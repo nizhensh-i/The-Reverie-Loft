@@ -102,13 +102,12 @@ const handleResize = () => {
 const fetchMusicInfo = async () => {
   musicInfoLoading.value = true;
   try {
-    console.log("开始请求音乐信息，配置:", import.meta.env.musicConfig);
     const response = await fetch(
       // `https://api.i-meto.com/meting/api?server=${props.musicConfig.server}&type=${props.musicConfig.type}&id=${props.musicConfig.id}`
       `https://api.qijieya.cn/meting/?server=${
-        import.meta.env.musicConfig.server
-      }&type=${import.meta.env.musicConfig.type}&id=${
-        import.meta.env.musicConfig.id
+        import.meta.env.VITE_MusicServer
+      }&type=${import.meta.env.VITE_MusicType}&id=${
+        import.meta.env.VITE_MusicPlaylistId
       }`
     );
     if (!response.ok) {
