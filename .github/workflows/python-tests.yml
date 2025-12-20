@@ -22,17 +22,19 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
-      # redis:
-      #   image: redis:6
-      #   ports:
-      #     - 6379:6379
-      #   env:
-      #     REDIS_PASSWORD: 1234
-      #   options: >-
-      #     --health-cmd "redis-cli ping"
-      #     --health-interval=10s
-      #     --health-timeout=5s
-      #     --health-retries=5
+      redis:
+        image: redis:6
+        ports:
+          - 6379:6379
+        # 注意：这里设置 env 只是为了给你后续的测试步骤引用，Redis 镜像本身不认这个变量
+        # env:
+        #   REDIS_PASSWORD: 1234 
+        options: >-
+          --health-cmd "redis-cli -a 1234 ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --requirepass 1234
 
     steps:
       - name: Set timezone
