@@ -92,19 +92,32 @@ class TestingConfig(Config):
         os.environ.get("TEST_DATABASE_URL")
         or "mysql+pymysql://root:1234@127.0.0.1:3306/test_backend_flask?charset=utf8mb4"
     )
-    # redis
-    REDIS_URL = (
-        os.environ.get("TEST_REDIS_URL")
-        or "redis://:1234@" + os.getenv("FLASK_RUN_HOST", "127.0.0.1") + ":6379/0"
-    )
-    WTF_CSRF_ENABLED = False
+    # redis - 支持GitHub Actions的无密码Redis
+    test_redis_url = os.environ.get("TEST_REDIS_URL")
+    if test_redis_url:
+        # GitHub Actions: 无密码Redis
+        REDIS_URL = test_redis_url
+        # 修改Celery配置以匹配无密码Redis
+        CELERY = {
+            **Config.CELERY,
+            'broker_url': test_redis_url.replace('/0', '/1'),
+            'result_backend': test_redis_url.replace('/0', '/2'),
+            'task_always_eager': True,
+            'task_eager_propagates': True,
+        }
+    else:
+        # 本地开发：有密码Redis
+        REDIS_URL = (
+            "redis://:1234@" + os.getenv("FLASK_RUN_HOST", "127.0.0.1") + ":6379/0"
+        )
+        # Celery测试配置：强制同步执行任务
+        CELERY = {
+            **Config.CELERY,
+            'task_always_eager': True,
+            'task_eager_propagates': True,
+        }
     
-    # Celery测试配置：强制同步执行任务
-    CELERY = {
-        **Config.CELERY,
-        'task_always_eager': True,
-        'task_eager_propagates': True,
-    }
+    WTF_CSRF_ENABLED = False
 
 
 class ProductionConfig(Config):

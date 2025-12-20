@@ -23,15 +23,14 @@ jobs:
           --health-retries=5
 
       redis:
-        image: redis:6
+        image: redis:6-alpine
         ports:
           - 6379:6379
         options: >-
-          --health-cmd "redis-cli -a 1234 ping"
+          --health-cmd "redis-cli ping"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-        command: redis-server --requirepass 1234
 
     steps:
       - name: Set timezone
@@ -56,7 +55,7 @@ jobs:
       - name: Run tests
         env:
           TEST_DATABASE_URL: mysql+pymysql://root:1234@127.0.0.1:3306/test_backend_flask
-          TEST_REDIS_URL: redis://:1234@127.0.0.1:6379/0
+          TEST_REDIS_URL: redis://@127.0.0.1:6379/0
           REDIS_HOST: 127.0.0.1
           SECRET_KEY: hard to guess string
           JWT_SECRET_KEY: super-secret
