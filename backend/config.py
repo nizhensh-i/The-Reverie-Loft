@@ -102,8 +102,8 @@ class TestingConfig(Config):
     # Celery测试配置：强制同步执行任务
     CELERY = {
         **Config.CELERY,
-        'task_always_eager': True,  # 强制同步执行任务
-        'task_eager_propagates': True,  # 异常传播
+        'task_always_eager': True,
+        'task_eager_propagates': True,
     }
 
 
