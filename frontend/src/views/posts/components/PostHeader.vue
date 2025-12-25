@@ -52,7 +52,7 @@ export default {
       }
       this.toUser();
     },
-    
+
     handleTouchStart(event) {
       // 为移动端提供更好的响应
       if (this.touchTimer) {
@@ -62,13 +62,13 @@ export default {
         // 长按逻辑（如果需要）
       }, 300);
     },
-    
+
     handleTouchEnd(event) {
       if (this.touchTimer) {
         clearTimeout(this.touchTimer);
       }
     },
-    
+
     toUser() {
       // 接口都已改为根据用户id获取用户数据
       this.otherUser.userInfo.id = this.post.user_id;
@@ -81,20 +81,19 @@ export default {
 <template>
   <el-row class="head" justify="space-between" align="middle">
     <div class="head-name">
-      <el-avatar 
-        alt="用户图像" 
-        :src="post.image" 
-        @click="handleUserClick" 
-        @touchstart="handleTouchStart"
-        @touchend="handleTouchEnd"
-      />
-      <el-text 
+      <el-avatar
+        alt="用户图像"
+        :src="post.image"
         @click="handleUserClick"
         @touchstart="handleTouchStart"
         @touchend="handleTouchEnd"
-      >{{
-        post.nick_name ? post.nick_name : post.author
-      }}</el-text>
+      />
+      <el-text
+        @click="handleUserClick"
+        @touchstart="handleTouchStart"
+        @touchend="handleTouchEnd"
+        >{{ post.nick_name ? post.nick_name : post.author }}</el-text
+      >
     </div>
     <div>
       <el-text size="small" class="head-time">{{ from_now }}</el-text>
@@ -109,26 +108,29 @@ export default {
 .head-name {
   display: flex;
   align-items: center;
-  
+
   .el-avatar {
     cursor: pointer;
     transition: opacity 0.2s ease;
-    
+
     &:hover {
       opacity: 0.8;
     }
-    
+
     &:active {
       transform: scale(0.95);
     }
   }
-  
+
   .el-text {
     margin-left: 5px;
     font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    // text-shadow: 0 1px 2px rgba(0,0,0,0.8);
     cursor: pointer;
     transition: color 0.2s ease;
-    
+
     &:hover {
       color: #409eff;
     }

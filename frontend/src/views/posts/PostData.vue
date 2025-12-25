@@ -8,6 +8,7 @@ import SkeletonUtil from "@/utils/components/SkeletonUtil.vue";
 import ICP from "@/utils/components/ICP.vue";
 import PublishEntry from "@/views/posts/components/PublishEntry.vue";
 import RegisterPrompt from "@/views/posts/components/RegisterPrompt.vue";
+import AtmosphereCard from "@/views/posts/components/AtmosphereCard.vue";
 import emitter from "@/utils/emitter.js";
 
 export default {
@@ -18,6 +19,7 @@ export default {
     SkeletonUtil,
     ICP,
     RegisterPrompt,
+    AtmosphereCard,
   },
   data() {
     return {
@@ -134,7 +136,7 @@ export default {
           :throttle="throttle"
           :useNew="true"
         >
-          <div class="posts-list">
+          <!-- <div class="posts-list">
             <transition-group name="slide-in">
               <PostPreview
                 v-for="item in posts"
@@ -149,7 +151,9 @@ export default {
                 </template>
               </PostPreview>
             </transition-group>
-          </div>
+          </div> -->
+
+          <AtmosphereCard v-for="item in posts" :key="item.id" />
         </SkeletonUtil>
       </el-tab-pane>
       <el-tab-pane name="showFollowed" v-if="currentUser.isLogin">

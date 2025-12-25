@@ -1,5 +1,6 @@
 <script setup>
 import Header from "./components/Header.vue";
+import AtmosphereHeader from "./components/AtmosphereHeader.vue";
 import GlobalPlayer from "@/views/user/components/music/GlobalPlayer.vue";
 import MiniPlayer from "@/views/user/components/music/MiniPlayer.vue";
 import MobileFloatingPlayer from "@/views/user/components/music/MobileFloatingPlayer.vue";
@@ -17,6 +18,7 @@ const isUserPage = computed(() => route.name === "user");
     <el-container>
       <el-header>
         <Header />
+        <!-- <AtmosphereHeader/> -->
       </el-header>
       <el-divider />
       <el-main :class="{ 'no-padding': isUserPage }">
