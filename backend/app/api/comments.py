@@ -36,7 +36,7 @@ def get_comment_replies(comment_id):
     replies, total = CommentApi.get_replies_by_parent(
         root_comment_id=root_comment_id, page=page
     )
-    return success(data=replies, extra={"total": total, "current_page": page})
+    return success(data=replies, total=total, current_page=page)
 
 
 class CommentApi(DecoratedMethodView):
@@ -133,8 +133,7 @@ class CommentApi(DecoratedMethodView):
             comments.append(comment_data)
 
         return success(
-            data=comments,
-            extra={"total": root_comments_pagination.total, "current_page": page},
+            data=comments, total=root_comments_pagination.total, current_page=page
         )
 
     def post(self, post_id):

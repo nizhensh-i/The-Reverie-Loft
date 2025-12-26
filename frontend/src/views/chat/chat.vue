@@ -7,7 +7,13 @@
 -->
 <template>
   <div class="chat-container">
-    <u-chat :config="config" style="max-height: 83vh" @load-more="loadMore" @submit="submit" @input="onInput">
+    <u-chat
+      :config="config"
+      style="max-height: 83vh"
+      @load-more="loadMore"
+      @submit="submit"
+      @input="onInput"
+    >
       <template #header>
         <PageHeadBack :title="otherUser.priorityName" />
       </template>
@@ -33,7 +39,6 @@
 -->
 <script setup>
 import { reactive, onMounted, ref, onUnmounted } from "vue";
-import { UChat } from "undraw-ui";
 import chatApi from "@/api/chat/chatApi.js";
 import emoji from "@/config/emoji.js";
 import imageCfg from "@/config/image.js";
@@ -121,7 +126,7 @@ function onInput() {
 
   // 发送typing事件
   currentUser.socket.emit("chat:typing", {
-    target_id: otherUser.userInfo.id
+    target_id: otherUser.userInfo.id,
   });
 
   // 设置防抖定时器
@@ -255,7 +260,6 @@ function submit(val, finish) {
 }
 
 @keyframes typingBounce {
-
   0%,
   80%,
   100% {

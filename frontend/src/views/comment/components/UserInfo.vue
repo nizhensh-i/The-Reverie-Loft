@@ -1,6 +1,5 @@
 <script setup>
 import { computed } from "vue";
-import { useLevel } from "undraw-ui";
 import { useCurrentUserStore } from "@/stores/user";
 import { useOtherUserStore } from "@/stores/otherUser";
 import userApi from "@/api/user/userApi.js";
@@ -84,9 +83,9 @@ const isF = computed(() => {
               <span class="name" style="max-width: 10em">{{
                 scope.username
               }}</span>
-              <span blank="true" class="rank" v-if="config.show.level">
+              <!-- <span blank="true" class="rank" v-if="config.show.level">
                 <u-icon size="24" v-html="useLevel(scope.level)"></u-icon>
-              </span>
+              </span> -->
             </div>
           </div>
           <div class="social-info">

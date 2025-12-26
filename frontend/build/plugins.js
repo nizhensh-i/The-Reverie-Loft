@@ -1,8 +1,9 @@
 import vue from "@vitejs/plugin-vue";
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
-import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import { VantResolver } from '@vant/auto-import-resolver';
+import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
+import { VantResolver } from "@vant/auto-import-resolver";
+import { UndrawUiResolver } from "undraw-ui/es/resolvers";
 import Icons from "unplugin-icons/vite";
 import IconsResolver from "unplugin-icons/resolver";
 import AppLoading from "vite-plugin-app-loading";
@@ -11,27 +12,28 @@ import svgLoader from "vite-svg-loader";
 import removeConsole from "vite-plugin-remove-console";
 
 export function getPluginsList(VITE_COMPRESSION, MODE) {
-  const isProd = MODE == 'production'
+  const isProd = MODE == "production";
   return [
     vue(),
     AutoImport({
-      imports: ["vue",
+      imports: [
+        "vue",
         // 自动导入函数式 API组件
         {
-          'element-plus': [
-            'ElMessage',
+          "element-plus": [
+            "ElMessage",
             // 'ElMessageBox',
             // 'ElNotification',
-            'ElLoading',
+            "ElLoading",
           ],
           vant: [
-            'showConfirmDialog',
+            "showConfirmDialog",
             // 'showDialog',
             // 'showToast',
           ],
         },
       ],
-      // resolvers:  [ElementPlusResolver(), VantResolver()] 
+      // resolvers:  [ElementPlusResolver(), VantResolver()]
       resolvers: isProd ? [ElementPlusResolver(), VantResolver()] : [],
     }),
     Components({
@@ -40,6 +42,7 @@ export function getPluginsList(VITE_COMPRESSION, MODE) {
         IconsResolver({
           enabledCollections: ["ep"],
         }),
+        UndrawUiResolver,
         // ElementPlusResolver(), VantResolver()
         ...(isProd ? [ElementPlusResolver(), VantResolver()] : []),
       ],

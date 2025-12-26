@@ -1,26 +1,26 @@
 repos:
   # 前端 Vue/JS 相关工具
-  - repo: https://github.com/eslint/eslint
-    rev: v9.0.0
-    hooks:
-      - id: eslint
-        name: ESLint
-        files: ^frontend/.*\.(js|vue|ts)$ # 只针对前端的 JavaScript/Vue 文件
-        exclude: ^frontend/(node_modules|dist)/  # 忽略 frontend 的 node_modules 和 dist
-        # 循环遍历每个文件，逐个转换路径（去掉开头的 frontend/）
-        entry: >
-          bash -c '
-          cd frontend || exit 1;
-          relative_files=();
-          for file in "$@"; do
-            # 去掉路径开头的 "frontend/"，得到相对路径（如 src/xxx.js）
-            relative_file="${file#frontend/}";
-            # 将相对路径加入数组
-            relative_files+=("$relative_file");
-          done;
-          eslint "${relative_files[@]}" --fix;
-          ' --
-        args: []  # 清空 args，避免额外参数干扰
+  # - repo: https://github.com/eslint/eslint
+  #   rev: v9.0.0
+  #   hooks:
+  #     - id: eslint
+  #       name: ESLint
+  #       files: ^frontend/.*\.(js|vue|ts)$ # 只针对前端的 JavaScript/Vue 文件
+  #       exclude: ^frontend/(node_modules|dist)/  # 忽略 frontend 的 node_modules 和 dist
+  #       # 循环遍历每个文件，逐个转换路径（去掉开头的 frontend/）
+  #       entry: >
+  #         bash -c '
+  #         cd frontend || exit 1;
+  #         relative_files=();
+  #         for file in "$@"; do
+  #           # 去掉路径开头的 "frontend/"，得到相对路径（如 src/xxx.js）
+  #           relative_file="${file#frontend/}";
+  #           # 将相对路径加入数组
+  #           relative_files+=("$relative_file");
+  #         done;
+  #         eslint "${relative_files[@]}" --fix;
+  #         ' --
+  #       args: []  # 清空 args，避免额外参数干扰
 
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v2.5.1

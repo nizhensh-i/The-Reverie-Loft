@@ -46,7 +46,6 @@
 
 <script setup>
 import { reactive, ref, watch } from "vue";
-import { UToast, UComment, UCommentScroll, UCommentNav } from "undraw-ui";
 import emoji from "@/config/emoji.js";
 import Operate from "./components/CommentOperate.vue";
 import UserInfo from "./components/UserInfo.vue";
@@ -160,7 +159,7 @@ const submit = ({ content, parentId, reply, finish, mentionList }) => {
       // 适配新的统一接口返回格式
       if (res.code === 200) {
         finish(res.data);
-        UToast({ message: "评论成功!", type: "info" });
+        ElMessage.info("评论成功!");
       } else {
         ElMessage.error(res.message || "评论失败");
       }
@@ -180,12 +179,12 @@ const like = (id, finish) => {
     loginReminder("快去登录再点赞吧");
     return;
   }
-  
+
   // 确保 likeIds 是数组
   if (!config.user.likeIds || !Array.isArray(config.user.likeIds)) {
     config.user.likeIds = [];
   }
-  
+
   if (config.user.likeIds.findIndex((item) => item == id) == -1) {
     // 点赞
     praiseApi
@@ -250,6 +249,7 @@ const more = () => {
           query.current++;
         } else {
           ElMessage.error(res.message || "加载评论失败");
+          finish(); // 即使失败也要调用finish
         }
       })
       .catch((error) => {
@@ -386,10 +386,6 @@ watch(
 .comment-count {
   font-size: 14px;
   color: #999;
-}
-
-.comment-scroll {
-  max-height: 800px;
 }
 
 .UComment {

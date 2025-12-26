@@ -6,6 +6,7 @@ import imageCfg from "@/config/image.js";
 import praise from "@/api/praise/praiseApi.js";
 import emojiCfg from "@/config/emojiCfg.js";
 import { loginReminder } from "@/utils/common.js";
+import dayjs from "@/config/dayjsCfg";
 
 export default {
   props: {
@@ -94,10 +95,10 @@ export default {
   computed: {
     from_now() {
       if (date.isYesterday(this.post.timestamp)) {
-        let time = this.$dayjs(this.post.timestamp).format("HH:mm");
+        let time = dayjs(this.post.timestamp).format("HH:mm");
         return `昨天 ${time}`;
       }
-      return this.$dayjs(this.post.timestamp).fromNow();
+      return dayjs(this.post.timestamp).fromNow();
     },
     isCommentManage() {
       return this.currentUser.userInfo.roleId >= 2;

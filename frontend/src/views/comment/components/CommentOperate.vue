@@ -26,7 +26,6 @@
 </template>
 <script setup>
 import { copy } from "@/utils/common.js";
-import { UToast } from "undraw-ui";
 
 const props = defineProps({ comment: Object });
 
@@ -49,7 +48,7 @@ const onCommand = (command) => {
       emit("remove", props.comment);
       break;
     case "report":
-      UToast({ type: "info", message: "举报成功: " + props.comment.id });
+      ElMessage.info("举报成功!");
       break;
     case "copy":
       rawCopy(props.comment.content);

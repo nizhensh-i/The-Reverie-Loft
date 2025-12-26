@@ -11,7 +11,7 @@ import PostImage from "@/views/posts/components/PostImage.vue";
 import PostPreview from "@/views/posts/components/PostPreview.vue";
 import userApi from "@/api/user/userApi.js";
 import date from "@/utils/date.js";
-import dayjs from "dayjs";
+import dayjs from "@/config/dayjsCfg";
 import { loginReminder, waitImage } from "@/utils/common.js";
 import musicPlayer from "./music.vue";
 
