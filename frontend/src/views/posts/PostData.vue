@@ -119,6 +119,7 @@ export default {
       @newPost="getPostsResult"
       v-if="currentUser.isLogin"
     />
+     <AtmosphereCard/>
     <el-tabs
       v-model="activeName"
       type="card"
@@ -136,7 +137,7 @@ export default {
           :throttle="throttle"
           :useNew="true"
         >
-          <!-- <div class="posts-list">
+          <div class="posts-list">
             <transition-group name="slide-in">
               <PostPreview
                 v-for="item in posts"
@@ -151,9 +152,7 @@ export default {
                 </template>
               </PostPreview>
             </transition-group>
-          </div> -->
-
-          <AtmosphereCard v-for="item in posts" :key="item.id" />
+          </div>
         </SkeletonUtil>
       </el-tab-pane>
       <el-tab-pane name="showFollowed" v-if="currentUser.isLogin">

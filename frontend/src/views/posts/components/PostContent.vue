@@ -15,6 +15,10 @@ export default {
       type: Number,
       default: 16,
     },
+    postType:{
+      type: String,
+      default: "",
+    }
   },
   components: {
     mavonEditor,
@@ -413,6 +417,8 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+// $serif-font: "Times New Roman", "Source Han Serif SC", "Songti SC", serif;
+// $no-serif-font: "-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif";
 .post-content-wrapper {
   width: 100%;
   margin: 0;
@@ -592,6 +598,7 @@ export default {
   margin: 1.5em 0;
 }
 
+// 代码块复制按钮
 :deep(.copy-btn) {
   position: absolute;
   top: 4px;
