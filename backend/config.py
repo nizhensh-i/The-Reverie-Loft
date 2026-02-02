@@ -26,7 +26,7 @@ class Config:
     FLASKY_MAIL_SUBJECT_PREFIX = "[Flasky]"
     FLASKY_MAIL_SENDER = "Flasky Admin <flasky@example.com>"
     # 管理员邮箱，当用户通过网站注册时，如果用户的邮箱与配置的管理员邮箱相同，则该用户将具有管理员权限
-    FLASKY_ADMIN = "zmc_li@foxmail.com"
+    FLASKY_ADMIN = os.environ.get("FLASKY_ADMIN_MAIL") or "zmc_li@foxmail.com"
     SSL_REDIRECT = False
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False

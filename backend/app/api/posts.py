@@ -5,7 +5,7 @@ from flask_jwt_extended import current_user, jwt_required
 from sqlalchemy.orm import joinedload
 
 from .. import cache, db, limiter
-from ..decorators import DecoratedMethodView, log_operate
+from ..decorators import DecoratedMethodView
 from ..models import Follow, Image, ImageType, Permission, Post, PostType, User
 from ..mycelery.notification_task import create_new_post_notifications
 from ..utils.markdown_truncate import MarkdownTruncator
@@ -95,7 +95,7 @@ class PostItemApi(DecoratedMethodView):
 
 class PostGroupApi(DecoratedMethodView):
     method_decorators = {
-        "get": [log_operate],
+        # "get": [log_operate],
         # "get": [sql_profile],
         "post": [jwt_required()],
     }

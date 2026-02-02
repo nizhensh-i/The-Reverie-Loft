@@ -192,7 +192,7 @@ export default {
 
     // 点击探索
     handleExplore() {
-      this.$message({
+      ElMessage({
         message: "登录后继续探索更多精彩内容",
         type: "info",
         duration: 2000,

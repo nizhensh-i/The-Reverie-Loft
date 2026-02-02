@@ -415,14 +415,6 @@ def oauth_callback(provider: str):
                 f"{provider.title()} 服务响应超时，请稍后重试",
             )
         except AttributeError as e:
-            # QQ 适配器的特殊 bug
-            if "'dict' object has no attribute 'text'" in str(e):
-                logging.error(f"QQ OAuth 库内部错误: {e}")
-                return _handle_oauth_error(
-                    provider,
-                    500,
-                    f"{provider.title()} OAuth 处理失败，请稍后重试或使用其他登录方式",
-                )
             raise
 
         # 检查响应是否包含网络错误（即使 code=200，message 中也可能包含错误）
