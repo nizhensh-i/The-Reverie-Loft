@@ -217,6 +217,8 @@ def _get_or_create_user(provider: str, auth_user) -> User:
         image=profile["avatar"],
         # 生成不可预测的密码，防止密码登录
         password=secrets.token_urlsafe(32),
+        # 用户不具备密码登陆能力
+        has_password=False,
     )
     db.session.add(user)
     # 获取 user.id

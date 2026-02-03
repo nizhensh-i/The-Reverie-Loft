@@ -9,10 +9,10 @@
               >已有 {{ currentUsers.toLocaleString() }} 位探索者</span
             >
           </div>
-          <div class="stat-item">
+          <!-- <div class="stat-item">
             <el-icon><i-ep-ChatDotRound /></el-icon>
             <span class="stat-text">本周新增 {{ weeklyPosts }} 条随想</span>
-          </div>
+          </div> -->
         </div>
         <div class="preview-content">
           <div class="preview-card">

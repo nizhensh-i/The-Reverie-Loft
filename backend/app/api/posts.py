@@ -8,6 +8,7 @@ from .. import cache, db, limiter
 from ..decorators import DecoratedMethodView
 from ..models import Follow, Image, ImageType, Permission, Post, PostType, User
 from ..mycelery.notification_task import create_new_post_notifications
+from ..utils.cache_helper import cache_invalidator
 from ..utils.markdown_truncate import MarkdownTruncator
 from ..utils.response import error, success
 
@@ -15,7 +16,7 @@ from ..utils.response import error, success
 class PostItemApi(DecoratedMethodView):
     method_decorators = {
         "get": [],
-        "delete": [jwt_required()],
+        "delete": [jwt_required(), cache_invalidator],
         "patch": [jwt_required()],
     }
 
@@ -49,8 +50,6 @@ class PostItemApi(DecoratedMethodView):
             logging.warning(f"用户 {current_user.username} 尝试删除不存在的文章 {id}")
             return error(404, "文章不存在")
         PostItemApi.soft_delete(p)
-        # 移除文章缓存
-        cache.delete_memoized(PostGroupApi.query_post)
         return success(message="文章删除成功")
 
     def patch(self, id):

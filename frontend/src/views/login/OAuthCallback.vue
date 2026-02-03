@@ -112,13 +112,18 @@ onMounted(() => {
     subTitle: provider ? `通过 ${provider} 登录，正在跳转...` : "正在跳转...",
   };
 
-  // 至少展示 1s，避免“样式刚出现就跳走”造成闪烁
+  // 至少展示 1s，避免"样式刚出现就跳走"造成闪烁
   const elapsed =
     (typeof performance !== "undefined" ? performance.now() : Date.now()) -
     startedAt;
   const delay = Math.max(1500 - elapsed, 0);
   setTimeout(() => router.replace("/posts"), delay);
 });
+
+// 返回登录页
+function goToLogin() {
+  router.replace("/login");
+}
 </script>
 
 <template>
@@ -136,6 +141,17 @@ onMounted(() => {
 
       <h2 class="title">{{ state.title }}</h2>
       <p class="subtitle">{{ state.subTitle }}</p>
+
+      <!-- 登录失败时显示返回按钮 -->
+      <el-button
+        v-if="state.status === 'error'"
+        class="back-button"
+        round
+        type="primary"
+        @click="goToLogin"
+      >
+        返回登录页
+      </el-button>
     </div>
   </div>
 </template>
@@ -171,7 +187,12 @@ onMounted(() => {
   font-size: 15px;
   line-height: 1.45;
   color: rgba(0, 0, 0, 0.56);
-  margin: 0;
+  margin: 0 0 24px;
+}
+
+.back-button {
+  margin-top: 58px;
+  min-width: 140px;
 }
 
 .status {

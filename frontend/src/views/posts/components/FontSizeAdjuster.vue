@@ -3,7 +3,7 @@ export default {
   props: {
     defaultFontSize: {
       type: Number,
-      default: 14,
+      default: 16,
     },
   },
   data() {
@@ -40,7 +40,7 @@ export default {
       this.visible = false;
     },
     resetFontSize() {
-      this.tempFontSize = 14;
+      this.tempFontSize = 16;
     },
   },
 };
@@ -78,7 +78,7 @@ export default {
         <div class="font-size-control">
           <div class="control-label">
             <span>字体大小: {{ tempFontSize }}px</span>
-            <el-button type="text" @click="resetFontSize">重置</el-button>
+            <el-button link @click="resetFontSize">重置</el-button>
           </div>
 
           <el-slider

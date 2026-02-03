@@ -1,50 +1,97 @@
 <template>
   <div class="comment-section">
-    <div class="comment-header">
-      <h3 class="comment-title">评论区</h3>
-      <div class="comment-count">共 {{ query.total }} 条评论</div>
-    </div>
+    <el-skeleton
+      :loading="isLoading"
+      animated
+      :throttle="{
+        leading: skeletonDelay,
+        trailing: skeletonDelay,
+        initVal: true,
+      }"
+    >
+      <template #template>
+        <div class="comment-header">
+          <el-skeleton-item variant="text" style="width: 80px; height: 24px" />
+          <el-skeleton-item variant="text" style="width: 120px" />
+        </div>
+        <div class="comment-skeleton">
+          <div class="skeleton-comment-item" v-for="i in 2" :key="i">
+            <el-skeleton-item
+              variant="circle"
+              style="width: 40px; height: 40px"
+            />
+            <div class="skeleton-content">
+              <el-skeleton-item
+                variant="text"
+                style="width: 120px; margin-bottom: 8px"
+              />
+              <el-skeleton-item
+                variant="text"
+                style="width: 100%; margin-bottom: 6px"
+              />
+              <el-skeleton-item
+                variant="text"
+                style="width: 80%; margin-bottom: 8px"
+              />
+              <el-skeleton-item variant="text" style="width: 60px" />
+            </div>
+          </div>
+        </div>
+      </template>
 
-    <u-comment-scroll :disable="disable" @more="more" class="comment-scroll">
-      <u-comment
-        ref="commentRef"
-        :config="config"
-        @submit="submit"
-        @like="like"
-        @mention-search="mentionSearch"
-        @reply-page="replyPage"
-        @show-info="showInfo"
-        class="UComment"
-      >
-        <u-comment-nav
-          v-model="latest"
-          @sorted="sorted"
-          class="comment-nav"
-        ></u-comment-nav>
-        <template #avatar="scope">
-          <el-avatar
-            alt="用户图像"
-            :src="scope.user.avatar"
-            class="comment-avatar"
-          />
-        </template>
-        <template #operate="scope">
-          <Operate
-            :comment="scope"
-            :post-author="props.postAuthor"
-            @remove="remove"
-          />
-        </template>
-        <template #card="scope">
-          <UserInfo :scope="scope" :loading="loading" :config="config" />
-        </template>
-      </u-comment>
-    </u-comment-scroll>
+      <template #default>
+        <div class="comment-header">
+          <h3 class="comment-title">评论区</h3>
+          <div class="comment-count">共 {{ query.total }} 条评论</div>
+        </div>
 
-    <div v-if="query.total === 0" class="empty-comments">
-      <van-icon name="comment-o" class="empty-icon" />
-      <p>暂无评论，快来发表第一条评论吧！</p>
-    </div>
+        <u-comment-scroll
+          :disable="disable"
+          @more="more"
+          class="comment-scroll"
+          :class="{ 'comment-scroll-disabled': disable }"
+        >
+          <u-comment
+            ref="commentRef"
+            :config="config"
+            @submit="submit"
+            @like="like"
+            @mention-search="mentionSearch"
+            @reply-page="replyPage"
+            @show-info="showInfo"
+            class="UComment"
+          >
+            <u-comment-nav
+              v-model="latest"
+              @sorted="sorted"
+              class="comment-nav"
+            ></u-comment-nav>
+            <template #avatar="scope">
+              <el-avatar
+                alt="用户图像"
+                :src="scope.user.avatar"
+                class="comment-avatar"
+              />
+            </template>
+            <template #operate="scope">
+              <Operate
+                :comment="scope"
+                :post-author="props.postAuthor"
+                @remove="remove"
+              />
+            </template>
+            <template #card="scope">
+              <UserInfo :scope="scope" :loading="loading" :config="config" />
+            </template>
+          </u-comment>
+        </u-comment-scroll>
+
+        <div v-if="query.total === 0" class="empty-comments">
+          <van-icon name="comment-o" class="empty-icon" />
+          <p>暂无评论，快来发表第一条评论吧！</p>
+        </div>
+      </template>
+    </el-skeleton>
   </div>
 </template>
 
@@ -98,6 +145,10 @@ config.user = {
 
 // 用户信息是否加载
 const loading = ref(false);
+// 评论加载状态（用于骨架屏）
+const isLoading = ref(true);
+// 骨架屏延时配置（毫秒）
+const skeletonDelay = 500;
 // 模拟请求获取用户详细信息
 const showInfo = (uid, finish) => {
   loading.value = true;
@@ -326,6 +377,7 @@ const remove = (comment) => {
 
 let currentRequestId = 0;
 function getComment() {
+  isLoading.value = true;
   const requestId = ++currentRequestId;
   commentApi
     .getComment(props.postId, query.current)
@@ -341,9 +393,14 @@ function getComment() {
         query.current++;
         query.total = res.total || 0;
 
-        // 如果已经加载完所有评论，禁用滚动加载
-        if (query.current > Math.ceil(query.total / query.size)) {
+        // 如果评论为空或已经加载完所有评论，禁用滚动加载
+        if (
+          query.total === 0 ||
+          query.current > Math.ceil(query.total / query.size)
+        ) {
           disable.value = true;
+        } else {
+          disable.value = false;
         }
       } else {
         ElMessage.error(res.message || "获取评论失败");
@@ -353,6 +410,9 @@ function getComment() {
       // ElMessage.error('获取评论失败，请稍后重试')
       message.error("获取评论失败，请稍后重试");
       console.error(error);
+    })
+    .finally(() => {
+      isLoading.value = false;
     });
 }
 function has_praised() {
@@ -380,11 +440,13 @@ watch(
     // 一定要重置页码。否则导致请求的页码不正确，返回的数据为空数组
     query.current = 1;
     query.total = 0;
-    disable.value = false;
+    disable.value = true; // 初始状态禁用，等数据加载后再启用
+    isLoading.value = true;
 
-    setTimeout(getComment, 200);
+    // 立即请求评论数据，不使用 setTimeout
+    getComment();
     if (currentUser.isLogin) {
-      setTimeout(has_praised, 250);
+      has_praised();
     }
   }
 );
@@ -427,6 +489,33 @@ watch(
 .comment-count {
   font-size: 14px;
   color: #999;
+}
+
+.comment-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  .skeleton-comment-item {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  .skeleton-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.comment-scroll {
+  &.comment-scroll-disabled {
+    :deep(.scroll-btn) {
+      display: none !important;
+    }
+  }
 }
 
 .UComment {
@@ -520,6 +609,12 @@ watch(
 
   .comment-count {
     font-size: 12px;
+  }
+
+  .comment-skeleton {
+    .skeleton-comment-item {
+      padding: 12px;
+    }
   }
 
   .UComment {

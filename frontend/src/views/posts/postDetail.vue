@@ -63,7 +63,7 @@ export default {
       // 控制骨架屏相关组件的显示状态
       showSkeletonComponents: false,
       // 骨架屏延时配置（毫秒）
-      skeletonDelay: 200,
+      skeletonDelay: 500,
     };
   },
   beforeRouteEnter(to, from, next) {
@@ -267,82 +267,41 @@ export default {
             />
             <el-skeleton-item variant="text" style="width: 120px" />
           </div>
-          <el-skeleton-item
-            variant="text"
-            style="width: 100%; height: 24px; margin-bottom: 16px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 100%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 100%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 100%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 90%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 100%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 95%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 85%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 85%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 100%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 92%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 88%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 100%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 96%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 80%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 100%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 94%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 86%; margin-bottom: 12px"
-          />
-          <el-skeleton-item
-            variant="text"
-            style="width: 82%; margin-bottom: 12px"
-          />
+          <!-- 文章标题骨架 -->
+          <div class="skeleton-title-section">
+            <el-skeleton-item
+              variant="text"
+              style="width: 75%; height: 22px; margin-bottom: 20px"
+            />
+          </div>
+          <!-- 文章内容骨架 -->
+          <div class="skeleton-content-section">
+            <el-skeleton-item
+              variant="text"
+              style="width: 100%; margin-bottom: 16px"
+            />
+            <el-skeleton-item
+              variant="text"
+              style="width: 95%; margin-bottom: 16px"
+            />
+            <el-skeleton-item
+              variant="text"
+              style="width: 88%; margin-bottom: 16px"
+            />
+            <div class="skeleton-spacer"></div>
+            <el-skeleton-item
+              variant="text"
+              style="width: 100%; margin-bottom: 16px"
+            />
+            <el-skeleton-item
+              variant="text"
+              style="width: 92%; margin-bottom: 16px"
+            />
+            <el-skeleton-item
+              variant="text"
+              style="width: 78%; margin-bottom: 16px"
+            />
+          </div>
         </template>
 
         <!-- 实际内容 -->
@@ -473,14 +432,26 @@ export default {
 }
 
 .skeleton-wrapper {
-  min-height: calc(100vh - 200px);
+  // min-height: calc(100vh - 200px);
 }
 
 .skeleton-header {
   display: flex;
   align-items: center;
-  margin-bottom: 40px;
+  margin-bottom: 24px;
   gap: 12px;
+}
+
+.skeleton-title-section {
+  margin-bottom: 32px;
+}
+
+.skeleton-content-section {
+  margin-bottom: 40px;
+}
+
+.skeleton-spacer {
+  height: 24px;
 }
 
 .post-detail-container {

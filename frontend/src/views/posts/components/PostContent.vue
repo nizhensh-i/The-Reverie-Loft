@@ -35,6 +35,7 @@ export default {
         this.pContent = newVal;
         this.truncationTryCount = 0; // 重置
         this.$nextTick(() => {
+          this.updateFontSize(this.fontSize);
           this.updateTruncation();
           this.processCodeBlocks();
         });
@@ -49,14 +50,9 @@ export default {
   },
   mounted() {
     this.$nextTick(() => {
+      this.updateFontSize(this.fontSize);
       this.updateTruncation();
       this.processCodeBlocks();
-      // 从本地存储加载字体大小设置
-      const savedFontSize = localStorage.getItem("article-font-size");
-      if (savedFontSize) {
-        this.fontSize = parseInt(savedFontSize);
-        this.updateFontSize(this.fontSize);
-      }
     });
   },
   computed: {},
@@ -71,11 +67,11 @@ export default {
         const h2Elements = contentDom.querySelectorAll("h2");
 
         h1Elements.forEach((el) => {
-          el.style.fontSize = `${(size * 1.8) / 16}em`;
+          el.style.fontSize = `${(size * 1.4) / 16}em`;
         });
 
         h2Elements.forEach((el) => {
-          el.style.fontSize = `${(size * 1.5) / 16}em`;
+          el.style.fontSize = `${(size * 1.2) / 16}em`;
         });
       }
     },
@@ -452,13 +448,13 @@ export default {
   }
 
   h1 {
-    font-size: 1.8em;
+    font-size: 1.4em;
     border-bottom: 1px solid #eee;
     padding-bottom: 0.3em;
   }
 
   h2 {
-    font-size: 1.5em;
+    font-size: 1.2em;
     border-bottom: 1px solid #f0f0f0;
     padding-bottom: 0.2em;
   }

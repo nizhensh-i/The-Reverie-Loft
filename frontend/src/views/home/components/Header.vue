@@ -103,7 +103,6 @@ export default {
       actions: [
         { text: "登录", icon: "user-o" },
         { text: "注册", icon: "add-o" },
-        { text: "关于", icon: "info-o" },
       ],
     };
   },
@@ -204,8 +203,6 @@ export default {
         this.$router.push("/login");
       } else if (action.text == "注册") {
         this.$router.push("/register");
-      } else if (action.text == "关于") {
-        this.$router.push("/about");
       }
     },
   },

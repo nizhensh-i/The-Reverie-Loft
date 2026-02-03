@@ -8,6 +8,7 @@ from .. import db
 from ..decorators import DecoratedMethodView
 from ..models import Comment, Post, Praise
 from ..mycelery.notification_task import create_like_notifications
+from ..utils.cache_helper import cache_invalidator
 from ..utils.response import error, success
 from . import api
 
@@ -36,6 +37,7 @@ def has_praised_comment_id(post_id):
 
 class PraisePostApi(DecoratedMethodView):
     method_decorators = {
+        "post": [jwt_required(), cache_invalidator],  # 自动清除缓存
         "share": [jwt_required()],
     }
 

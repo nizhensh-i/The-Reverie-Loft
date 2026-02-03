@@ -1,5 +1,6 @@
 <script setup>
 import Header from "./components/Header.vue";
+import ICP from "@/utils/components/ICP.vue";
 import GlobalPlayer from "@/views/user/components/music/GlobalPlayer.vue";
 import MiniPlayer from "@/views/user/components/music/MiniPlayer.vue";
 import MobileFloatingPlayer from "@/views/user/components/music/MobileFloatingPlayer.vue";
@@ -44,6 +45,9 @@ const isUserPage = computed(() => route.name === "user");
       <MiniPlayer />
       <!-- 移动端悬浮播放按钮 -->
       <MobileFloatingPlayer />
+
+      <!-- 页脚 -->
+      <!-- <ICP /> -->
     </el-container>
   </el-config-provider>
 </template>

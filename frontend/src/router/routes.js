@@ -189,7 +189,17 @@ const routes = [
       {
         path: "/about",
         name: "about",
-        component: () => import("../views/About.vue"),
+        component: () => import("../views/legal/About.vue"),
+      },
+      {
+        path: "/terms",
+        name: "terms",
+        component: () => import("../views/legal/TermsOfService.vue"),
+      },
+      {
+        path: "/privacy",
+        name: "privacy",
+        component: () => import("../views/legal/PrivacyPolicy.vue"),
       },
       ...updateUser,
       ...setting,

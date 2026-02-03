@@ -70,9 +70,7 @@ export default {
       return date.dateShow(time);
     },
     isCurrentUser() {
-      return (
-        this.user && this.user.username == this.currentUser.userInfo.username
-      );
+      return this.$route.params.userName == this.currentUser.userInfo.username;
     },
     isFollowCurrentUser() {
       return (

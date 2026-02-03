@@ -8,6 +8,7 @@ from .. import db, limiter
 from ..decorators import DecoratedMethodView, permission_required
 from ..models import Comment, NotificationType, Permission, Post
 from ..mycelery.notification_task import create_comment_notifications
+from ..utils.cache_helper import cache_invalidator
 from ..utils.common import get_avatars_url
 from ..utils.response import error, success
 from ..utils.text_filter import DFAFilter
@@ -44,6 +45,7 @@ class CommentApi(DecoratedMethodView):
         "get": [],
         "post": [
             jwt_required(),
+            cache_invalidator,
             limiter.limit(
                 "1/second;3/minute", exempt_when=lambda: current_user.role_id == 3
             ),
