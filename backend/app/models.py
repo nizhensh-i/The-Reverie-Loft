@@ -164,6 +164,8 @@ class User(db.Model):
     sex = db.Column(db.String(10), nullable=True)
     # 个人资料背景图片
     bg_image = db.Column(db.String(255), nullable=True)
+    # 个人资料PC端背景图片
+    pc_bg_image = db.Column(db.String(255), nullable=True)
     member_since = db.Column(db.DateTime(), default=DateUtils.now_time)
     last_seen = db.Column(db.DateTime(), default=DateUtils.now_time)
     # 用户图像
@@ -420,6 +422,7 @@ class User(db.Model):
             "about_me": self.about_me,
             "sex": self.sex,
             "bg_image": self.bg_image,
+            "pc_bg_image": self.pc_bg_image,
             "member_since": self.member_since
             if isinstance(self.member_since, str)
             else DateUtils.datetime_to_str(self.member_since),

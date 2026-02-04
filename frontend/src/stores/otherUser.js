@@ -6,6 +6,8 @@ export const useOtherUserStore = defineStore("otherUser", {
       id: 1,
       username: "",
       nickname: "",
+      bg_image: "",
+      pc_bg_image: "",
       social_account: {
         github: "",
         email: "",
@@ -24,7 +26,7 @@ export const useOtherUserStore = defineStore("otherUser", {
     },
     defaultBackground: `${
       import.meta.env.VITE_QINIU_DOMAIN
-    }/userBackground/static/image-pre3.webp-slim`,
+    }/userBackground/mobile/image-pre3.webp-slim`,
   }),
   getters: {
     isCommentManage: (state) => state.userInfo.roleId >= 2,
@@ -37,6 +39,10 @@ export const useOtherUserStore = defineStore("otherUser", {
     backGroundUrl: (state) =>
       state.userInfo.bg_image
         ? state.userInfo.bg_image
+        : state.defaultBackground,
+    pcBackGroundUrl: (state) =>
+      state.userInfo.pc_bg_image
+        ? state.userInfo.pc_bg_image
         : state.defaultBackground,
   },
   actions: {

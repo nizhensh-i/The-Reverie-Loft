@@ -18,6 +18,7 @@ export const useCurrentUserStore = defineStore("currentUser", {
       roleId: 0,
       confirmed: false,
       bg_image: "",
+      pc_bg_image: "",
       image: "",
       about_me: "",
       location: "",
@@ -64,8 +65,10 @@ export const useCurrentUserStore = defineStore("currentUser", {
       MAX_ITEM: 50,
     },
     devUploadBaseUrl: "dev/",
-    // 主页背景库地址
-    userBackgroundUrl: "userBackground/static/",
+    // 主页移动端背景库地址
+    userBackgroundUrl: "userBackground/mobile/",
+    // 主页PC端背景库地址
+    userPcBackgroundUrl: "userBackground/pc/",
     // 用户头像库地址
     userAvatars: "userAvatars/",
     defaultBackground: `${
@@ -86,6 +89,10 @@ export const useCurrentUserStore = defineStore("currentUser", {
     backGroundUrl: (state) =>
       state.userInfo.bg_image
         ? state.userInfo.bg_image
+        : state.defaultBackground,
+    pcBackGroundUrl: (state) =>
+      state.userInfo.pc_bg_image
+        ? state.userInfo.pc_bg_image
         : state.defaultBackground,
     cityName: (state) => {
       if (!state.userInfo.location) return "";
@@ -112,7 +119,8 @@ export const useCurrentUserStore = defineStore("currentUser", {
       import.meta.env.DEV == true
         ? state.devUploadBaseUrl
         : `user_image/user_${state.userInfo.id}/markdown/`,
-    uploadBackgroundStatic: (state) => `${state.userBackgroundUrl}static/`,
+    uploadBackgroundStatic: (state) => `${state.userBackgroundUrl}`,
+    uploadPcBackgroundStatic: (state) => `${state.userPcBackgroundUrl}`,
     uploadBackgroundDynamics: (state) => `${state.userBackgroundUrl}dynamics/`,
   },
   actions: {

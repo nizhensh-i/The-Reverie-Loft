@@ -41,6 +41,7 @@ export default {
       },
       dialogShow: false,
       contentLoaded: false,
+      isMobileDevice: false,
     };
   },
   setup() {
@@ -98,9 +99,15 @@ export default {
       );
     },
     bgImage() {
-      return this.isCurrentUser
-        ? this.currentUser.backGroundUrl
-        : this.otherUser.backGroundUrl;
+      const isMobile = this.isMobileDevice;
+      if (this.isCurrentUser) {
+        return isMobile
+          ? this.currentUser.backGroundUrl
+          : this.currentUser.pcBackGroundUrl;
+      }
+      return isMobile
+        ? this.otherUser.backGroundUrl
+        : this.otherUser.pcBackGroundUrl;
     },
     backColor() {
       return this.isUserPage ? "#ffffff" : "#000000";
@@ -114,6 +121,7 @@ export default {
   },
   // 当从A资料跳转B资料时，更新资料页面
   created() {
+    this.isMobileDevice = this.checkIsMobile();
     // 首次加载时获取用户数据
     this.getUser();
     console.log("111", this.$route.params.userName);
@@ -132,26 +140,43 @@ export default {
       }
     );
   },
+  mounted() {
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", this.handleResize);
+    }
+  },
+  beforeUnmount() {
+    if (typeof window !== "undefined") {
+      window.removeEventListener("resize", this.handleResize);
+    }
+  },
   methods: {
+    checkIsMobile() {
+      if (typeof window === "undefined") return false;
+      const ua = navigator.userAgent || "";
+      return (
+        /Mobi|Android|iPhone|iPad|iPod/i.test(ua) || window.innerWidth <= 768
+      );
+    },
+    handleResize() {
+      const nextIsMobile = this.checkIsMobile();
+      if (nextIsMobile !== this.isMobileDevice) {
+        this.isMobileDevice = nextIsMobile;
+        if (this.isUserPage) {
+          this.setMainProperty();
+        }
+      }
+    },
     setMainProperty() {
       if (!this.isUserPage) {
         return;
       }
 
-      // 确保背景图片URL是最新的
-      let bgImageUrl = this.bgImage;
-
-      // 如果是当前用户，确保使用最新的背景图片
-      if (this.isCurrentUser && this.currentUser.backGroundUrl) {
-        bgImageUrl = this.currentUser.backGroundUrl;
-      } else if (!this.isCurrentUser && this.otherUser.backGroundUrl) {
-        bgImageUrl = this.otherUser.backGroundUrl;
-      }
-
+      const bgImageUrl = this.bgImage;
       const root = document.documentElement;
       root.style.setProperty(
         "--leleo-background-image-url",
-        `url('${bgImageUrl}')`
+        bgImageUrl ? `url('${bgImageUrl}')` : "none"
       );
     },
     // 每次点击tag触发动画
@@ -168,10 +193,7 @@ export default {
     handleSwitchChange() {
       const root = document.documentElement;
       if (this.isUserPage) {
-        root.style.setProperty(
-          "--leleo-background-image-url",
-          `url('${this.bgImage}')`
-        );
+        this.setMainProperty();
       } else {
         root.style.setProperty("--leleo-background-image-url", `none`);
         root.style.setProperty("background-color", "#fff");
@@ -218,12 +240,18 @@ export default {
           if (isViewingSelf) {
             this.currentUser.setUserInfo(userData);
             if (userData.bg_image) {
-              this.currentUser.bg_image = userData.bg_image;
+              this.currentUser.userInfo.bg_image = userData.bg_image;
+            }
+            if (userData.pc_bg_image) {
+              this.currentUser.userInfo.pc_bg_image = userData.pc_bg_image;
             }
           } else {
             this.otherUser.userInfo = userData;
             if (userData.bg_image) {
-              this.otherUser.bg_image = userData.bg_image;
+              this.otherUser.userInfo.bg_image = userData.bg_image;
+            }
+            if (userData.pc_bg_image) {
+              this.otherUser.userInfo.pc_bg_image = userData.pc_bg_image;
             }
           }
 
