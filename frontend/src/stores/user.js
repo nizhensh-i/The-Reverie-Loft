@@ -65,7 +65,7 @@ export const useCurrentUserStore = defineStore("currentUser", {
     },
     devUploadBaseUrl: "dev/",
     // 主页背景库地址
-    userBackgroundUrl: "userBackground/",
+    userBackgroundUrl: "userBackground/static/",
     // 用户头像库地址
     userAvatars: "userAvatars/",
     defaultBackground: `${

@@ -92,14 +92,14 @@ onUnmounted(() => {
 }
 
 .footer.fixed {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 99;
+  // position: fixed;
+  // left: 0;
+  // right: 0;
+  // bottom: 0;
+  // z-index: 99;
   background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(5px);
-  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.05);
+  // box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.05);
 }
 
 .footer-divider {

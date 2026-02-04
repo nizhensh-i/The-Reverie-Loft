@@ -587,6 +587,7 @@ textarea {
 
     &:hover {
       color: #3b82f6;
+      cursor: pointer;
     }
   }
 }

@@ -29,5 +29,6 @@ export default {
 <style scoped>
 .el-page-header {
   margin-bottom: 10px;
+  margin-top: 10px;
 }
 </style>
