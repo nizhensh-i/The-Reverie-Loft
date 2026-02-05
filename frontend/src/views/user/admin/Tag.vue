@@ -1,63 +1,70 @@
 <template>
   <PageHeadBack>
-    <div>
-      <el-tag
-        v-for="tag in dynamicTags"
-        :key="tag.name"
-        :type="tag.type"
-        round
-        closable
-        :disable-transitions="false"
-        @close="handleClose(tag)"
-      >
-        {{ tag.name }}
-      </el-tag>
-      <el-input
-        v-if="inputVisible"
-        ref="InputRef"
-        v-model="inputValue"
-        class="w-20"
-        size="small"
-        @keyup.enter="handleInputConfirm"
-        @blur="handleInputConfirm"
+    <PageScroll max-height="calc(100vh - 45px - 47px)">
+      <div>
+        <el-tag
+          v-for="tag in dynamicTags"
+          :key="tag.name"
+          :type="tag.type"
+          round
+          closable
+          :disable-transitions="false"
+          @close="handleClose(tag)"
+        >
+          {{ tag.name }}
+        </el-tag>
+        <el-input
+          v-if="inputVisible"
+          ref="InputRef"
+          v-model="inputValue"
+          class="w-20"
+          size="small"
+          @keyup.enter="handleInputConfirm"
+          @blur="handleInputConfirm"
+        />
+        <el-button
+          v-else
+          class="button-new-tag"
+          size="small"
+          @click="showInput"
+        >
+          + 新增 Tag
+        </el-button>
+      </div>
+
+      <div class="del" v-if="tagRemove.length">
+        待删除的标签：
+        <el-tag
+          v-for="tag in tagRemove"
+          :key="tag"
+          type="danger"
+          round
+          closable
+          @close="cancelDel(tag)"
+        >
+          {{ tag }}
+        </el-tag>
+      </div>
+
+      <div class="but">
+        <el-text>注：可用空格分隔，一次输入多个标签</el-text>
+        <el-button type="primary" round :disabled="!tagChange" @click="reset"
+          >重置</el-button
+        >
+        <el-button type="primary" round :disabled="!tagChange" @click="save"
+          >保存</el-button
+        >
+      </div>
+
+      <van-dialog
+        v-model:show="dialogShow"
+        :title="dialogData.title"
+        :message="dialogData.message"
+        width="230"
+        show-cancel-button
+        :beforeClose="beforeClose"
       />
-      <el-button v-else class="button-new-tag" size="small" @click="showInput">
-        + 新增 Tag
-      </el-button>
-    </div>
-
-    <div class="del" v-if="tagRemove.length">
-      待删除的标签：
-      <el-tag
-        v-for="tag in tagRemove"
-        :key="tag"
-        type="danger"
-        round
-        closable
-        @close="cancelDel(tag)"
-      >
-        {{ tag }}
-      </el-tag>
-    </div>
-
-    <div class="but">
-      <el-text>注：可用空格分隔，一次输入多个标签</el-text>
-      <el-button type="primary" round :disabled="!tagChange" @click="reset"
-        >重置</el-button
-      >
-      <el-button type="primary" round :disabled="!tagChange" @click="save"
-        >保存</el-button
-      >
-    </div>
-
-    <van-dialog
-      v-model:show="dialogShow"
-      :title="dialogData.title"
-      :message="dialogData.message"
-      width="230"
-      show-cancel-button
-      :beforeClose="beforeClose"
-    />
+    </PageScroll>
   </PageHeadBack>
 </template>
 
@@ -66,6 +73,7 @@ import { nextTick, ref, computed } from "vue";
 import editApi from "@/api/user/editApi.js";
 import userApi from "@/api/user/userApi.js";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 
 // 原始tag数组
 const originTag = ref([]);

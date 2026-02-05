@@ -20,7 +20,7 @@
       @change="handleSwitchChange"
       :before-change="beforeSwitch"
     />
-    <div class="area-container">
+    <PageScroll class="area-container" max-height="calc(100vh - 45px - 47px)">
       <div class="avatar" style="margin-top: 1rem">
         <music-player
           :avatar="user?.image || ''"
@@ -229,7 +229,7 @@
           </el-button>
         </div>
       </div>
-    </div>
+    </PageScroll>
   </div>
   <van-dialog
     v-model:show="dialogShow"
@@ -263,7 +263,7 @@
     background-size: cover;
     background-position: center;
     position: absolute;
-    height: 100%;
+    height: 94%;
     width: 100%;
     z-index: -1;
     filter: brightness(85%);
@@ -359,9 +359,6 @@
 
   // 主内容区域
   .area-container {
-    overflow-y: auto;
-    overflow-x: hidden;
-    height: 100vh;
     z-index: 1;
 
     .avatar {

@@ -20,22 +20,20 @@ const isUserPage = computed(() => route.name === "user");
       </el-header>
       <el-divider />
       <el-main :class="{ 'no-padding': isUserPage }">
-        <el-scrollbar ref="scrollbar" class="Scrollbar">
-          <router-view v-slot="{ Component, route }">
-            <keep-alive>
-              <component
-                v-if="route.meta.keepAlive"
-                :is="Component"
-                :key="route.name"
-              />
-            </keep-alive>
+        <router-view v-slot="{ Component, route }">
+          <keep-alive>
             <component
-              v-if="!route.meta.keepAlive"
+              v-if="route.meta.keepAlive"
               :is="Component"
               :key="route.name"
             />
-          </router-view>
-        </el-scrollbar>
+          </keep-alive>
+          <component
+            v-if="!route.meta.keepAlive"
+            :is="Component"
+            :key="route.name"
+          />
+        </router-view>
       </el-main>
 
       <!-- 全局音乐播放器 -->
@@ -68,13 +66,6 @@ body {
   padding: 0 !important;
 }
 
-/* 10px是随机添加的，出现阻尼效果 并且页头不会消失 */
-.el-scrollbar {
-  height: calc(100vh - var(--el-main-padding) * 2 - 10px);
-}
-.el-scrollbar :deep(.el-scrollbar__thumb) {
-  background-color: rgba(0, 0, 0, 0);
-}
 .el-divider--horizontal {
   margin: 2px 0px 0px 0px;
   height: 0px;

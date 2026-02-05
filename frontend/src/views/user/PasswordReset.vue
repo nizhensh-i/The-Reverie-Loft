@@ -7,6 +7,7 @@ export default {
   components: {
     ButtonClick,
     PageHeadBack,
+    PageScroll,
   },
   data() {
     var validatePass = (rule, value, callback) => {
@@ -94,125 +95,127 @@ export default {
 
 <template>
   <PageHeadBack>
-    <div class="password-reset-container">
-      <div class="reset-header">
-        <div class="reset-icon">
-          <el-icon size="48" color="#409EFF">
-            <i-ep-Lock />
-          </el-icon>
+    <PageScroll max-height="calc(100vh - 45px - 47px)">
+      <div class="password-reset-container">
+        <div class="reset-header">
+          <div class="reset-icon">
+            <el-icon size="48" color="#409EFF">
+              <i-ep-Lock />
+            </el-icon>
+          </div>
+          <h1 class="reset-title">重置您的密码</h1>
+          <p class="reset-subtitle">请按照以下步骤重置您的密码</p>
         </div>
-        <h1 class="reset-title">重置您的密码</h1>
-        <p class="reset-subtitle">请按照以下步骤重置您的密码</p>
-      </div>
 
-      <div class="reset-form-wrapper">
-        <el-form
-          label-position="top"
-          label-width="auto"
-          :model="form"
-          :rules="rules"
-          ref="formRef"
-          class="reset-form"
-        >
-          <div class="form-step" :class="{ 'step-completed': isEmailValid }">
-            <div class="step-header">
-              <div class="step-number">1</div>
-              <div class="step-title">验证邮箱</div>
+        <div class="reset-form-wrapper">
+          <el-form
+            label-position="top"
+            label-width="auto"
+            :model="form"
+            :rules="rules"
+            ref="formRef"
+            class="reset-form"
+          >
+            <div class="form-step" :class="{ 'step-completed': isEmailValid }">
+              <div class="step-header">
+                <div class="step-number">1</div>
+                <div class="step-title">验证邮箱</div>
+              </div>
+              <el-form-item prop="email" label="邮箱地址">
+                <div class="email-input-group">
+                  <el-input
+                    v-model="form.email"
+                    placeholder="请输入您的邮箱地址"
+                    size="large"
+                    @blur="validateEmail"
+                    class="email-input"
+                  >
+                    <template #prefix>
+                      <el-icon><i-ep-Message /></el-icon>
+                    </template>
+                  </el-input>
+                  <el-button
+                    @click="applyCode"
+                    type="primary"
+                    size="large"
+                    :disabled="!isEmailValid"
+                    v-if="showButton"
+                    class="send-code-btn"
+                  >
+                    发送验证码
+                  </el-button>
+                  <div v-else class="countdown-wrapper">
+                    <el-countdown
+                      prefix="重新发送 "
+                      suffix=" 秒后可重发"
+                      format="ss"
+                      :value="value"
+                      @finish="finish"
+                    />
+                  </div>
+                </div>
+              </el-form-item>
             </div>
-            <el-form-item prop="email" label="邮箱地址">
-              <div class="email-input-group">
+
+            <div class="form-step" :class="{ 'step-completed': form.code }">
+              <div class="step-header">
+                <div class="step-number">2</div>
+                <div class="step-title">输入验证码</div>
+              </div>
+              <el-form-item prop="code" label="验证码">
                 <el-input
-                  v-model="form.email"
-                  placeholder="请输入您的邮箱地址"
+                  v-model="form.code"
+                  placeholder="请输入6位验证码"
                   size="large"
-                  @blur="validateEmail"
-                  class="email-input"
+                  maxlength="6"
+                  class="code-input"
                 >
                   <template #prefix>
-                    <el-icon><i-ep-Message /></el-icon>
+                    <el-icon><i-ep-Key /></el-icon>
                   </template>
                 </el-input>
-                <el-button
-                  @click="applyCode"
-                  type="primary"
-                  size="large"
-                  :disabled="!isEmailValid"
-                  v-if="showButton"
-                  class="send-code-btn"
-                >
-                  发送验证码
-                </el-button>
-                <div v-else class="countdown-wrapper">
-                  <el-countdown
-                    prefix="重新发送 "
-                    suffix=" 秒后可重发"
-                    format="ss"
-                    :value="value"
-                    @finish="finish"
-                  />
-                </div>
+              </el-form-item>
+            </div>
+
+            <div
+              class="form-step"
+              :class="{ 'step-completed': form.new_password }"
+            >
+              <div class="step-header">
+                <div class="step-number">3</div>
+                <div class="step-title">设置新密码</div>
               </div>
-            </el-form-item>
-          </div>
-
-          <div class="form-step" :class="{ 'step-completed': form.code }">
-            <div class="step-header">
-              <div class="step-number">2</div>
-              <div class="step-title">输入验证码</div>
+              <el-form-item prop="new_password" label="新密码">
+                <el-input
+                  v-model="form.new_password"
+                  type="password"
+                  show-password
+                  placeholder="请输入新密码（至少3个字符）"
+                  size="large"
+                >
+                  <template #prefix>
+                    <el-icon><i-ep-Lock /></el-icon>
+                  </template>
+                </el-input>
+              </el-form-item>
             </div>
-            <el-form-item prop="code" label="验证码">
-              <el-input
-                v-model="form.code"
-                placeholder="请输入6位验证码"
-                size="large"
-                maxlength="6"
-                class="code-input"
-              >
-                <template #prefix>
-                  <el-icon><i-ep-Key /></el-icon>
-                </template>
-              </el-input>
-            </el-form-item>
-          </div>
 
-          <div
-            class="form-step"
-            :class="{ 'step-completed': form.new_password }"
-          >
-            <div class="step-header">
-              <div class="step-number">3</div>
-              <div class="step-title">设置新密码</div>
-            </div>
-            <el-form-item prop="new_password" label="新密码">
-              <el-input
-                v-model="form.new_password"
-                type="password"
-                show-password
-                placeholder="请输入新密码（至少3个字符）"
-                size="large"
-              >
-                <template #prefix>
-                  <el-icon><i-ep-Lock /></el-icon>
-                </template>
-              </el-input>
+            <el-form-item class="submit-form-item">
+              <ButtonClick
+                content="重置密码"
+                type="primary"
+                :disabled="isSubmit"
+                :round="true"
+                width="100%"
+                :loading="loading"
+                @do-search="submitForm"
+                class="submit-btn"
+              />
             </el-form-item>
-          </div>
-
-          <el-form-item class="submit-form-item">
-            <ButtonClick
-              content="重置密码"
-              type="primary"
-              :disabled="isSubmit"
-              :round="true"
-              width="100%"
-              :loading="loading"
-              @do-search="submitForm"
-              class="submit-btn"
-            />
-          </el-form-item>
-        </el-form>
+          </el-form>
+        </div>
       </div>
-    </div>
+    </PageScroll>
   </PageHeadBack>
 </template>
 <style scoped>

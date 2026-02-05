@@ -1,5 +1,6 @@
 <script setup>
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import { ref, reactive, onMounted, watch, computed } from "vue";
 import imageApi from "@/api/user/imageApi.js";
 import editApi from "@/api/user/editApi.js";
@@ -13,8 +14,16 @@ const router = useRouter();
 let images = ref([]);
 let pcImages = ref([]);
 const active = ref("mobile");
-const mobileRadio = ref(currentUser.userInfo.bg_image);
-const pcRadio = ref(currentUser.userInfo.pc_bg_image);
+const mobileRadio = ref(
+  currentUser.userInfo.bg_image
+    ? currentUser.userInfo.bg_image
+    : currentUser.defaultBackground
+);
+const pcRadio = ref(
+  currentUser.userInfo.pc_bg_image
+    ? currentUser.userInfo.pc_bg_image
+    : currentUser.defaultPcBackground
+);
 
 const { isChange: isMobileChange } = useChange(mobileRadio);
 const { isChange: isPcChange } = useChange(pcRadio);
@@ -117,74 +126,75 @@ async function submitdata() {
 
 <template>
   <PageHeadBack>
-    <van-tabs v-model:active="active" animated>
-      <van-tab title="手机端壁纸" name="mobile" class="tab tab-mobile">
-        <!-- 图片 -->
-        <el-text class="title">请选择壁纸</el-text>
-        <el-radio-group v-model="mobileRadio">
-          <div class="scroll-container">
-            <el-row>
-              <el-col :span="12" v-for="item in images" :key="item">
-                <el-image
-                  :src="item"
-                  fit="cover"
-                  :class="{ 'selected-item': mobileRadio === item }"
-                  loading="lazy"
-                  @click="mobileRadio = item"
-                >
-                  <template #placeholder>
-                    <div class="img-loading">
-                      <el-icon><i-ep-Loading /></el-icon>
-                    </div>
-                  </template>
-                </el-image>
-              </el-col>
-            </el-row>
-          </div>
-        </el-radio-group>
-        <!-- 分页 -->
-        <el-pagination
-          v-model:current-page="query.currentPage"
-          layout="prev, pager, next"
-          :page-size="query.size"
-          :total="query.total"
-          @current-change="handleCurrentChange('mobile')"
-        />
-      </van-tab>
-      <van-tab title="电脑端壁纸" name="pc" class="tab tab-pc">
-        <!-- 图片 -->
-        <el-text class="title">请选择壁纸</el-text>
-        <el-radio-group v-model="pcRadio">
-          <div class="scroll-container">
-            <el-row>
-              <el-col :span="12" v-for="item in pcImages" :key="item">
-                <el-image
-                  :src="item"
-                  fit="cover"
-                  :class="{ 'selected-item': pcRadio === item }"
-                  loading="lazy"
-                  @click="pcRadio = item"
-                >
-                  <template #placeholder>
-                    <div class="img-loading">
-                      <el-icon><i-ep-Loading /></el-icon>
-                    </div>
-                  </template>
-                </el-image>
-              </el-col>
-            </el-row>
-          </div>
-        </el-radio-group>
-        <!-- 分页 -->
-        <el-pagination
-          v-model:current-page="pcQuery.currentPage"
-          layout="prev, pager, next"
-          :page-size="pcQuery.size"
-          :total="pcQuery.total"
-          @current-change="handleCurrentChange('pc')"
-        />
-      </van-tab>
-      <!-- <van-tab title="动态壁纸">
+    <PageScroll max-height="calc(100vh - 45px - 47px)">
+      <van-tabs v-model:active="active" animated>
+        <van-tab title="手机端壁纸" name="mobile" class="tab tab-mobile">
+          <!-- 图片 -->
+          <el-text class="title">请选择壁纸</el-text>
+          <el-radio-group v-model="mobileRadio">
+            <div class="scroll-container">
+              <el-row>
+                <el-col :span="12" v-for="item in images" :key="item">
+                  <el-image
+                    :src="item"
+                    fit="cover"
+                    :class="{ 'selected-item': mobileRadio === item }"
+                    loading="lazy"
+                    @click="mobileRadio = item"
+                  >
+                    <template #placeholder>
+                      <div class="img-loading">
+                        <el-icon><i-ep-Loading /></el-icon>
+                      </div>
+                    </template>
+                  </el-image>
+                </el-col>
+              </el-row>
+            </div>
+          </el-radio-group>
+          <!-- 分页 -->
+          <el-pagination
+            v-model:current-page="query.currentPage"
+            layout="prev, pager, next"
+            :page-size="query.size"
+            :total="query.total"
+            @current-change="handleCurrentChange('mobile')"
+          />
+        </van-tab>
+        <van-tab title="电脑端壁纸" name="pc" class="tab tab-pc">
+          <!-- 图片 -->
+          <el-text class="title">请选择壁纸</el-text>
+          <el-radio-group v-model="pcRadio">
+            <div class="scroll-container">
+              <el-row>
+                <el-col :span="12" v-for="item in pcImages" :key="item">
+                  <el-image
+                    :src="item"
+                    fit="cover"
+                    :class="{ 'selected-item': pcRadio === item }"
+                    loading="lazy"
+                    @click="pcRadio = item"
+                  >
+                    <template #placeholder>
+                      <div class="img-loading">
+                        <el-icon><i-ep-Loading /></el-icon>
+                      </div>
+                    </template>
+                  </el-image>
+                </el-col>
+              </el-row>
+            </div>
+          </el-radio-group>
+          <!-- 分页 -->
+          <el-pagination
+            v-model:current-page="pcQuery.currentPage"
+            layout="prev, pager, next"
+            :page-size="pcQuery.size"
+            :total="pcQuery.total"
+            @current-change="handleCurrentChange('pc')"
+          />
+        </van-tab>
+        <!-- <van-tab title="动态壁纸">
         <el-text>请选择壁纸</el-text>
         <div class="scroll-container">
           <el-row>
@@ -194,17 +204,18 @@ async function submitdata() {
           </el-row>
         </div>
       </van-tab> -->
-    </van-tabs>
-    <!-- 按钮区 -->
-    <div class="btn-bar">
-      <el-button type="info" @click="redefault">恢复</el-button>
-      <el-button
-        type="primary"
-        :disabled="!currentRadio || !isCurrentChange"
-        @click="submitdata"
-        >确认</el-button
-      >
-    </div>
+      </van-tabs>
+      <!-- 按钮区 -->
+      <div class="btn-bar">
+        <el-button type="info" @click="redefault">恢复</el-button>
+        <el-button
+          type="primary"
+          :disabled="!currentRadio || !isCurrentChange"
+          @click="submitdata"
+          >确认</el-button
+        >
+      </div>
+    </PageScroll>
   </PageHeadBack>
 </template>
 <style lang="scss" scoped>

@@ -6,6 +6,7 @@ import { cloneDeep } from "@pureadmin/utils";
 import { useRouter, useRoute } from "vue-router";
 import editApi from "@/api/user/editApi.js";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import { useChange } from "@/utils/composedFunc/change.js";
 
 import github from "@/asset/svg/github.svg?component";
@@ -89,79 +90,81 @@ function getAttr(type) {
 </script>
 <template>
   <PageHeadBack>
-    <template #action>
-      <el-button :disabled="!isChange" @click="save">保存</el-button>
-    </template>
-    <div v-if="data.type === 1">
-      <div class="title">修改昵称</div>
-      <el-input v-model="data.localUserInfo.nickname" />
-    </div>
+    <PageScroll max-height="calc(100vh - 45px - 47px)">
+      <template #action>
+        <el-button :disabled="!isChange" @click="save">保存</el-button>
+      </template>
+      <div v-if="data.type === 1">
+        <div class="title">修改昵称</div>
+        <el-input v-model="data.localUserInfo.nickname" />
+      </div>
 
-    <div v-if="data.type === 2">
-      <div class="title">修改签名</div>
-      <el-input
-        v-model="data.localUserInfo.about_me"
-        autosize
-        type="textarea"
-        show-word-limit
-        maxlength="30"
-      />
-    </div>
+      <div v-if="data.type === 2">
+        <div class="title">修改签名</div>
+        <el-input
+          v-model="data.localUserInfo.about_me"
+          autosize
+          type="textarea"
+          show-word-limit
+          maxlength="30"
+        />
+      </div>
 
-    <div v-if="data.type === 3">
-      <div class="title">修改社交账号</div>
-      <van-cell-group inset>
-        <van-field
-          v-model="data.localUserInfo.social_account.github"
-          label="github"
-        >
-          <template #left-icon>
-            <component :is="github" class="icon" />
-          </template>
-        </van-field>
-        <van-field
-          v-model="data.localUserInfo.social_account.email"
-          label="邮箱"
-        >
-          <template #left-icon>
-            <component :is="email" class="icon" />
-          </template>
-        </van-field>
-        <van-field
-          v-model="data.localUserInfo.social_account.qq"
-          type="digit"
-          label="qq"
-        >
-          <template #left-icon>
-            <component :is="qqchat" class="icon" />
-          </template>
-        </van-field>
-        <van-field
-          v-model="data.localUserInfo.social_account.wechat"
-          label="微信"
-        >
-          <template #left-icon>
-            <component :is="wechat" class="icon" />
-          </template>
-        </van-field>
-        <van-field
-          v-model="data.localUserInfo.social_account.bilibili"
-          label="bilibili"
-        >
-          <template #left-icon>
-            <component :is="bilibili" class="icon" />
-          </template>
-        </van-field>
-        <van-field
-          v-model="data.localUserInfo.social_account.twitter"
-          label="twitter"
-        >
-          <template #left-icon>
-            <component :is="twitter" class="icon" />
-          </template>
-        </van-field>
-      </van-cell-group>
-    </div>
+      <div v-if="data.type === 3">
+        <div class="title">修改社交账号</div>
+        <van-cell-group inset>
+          <van-field
+            v-model="data.localUserInfo.social_account.github"
+            label="github"
+          >
+            <template #left-icon>
+              <component :is="github" class="icon" />
+            </template>
+          </van-field>
+          <van-field
+            v-model="data.localUserInfo.social_account.email"
+            label="邮箱"
+          >
+            <template #left-icon>
+              <component :is="email" class="icon" />
+            </template>
+          </van-field>
+          <van-field
+            v-model="data.localUserInfo.social_account.qq"
+            type="digit"
+            label="qq"
+          >
+            <template #left-icon>
+              <component :is="qqchat" class="icon" />
+            </template>
+          </van-field>
+          <van-field
+            v-model="data.localUserInfo.social_account.wechat"
+            label="微信"
+          >
+            <template #left-icon>
+              <component :is="wechat" class="icon" />
+            </template>
+          </van-field>
+          <van-field
+            v-model="data.localUserInfo.social_account.bilibili"
+            label="bilibili"
+          >
+            <template #left-icon>
+              <component :is="bilibili" class="icon" />
+            </template>
+          </van-field>
+          <van-field
+            v-model="data.localUserInfo.social_account.twitter"
+            label="twitter"
+          >
+            <template #left-icon>
+              <component :is="twitter" class="icon" />
+            </template>
+          </van-field>
+        </van-cell-group>
+      </div>
+    </PageScroll>
   </PageHeadBack>
 </template>
 

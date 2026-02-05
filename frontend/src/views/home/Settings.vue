@@ -1,127 +1,130 @@
 <template>
   <PageHeadBack>
-    <div class="settings-content">
-      <!-- 未设置密码提示横幅 -->
-      <el-alert
-        v-if="!currentUser.userInfo.has_password"
-        title="你尚未设置登录密码"
-        type="warning"
-        :closable="false"
-        show-icon
-        class="password-warning-banner"
-      />
+    <PageScroll max-height="calc(100vh - 45px - 47px)">
+      <div class="settings-content">
+        <!-- 未设置密码提示横幅 -->
+        <el-alert
+          v-if="!currentUser.userInfo.has_password"
+          title="你尚未设置登录密码"
+          type="warning"
+          :closable="false"
+          show-icon
+          class="password-warning-banner"
+        />
 
-      <!-- 账户设置 -->
-      <div class="cell-group">
-        <van-cell
-          v-if="currentUser.userInfo.has_password"
-          title="修改密码"
-          icon="lock"
-          is-link
-          @click="goTo('/changePassword')"
-        />
-        <van-cell
-          v-else
-          title="设置密码"
-          icon="lock"
-          is-link
-          @click="goTo('/setPassword')"
-        />
-        <van-cell
-          v-if="currentUser.isConfirmed"
-          title="修改邮箱"
-          icon="envelop-o"
-          is-link
-          @click="goTo('/changeEmail')"
-        />
-        <van-cell
-          v-else
-          title="绑定邮箱"
-          icon="envelop-o"
-          is-link
-          @click="goTo('/bindEmail')"
-        />
-      </div>
+        <!-- 账户设置 -->
+        <div class="cell-group">
+          <van-cell
+            v-if="currentUser.userInfo.has_password"
+            title="修改密码"
+            icon="lock"
+            is-link
+            @click="goTo('/changePassword')"
+          />
+          <van-cell
+            v-else
+            title="设置密码"
+            icon="lock"
+            is-link
+            @click="goTo('/setPassword')"
+          />
+          <van-cell
+            v-if="currentUser.isConfirmed"
+            title="修改邮箱"
+            icon="envelop-o"
+            is-link
+            @click="goTo('/changeEmail')"
+          />
+          <van-cell
+            v-else
+            title="绑定邮箱"
+            icon="envelop-o"
+            is-link
+            @click="goTo('/bindEmail')"
+          />
+        </div>
 
-      <!-- 第三方账号绑定 -->
-      <div class="cell-group">
-        <div class="cell-group-title">第三方账号绑定</div>
-        <van-cell
-          v-for="provider in oauthProviders"
-          :key="provider.provider"
-          :title="getProviderTitle(provider.provider)"
-          :label="getProviderLabel(provider.provider)"
-          :class="{ 'is-bound': isProviderBound(provider.provider) }"
-        >
-          <!-- :icon="getProviderIcon(provider.provider)" -->
-          <template #right-icon>
-            <el-switch
-              :model-value="isProviderBound(provider.provider)"
-              @update:model-value="
-                (value) => handleProviderToggle(value, provider.provider)
-              "
-              size="small"
-            />
-          </template>
-        </van-cell>
-      </div>
+        <!-- 第三方账号绑定 -->
+        <div class="cell-group">
+          <div class="cell-group-title">第三方账号绑定</div>
+          <van-cell
+            v-for="provider in oauthProviders"
+            :key="provider.provider"
+            :title="getProviderTitle(provider.provider)"
+            :label="getProviderLabel(provider.provider)"
+            :class="{ 'is-bound': isProviderBound(provider.provider) }"
+          >
+            <!-- :icon="getProviderIcon(provider.provider)" -->
+            <template #right-icon>
+              <el-switch
+                :model-value="isProviderBound(provider.provider)"
+                @update:model-value="
+                  (value) => handleProviderToggle(value, provider.provider)
+                "
+                size="small"
+              />
+            </template>
+          </van-cell>
+        </div>
 
-      <!-- 管理员设置 -->
-      <div v-if="currentUser.isCommentManage" class="cell-group">
-        <van-cell
-          title="评论管理"
-          icon="chat-o"
-          is-link
-          @click="goTo('/commentManagement')"
-        />
-        <van-cell
-          title="标签管理"
-          icon="medal-o"
-          is-link
-          @click="goTo('/tag')"
-        />
-        <van-cell
-          title="操作日志"
-          icon="shield-o"
-          is-link
-          @click="goTo('/operateLog')"
-        />
-        <van-cell
-          title="管理背景库"
-          icon="photo-o"
-          is-link
-          @click="goTo('/uploadBg')"
-        />
-        <van-cell
-          title="管理图像库"
-          icon="user-o"
-          is-link
-          @click="goTo('/uploadAva')"
-        />
-        <van-cell
-          title="找回其他用户密码"
-          icon="warning-o"
-          is-link
-          @click="goTo('/PasswordChangeAdmin')"
-        />
-      </div>
+        <!-- 管理员设置 -->
+        <div v-if="currentUser.isCommentManage" class="cell-group">
+          <van-cell
+            title="评论管理"
+            icon="chat-o"
+            is-link
+            @click="goTo('/commentManagement')"
+          />
+          <van-cell
+            title="标签管理"
+            icon="medal-o"
+            is-link
+            @click="goTo('/tag')"
+          />
+          <van-cell
+            title="操作日志"
+            icon="shield-o"
+            is-link
+            @click="goTo('/operateLog')"
+          />
+          <van-cell
+            title="管理背景库"
+            icon="photo-o"
+            is-link
+            @click="goTo('/uploadBg')"
+          />
+          <van-cell
+            title="管理图像库"
+            icon="user-o"
+            is-link
+            @click="goTo('/uploadAva')"
+          />
+          <van-cell
+            title="找回其他用户密码"
+            icon="warning-o"
+            is-link
+            @click="goTo('/PasswordChangeAdmin')"
+          />
+        </div>
 
-      <!-- 其他设置 -->
-      <!-- <div class="cell-group">
+        <!-- 其他设置 -->
+        <!-- <div class="cell-group">
         <van-cell title="意见反馈" icon="question-o" is-link />
       </div> -->
 
-      <div class="logout-button">
-        <el-button type="danger" round @click="handleLogout"
-          >退出登录</el-button
-        >
+        <div class="logout-button">
+          <el-button type="danger" round @click="handleLogout"
+            >退出登录</el-button
+          >
+        </div>
       </div>
-    </div>
+    </PageScroll>
   </PageHeadBack>
 </template>
 
 <script>
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import { useCurrentUserStore } from "@/stores/user";
 
 import authApi from "@/api/auth/authApi.js";
@@ -130,6 +133,7 @@ export default {
   name: "Settings",
   components: {
     PageHeadBack,
+    PageScroll,
   },
   data() {
     return {

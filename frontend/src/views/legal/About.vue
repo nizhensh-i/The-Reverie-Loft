@@ -1,10 +1,12 @@
 <script>
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import homeIcon from "@/asset/svg/homeIcon.svg?component";
 export default {
   components: {
     PageHeadBack,
     homeIcon,
+    PageScroll,
   },
   data() {
     return {
@@ -21,62 +23,64 @@ export default {
 
 <template>
   <PageHeadBack>
-    <div class="about-container">
-      <div class="about-content">
-        <!-- 个人介绍区域 -->
-        <div class="intro-section">
-          <div class="avatar">
-            <homeIcon />
+    <PageScroll max-height="calc(100vh - 45px - 47px)">
+      <div class="about-container">
+        <div class="about-content">
+          <!-- 个人介绍区域 -->
+          <div class="intro-section">
+            <div class="avatar">
+              <homeIcon />
+            </div>
+            <h1 class="name">{{ creator.name }}</h1>
+            <p class="title">{{ creator.title }}</p>
+            <p class="bio">{{ creator.bio }}</p>
           </div>
-          <h1 class="name">{{ creator.name }}</h1>
-          <p class="title">{{ creator.title }}</p>
-          <p class="bio">{{ creator.bio }}</p>
-        </div>
 
-        <!-- 项目介绍 -->
-        <div class="project-section">
-          <h2 class="section-title">关于本站</h2>
-          <div class="section-content">
-            <p class="description">
-              这是一个个人作品，一个安静的角落，用来记录技术探索、生活感悟和创作思考。
+          <!-- 项目介绍 -->
+          <div class="project-section">
+            <h2 class="section-title">关于本站</h2>
+            <div class="section-content">
+              <p class="description">
+                这是一个个人作品，一个安静的角落，用来记录技术探索、生活感悟和创作思考。
+              </p>
+              <p class="description">
+                没有商业目标，没有增长压力，只是单纯地享受创造的过程，和偶尔相遇的共鸣。
+              </p>
+            </div>
+          </div>
+
+          <!-- 联系我 -->
+          <div class="contact-section">
+            <h2 class="section-title">联系我</h2>
+            <div class="contact-links">
+              <el-link
+                href="mailto:zmc_li@foxmail.com"
+                :underline="false"
+                class="contact-link"
+              >
+                <el-icon class="link-icon"><i-ep-Message /></el-icon>
+                <span class="link-text">zmc_li@foxmail.com</span>
+              </el-link>
+            </div>
+          </div>
+
+          <!-- 版权信息 -->
+          <div class="footer-section">
+            <p class="copyright">
+              &copy; {{ currentYear }}
+              <a
+                href="https://github.com/nizhensh-i"
+                target="_blank"
+                :underline="false"
+              >
+                随想阁楼</a
+              >
             </p>
-            <p class="description">
-              没有商业目标，没有增长压力，只是单纯地享受创造的过程，和偶尔相遇的共鸣。
-            </p>
+            <p class="motto">Stay hungry, stay foolish.</p>
           </div>
-        </div>
-
-        <!-- 联系我 -->
-        <div class="contact-section">
-          <h2 class="section-title">联系我</h2>
-          <div class="contact-links">
-            <el-link
-              href="mailto:zmc_li@foxmail.com"
-              :underline="false"
-              class="contact-link"
-            >
-              <el-icon class="link-icon"><i-ep-Message /></el-icon>
-              <span class="link-text">zmc_li@foxmail.com</span>
-            </el-link>
-          </div>
-        </div>
-
-        <!-- 版权信息 -->
-        <div class="footer-section">
-          <p class="copyright">
-            &copy; {{ currentYear }}
-            <a
-              href="https://github.com/nizhensh-i"
-              target="_blank"
-              :underline="false"
-            >
-              随想阁楼</a
-            >
-          </p>
-          <p class="motto">Stay hungry, stay foolish.</p>
         </div>
       </div>
-    </div>
+    </PageScroll>
   </PageHeadBack>
 </template>
 
@@ -88,7 +92,7 @@ export default {
 .about-content {
   max-width: 600px;
   width: 100%;
-  padding: 80px 40px 60px;
+  padding: 20px 20px;
   margin: 0 auto;
 }
 
@@ -100,7 +104,7 @@ export default {
 
   .about-content {
     margin: 0;
-    padding: 100px 60px 80px 120px;
+    padding: 20px 20px;
     max-width: none;
     width: auto;
   }

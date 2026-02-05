@@ -3,21 +3,46 @@ import errorManager from "@/utils/message";
 import router from "../router/index.js";
 import axios from "axios";
 
+// ============ 常量定义 ============
+const REFRESH_URL = "/auth/refresh";
+const TOKEN_KEY = "blog";
+const EXPIRED_MESSAGE = "身份已过期";
+const FRESH_REQUIRED_MESSAGE = "该操作需要重新登录以验证身份";
+
+const ResponseCode = {
+  SUCCESS: 200,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  TOO_MANY_REQUESTS: 429,
+  SERVER_ERROR: 500,
+};
+
+const ErrorMessageMap = {
+  [ResponseCode.BAD_REQUEST]: "参数错误",
+  [ResponseCode.UNAUTHORIZED]: "身份未认证",
+  [ResponseCode.FORBIDDEN]: "禁止访问",
+  [ResponseCode.NOT_FOUND]: "资源不存在",
+  [ResponseCode.TOO_MANY_REQUESTS]: "请求频率超限",
+  [ResponseCode.SERVER_ERROR]: "服务器内部错误",
+};
+
+const SPECIAL_MESSAGES = {
+  FRESH_REQUIRED: FRESH_REQUIRED_MESSAGE,
+  TOKEN_EXPIRED: EXPIRED_MESSAGE,
+};
+
+// ============ axios实例 ============
 const $http = axios.create({
   baseURL: import.meta.env.VITE_APP_BASE_API ?? "/",
   timeout: 10000,
 });
 
-const REFRESH_URL = "/auth/refresh";
-const FRESH_REQUIRED_MESSAGE = "该操作需要重新登录以验证身份";
-const EXPIRED_MESSAGE = "身份已过期";
-const TOKEN_KEY = "blog";
-
-// 刷新状态管理
+// ============ token管理 ============
 let isRefreshing = false;
 let pendingQueue = [];
 
-// 获取token的安全方法
 function getToken(type = "access_token") {
   try {
     const blogData = JSON.parse(localStorage.getItem(TOKEN_KEY) || "{}");
@@ -27,7 +52,6 @@ function getToken(type = "access_token") {
   }
 }
 
-// 处理登出
 export function handleUnauthorized() {
   const store = useCurrentUserStore();
   if (store.access_token) {
@@ -36,56 +60,43 @@ export function handleUnauthorized() {
   }
 }
 
-// 处理队列中的请求
+// ============ token刷新 ============
 function processQueue(error, newToken = null) {
   pendingQueue.forEach(({ resolve, reject }) => {
-    if (error) {
-      reject(error);
-    } else {
-      resolve(newToken);
-    }
+    error ? reject(error) : resolve(newToken);
   });
   pendingQueue = [];
 }
 
-// 刷新token
 async function refreshToken() {
-  const store = useCurrentUserStore();
-  const refreshToken = getToken("refresh_token");
-
-  // 使用独立的axios实例，避免循环调用拦截器
   const res = await axios.post(REFRESH_URL, null, {
-    headers: { Authorization: refreshToken },
+    headers: { Authorization: getToken("refresh_token") },
     baseURL: import.meta.env.VITE_APP_BASE_API ?? "/",
     timeout: 10000,
   });
 
-  // 后端返回格式: { code: 200, data: { access_token: "Bearer xxx" } }
   if (res.data.code !== 200) {
     throw new Error(res.data.message || "刷新token失败");
   }
 
   const accessToken = res.data.data.access_token;
+  const store = useCurrentUserStore();
   store.access_token = accessToken;
   return accessToken;
 }
 
-// 重试请求
 function retryRequest(config, token) {
   config.headers.Authorization = token;
   return $http(config);
 }
 
-// 处理401 token过期
 function handleTokenExpired(config) {
-  // 刷新接口自己报错，直接登出
   if (config.url.includes(REFRESH_URL)) {
     errorManager.warning("您的身份已过期, 请重新登录");
     handleUnauthorized();
     return Promise.reject();
   }
 
-  // 已经在刷新，排队等待
   if (isRefreshing) {
     return new Promise((resolve, reject) => {
       pendingQueue.push({
@@ -95,18 +106,13 @@ function handleTokenExpired(config) {
     });
   }
 
-  // 开始刷新
   isRefreshing = true;
-  console.log("刷新token开始...");
   return refreshToken()
     .then((newToken) => {
-      console.log("刷新token结束...");
       processQueue(null, newToken);
-      console.log("请求开始重试...");
       return retryRequest(config, newToken);
     })
     .catch((refreshError) => {
-      // 如果是401错误，说明refresh_token也过期了
       if (refreshError.response?.status === 401) {
         errorManager.warning("您的身份已过期, 请重新登录");
       }
@@ -119,100 +125,94 @@ function handleTokenExpired(config) {
     });
 }
 
-// 处理标准响应（有code字段）
+// ============ 统一错误处理 ============
+function navigateToErrorPage(code) {
+  const routes = {
+    [ResponseCode.FORBIDDEN]: "/403",
+    [ResponseCode.NOT_FOUND]: "/404",
+    [ResponseCode.SERVER_ERROR]: "/500",
+  };
+  routes[code] && router.push(routes[code]);
+}
+
+function showErrorMessage(code, message) {
+  if (code === ResponseCode.TOO_MANY_REQUESTS) return;
+  const msg = message || ErrorMessageMap[code];
+  const method = code >= 400 && code < 500 ? "warning" : "error";
+  msg && errorManager[method](msg);
+}
+
 function handleStandardResponse(response) {
   const { code, message } = response.data;
 
-  if (code === 200) {
-    return response.data;
-  }
+  if (code === ResponseCode.SUCCESS) return response.data;
 
-  if (code === 401 && message === FRESH_REQUIRED_MESSAGE) {
-    // 提示用户需要重新登录
+  if (
+    code === ResponseCode.UNAUTHORIZED &&
+    message === SPECIAL_MESSAGES.FRESH_REQUIRED
+  ) {
     errorManager.warning("为了您的账户安全，请重新登录");
     handleUnauthorized();
-    return Promise.reject(new Error(FRESH_REQUIRED_MESSAGE));
+    return Promise.reject(new Error(SPECIAL_MESSAGES.FRESH_REQUIRED));
   }
 
-  if (code === 401 && message === EXPIRED_MESSAGE) {
+  if (
+    code === ResponseCode.UNAUTHORIZED &&
+    message === SPECIAL_MESSAGES.TOKEN_EXPIRED
+  ) {
     return handleTokenExpired(response.config);
   }
 
-  errorManager.error(message || "请求失败");
-  return Promise.reject(message);
+  if (code === ResponseCode.UNAUTHORIZED) {
+    showErrorMessage(code, message);
+    handleUnauthorized();
+    return Promise.reject(message);
+  }
+
+  showErrorMessage(code, message);
+  navigateToErrorPage(code);
+  return Promise.reject(message || "请求失败");
 }
 
-// 处理HTTP错误
 function handleHttpError(error) {
   const { status, data } = error.response || {};
 
-  // 网络错误
   if (!error.response) {
-    errorManager.error("服务器响应超时");
+    errorManager.error(
+      error.code === "ECONNABORTED" ? "请求超时" : "网络连接失败"
+    );
     return Promise.reject(error);
   }
 
-  // 状态码路由处理
-  const statusHandlers = {
-    401: () => {
-      errorManager.error("您的身份未认证, 请重新登录");
-      router.push("/login");
-    },
-    403: () => router.push("/403"),
-    404: () => router.push("/404"),
-    500: () => router.push("/500"),
-    400: () => errorManager.error("接口报错"),
-    429: () => {},
-  };
+  if (data?.code !== undefined) return Promise.reject(error);
 
-  const handler = statusHandlers[status];
-  if (handler) {
-    handler();
-  } else if (data?.code && typeof data.code === "number" && data.code !== 200) {
-    errorManager.error(data.message || "请求失败，请稍后重试！");
-  } else if (!data) {
-    errorManager.error("请求失败，请稍后重试！");
-  }
-
+  showErrorMessage(status, data?.message);
+  navigateToErrorPage(status);
   return Promise.reject(error);
 }
 
-// 日志辅助函数
+// ============ 日志工具 ============
 function logRequest(config) {
-  console.log("==>请求开始");
-  console.log(`${config.baseURL}${config.url}`);
-  if (config.data) {
-    console.log("==>请求数据", config.data);
-  }
+  console.log("==>请求开始", config.baseURL + config.url, config.data || "");
 }
 
 function logResponse(response) {
-  console.log(response);
-  console.log("==>请求结束");
+  console.log("==>请求结束", response);
 }
 
 function logError(error) {
-  console.log(error);
-  console.log("==>请求结束");
+  console.log("==>请求错误", error);
 }
 
-/**
- * 设置网络请求监听
- */
-function setInterceptors(...instance) {
-  instance.forEach((i) => {
-    // 请求拦截器
-    i.interceptors.request.use(
+// ============ 拦截器配置 ============
+function setInterceptors(...instances) {
+  instances.forEach((instance) => {
+    instance.interceptors.request.use(
       (config) => {
-        // 统一根据 useRefreshToken 配置获取 token
-        const tokenType = config.useRefreshToken
-          ? "refresh_token"
-          : "access_token";
-        const token = getToken(tokenType);
-        if (token) {
-          config.headers.Authorization = token;
-        }
-
+        const token = getToken(
+          config.useRefreshToken ? "refresh_token" : "access_token"
+        );
+        if (token) config.headers.Authorization = token;
         logRequest(config);
         return config;
       },
@@ -223,21 +223,12 @@ function setInterceptors(...instance) {
       }
     );
 
-    // 响应拦截器
-    i.interceptors.response.use((response) => {
+    instance.interceptors.response.use((response) => {
       logResponse(response);
-
-      if (response.status !== 200) {
-        return Promise.reject(response);
-      }
-
-      // 标准响应格式（有code字段）
-      if (response.data.code !== undefined) {
-        return handleStandardResponse(response);
-      }
-
-      // 其他格式直接返回
-      return response;
+      if (response.status !== 200) return Promise.reject(response);
+      return response.data.code !== undefined
+        ? handleStandardResponse(response)
+        : response;
     }, handleHttpError);
   });
 }

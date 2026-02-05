@@ -1,6 +1,6 @@
 <template>
-  <PageHeadBack :title="title">
-    <div class="container">
+  <div class="container">
+    <PageScroll max-height="calc(100vh - 45px - 40px - 60px)">
       <!-- 功能标签页 -->
       <el-tabs
         v-model="activeTab"
@@ -145,7 +145,7 @@
               :loading="deleting"
             >
               <el-icon><i-ep-Delete /></el-icon>
-              删除选中{{ uploadTitle }} ({{ selectedImages.length }})
+              删除选中 ({{ selectedImages.length }})
             </el-button>
             <el-button @click="handleRefresh">
               <el-icon><i-ep-Refresh /></el-icon>
@@ -154,12 +154,13 @@
           </div>
         </el-tab-pane>
       </el-tabs>
-    </div>
-  </PageHeadBack>
+    </PageScroll>
+  </div>
 </template>
 
 <script>
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import ImageUpload from "./ImageUpload.vue";
 import uploadApi from "@/api/upload/uploadApi.js";
 import { ElMessage, ElMessageBox } from "element-plus";
@@ -170,12 +171,9 @@ export default {
   components: {
     PageHeadBack,
     ImageUpload,
+    PageScroll,
   },
   props: {
-    title: {
-      type: String,
-      required: true,
-    },
     uploadTitle: {
       type: String,
       required: true,

@@ -73,7 +73,10 @@ export const useCurrentUserStore = defineStore("currentUser", {
     userAvatars: "userAvatars/",
     defaultBackground: `${
       import.meta.env.VITE_QINIU_DOMAIN
-    }/userBackground/static/image-pre3.webp-slim`,
+    }/userBackground/mobile/image-pre3.webp-slim`,
+    defaultPcBackground: `${
+      import.meta.env.VITE_QINIU_DOMAIN
+    }/userBackground/pc/image.png-slim`,
   }),
   getters: {
     isLogin: (state) => state.access_token != "",
@@ -93,7 +96,7 @@ export const useCurrentUserStore = defineStore("currentUser", {
     pcBackGroundUrl: (state) =>
       state.userInfo.pc_bg_image
         ? state.userInfo.pc_bg_image
-        : state.defaultBackground,
+        : state.defaultPcBackground,
     cityName: (state) => {
       if (!state.userInfo.location) return "";
       return cityUtil.getCodeToName(state.userInfo.location, areaList);
@@ -119,9 +122,6 @@ export const useCurrentUserStore = defineStore("currentUser", {
       import.meta.env.DEV == true
         ? state.devUploadBaseUrl
         : `user_image/user_${state.userInfo.id}/markdown/`,
-    uploadBackgroundStatic: (state) => `${state.userBackgroundUrl}`,
-    uploadPcBackgroundStatic: (state) => `${state.userPcBackgroundUrl}`,
-    uploadBackgroundDynamics: (state) => `${state.userBackgroundUrl}dynamics/`,
   },
   actions: {
     addItemLikeIds(value) {

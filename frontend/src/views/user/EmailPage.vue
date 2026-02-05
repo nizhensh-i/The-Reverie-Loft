@@ -3,10 +3,12 @@ import authApi from "@/api/auth/authApi.js";
 import { useCurrentUserStore } from "@/stores/user";
 import ButtonClick from "@/utils/components/ButtonClick.vue";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 export default {
   components: {
     ButtonClick,
     PageHeadBack,
+    PageScroll,
   },
   data() {
     return {
@@ -108,83 +110,85 @@ export default {
 
 <template>
   <PageHeadBack>
-    <div class="email-binding-container">
-      <div class="email-header">
-        <div class="email-icon">
-          <i class="el-icon-message"></i>
+    <PageScroll max-height="calc(100vh - 45px - 47px)">
+      <div class="email-binding-container">
+        <div class="email-header">
+          <div class="email-icon">
+            <i class="el-icon-message"></i>
+          </div>
+          <h1>邮箱绑定</h1>
+          <p class="subtitle">绑定邮箱可以提高账户安全性，并接收重要通知</p>
         </div>
-        <h1>邮箱绑定</h1>
-        <p class="subtitle">绑定邮箱可以提高账户安全性，并接收重要通知</p>
-      </div>
 
-      <div class="form-card">
-        <el-form
-          label-position="top"
-          label-width="auto"
-          :model="form"
-          :rules="rules"
-          ref="formRef"
-        >
-          <el-form-item prop="email" label="邮箱地址">
-            <div class="input-group">
-              <el-input
-                v-model="form.email"
-                placeholder="请输入您的邮箱地址"
-                @blur="validateEmail"
-                prefix-icon="el-icon-message"
-              />
-              <div class="code-button">
-                <el-button
-                  @click="applyCode"
-                  type="primary"
-                  :disabled="!isEmailValid"
-                  v-if="showButton"
-                  class="send-code-btn"
-                >
-                  发送验证码
-                </el-button>
-                <el-countdown
-                  prefix="重新发送"
-                  format="ss秒"
-                  :value="value"
-                  @finish="finish"
-                  v-else
-                  class="countdown"
+        <div class="form-card">
+          <el-form
+            label-position="top"
+            label-width="auto"
+            :model="form"
+            :rules="rules"
+            ref="formRef"
+          >
+            <el-form-item prop="email" label="邮箱地址">
+              <div class="input-group">
+                <el-input
+                  v-model="form.email"
+                  placeholder="请输入您的邮箱地址"
+                  @blur="validateEmail"
+                  prefix-icon="el-icon-message"
                 />
+                <div class="code-button">
+                  <el-button
+                    @click="applyCode"
+                    type="primary"
+                    :disabled="!isEmailValid"
+                    v-if="showButton"
+                    class="send-code-btn"
+                  >
+                    发送验证码
+                  </el-button>
+                  <el-countdown
+                    prefix="重新发送"
+                    format="ss秒"
+                    :value="value"
+                    @finish="finish"
+                    v-else
+                    class="countdown"
+                  />
+                </div>
               </div>
-            </div>
-          </el-form-item>
+            </el-form-item>
 
-          <el-form-item prop="code" label="验证码">
-            <el-input
-              v-model="form.code"
-              placeholder="请输入收到的验证码"
-              prefix-icon="el-icon-key"
-            />
-          </el-form-item>
+            <el-form-item prop="code" label="验证码">
+              <el-input
+                v-model="form.code"
+                placeholder="请输入收到的验证码"
+                prefix-icon="el-icon-key"
+              />
+            </el-form-item>
 
-          <el-form-item>
-            <ButtonClick
-              content="绑定邮箱"
-              type="primary"
-              :disabled="isSubmit"
-              :loading="loading"
-              @do-search="submitForm"
-              class="submit-btn"
-            />
-          </el-form-item>
-        </el-form>
+            <el-form-item>
+              <ButtonClick
+                content="绑定邮箱"
+                type="primary"
+                :disabled="isSubmit"
+                :loading="loading"
+                @do-search="submitForm"
+                class="submit-btn"
+              />
+            </el-form-item>
+          </el-form>
 
-        <div class="tips">
-          <p><i class="el-icon-info"></i> 绑定邮箱后，您可以：</p>
-          <ul>
-            <!-- <li>接收系统通知和重要提醒</li> -->
-            <li>使用邮箱找回密码</li>
-            <li>提高账户安全性</li>
-          </ul>
+          <div class="tips">
+            <p><i class="el-icon-info"></i> 绑定邮箱后，您可以：</p>
+            <ul>
+              <!-- <li>接收系统通知和重要提醒</li> -->
+              <li>使用邮箱找回密码</li>
+              <li>提高账户安全性</li>
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
+    </PageScroll>
   </PageHeadBack>
 </template>
 

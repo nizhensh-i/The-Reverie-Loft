@@ -3,6 +3,7 @@ import PageHeadBack from "@/utils/components/PageHeadBack.vue";
 import uploadCard from "@/views/user/components/uploadCard.vue";
 import ButtonAnimate from "@/utils/components/ButtonAnimate.vue";
 import interest from "@/views/user/components/Interest.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 
 export default {
   name: "BlogPost",
@@ -12,6 +13,7 @@ export default {
     uploadCard,
     interest,
     ButtonAnimate,
+    PageScroll,
   },
   data() {
     return {
@@ -78,43 +80,45 @@ export default {
 
 <template>
   <PageHeadBack>
-    <div class="page-head">
-      <el-text>各分类下最多展示3张图片</el-text>
-      <Transition>
-        <el-button
-          size="small"
-          round
-          type="primary"
-          plain
-          v-show="isPre"
-          @click="pre"
-          >预览</el-button
-        >
-      </Transition>
-    </div>
-    <uploadCard
-      ref="movie"
-      v-model:formData="formDataMovie"
-      type="movie"
-      class="upload-card"
-    />
-    <uploadCard ref="book" v-model:formData="formDataBook" type="book" />
+    <PageScroll max-height="calc(100vh - 45px - 47px)">
+      <div class="page-head">
+        <el-text>各分类下最多展示3张图片</el-text>
+        <Transition>
+          <el-button
+            size="small"
+            round
+            type="primary"
+            plain
+            v-show="isPre"
+            @click="pre"
+            >预览</el-button
+          >
+        </Transition>
+      </div>
+      <uploadCard
+        ref="movie"
+        v-model:formData="formDataMovie"
+        type="movie"
+        class="upload-card"
+      />
+      <uploadCard ref="book" v-model:formData="formDataBook" type="book" />
 
-    <el-dialog v-model="showPre" width="400">
-      <ButtonAnimate
-        content="喜欢的电影"
-        :isActive="activeInterest === 'movie'"
-        :fontColor="true"
-        @click="setActive('movie')"
-      />
-      <ButtonAnimate
-        content="在看的书籍"
-        :isActive="activeInterest === 'book'"
-        :fontColor="true"
-        @click="setActive('book')"
-      />
-      <interest :interest="preData" :showInterest="activeInterest" />
-    </el-dialog>
+      <el-dialog v-model="showPre" width="400">
+        <ButtonAnimate
+          content="喜欢的电影"
+          :isActive="activeInterest === 'movie'"
+          :fontColor="true"
+          @click="setActive('movie')"
+        />
+        <ButtonAnimate
+          content="在看的书籍"
+          :isActive="activeInterest === 'book'"
+          :fontColor="true"
+          @click="setActive('book')"
+        />
+        <interest :interest="preData" :showInterest="activeInterest" />
+      </el-dialog>
+    </PageScroll>
   </PageHeadBack>
 </template>
 

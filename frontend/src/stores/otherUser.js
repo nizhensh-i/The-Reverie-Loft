@@ -27,6 +27,9 @@ export const useOtherUserStore = defineStore("otherUser", {
     defaultBackground: `${
       import.meta.env.VITE_QINIU_DOMAIN
     }/userBackground/mobile/image-pre3.webp-slim`,
+    defaultPcBackground: `${
+      import.meta.env.VITE_QINIU_DOMAIN
+    }/userBackground/pc/image.png-slim`,
   }),
   getters: {
     isCommentManage: (state) => state.userInfo.roleId >= 2,
@@ -43,7 +46,7 @@ export const useOtherUserStore = defineStore("otherUser", {
     pcBackGroundUrl: (state) =>
       state.userInfo.pc_bg_image
         ? state.userInfo.pc_bg_image
-        : state.defaultBackground,
+        : state.defaultPcBackground,
   },
   actions: {
     setUserInfo(val) {

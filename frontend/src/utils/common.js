@@ -161,10 +161,11 @@ function beforePicUpload(fileList) {
     const limitPic =
       file.raw.type === "image/png" ||
       file.raw.type === "image/jpg" ||
-      file.raw.type === "image/jpeg";
+      file.raw.type === "image/jpeg" ||
+      file.raw.type === "image/webp";
     if (!limitPic) {
       ElMessage({
-        message: "请上传格式为png/jpg/jpeg的图片",
+        message: "请上传格式为png/jpg/jpeg/webp的图片",
         type: "warning",
       });
       return false;

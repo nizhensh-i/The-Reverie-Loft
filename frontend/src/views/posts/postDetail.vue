@@ -1,5 +1,6 @@
 <script>
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import PostImage from "@/views/posts/components/PostImage.vue";
 import PostAction from "@/views/posts/components/PostAction.vue";
 import CommentCard from "@/views/comment/ComCard.vue";
@@ -16,6 +17,7 @@ import { useCurrentUserStore } from "@/stores/user";
 export default {
   components: {
     PageHeadBack,
+    PageScroll,
     CommentCard,
     PostImage,
     PostAction,
@@ -198,12 +200,11 @@ export default {
       if (el) {
         // 添加偏移量避免被顶部导航栏遮挡
         const offset = 80;
-        const elementPosition =
-          el.getBoundingClientRect().top + window.pageYOffset;
-        window.scrollTo({
-          top: elementPosition - offset,
-          behavior: "smooth",
-        });
+        const elementPosition = el.offsetTop;
+        const pageScroll = this.$refs.pageScrollRef;
+        if (pageScroll) {
+          pageScroll.setScrollTop(elementPosition - offset);
+        }
 
         // 手动设置当前激活的标题
         this.activeHeadingId = id;
@@ -243,131 +244,137 @@ export default {
 
 <template>
   <PageHeadBack>
-    <!-- 回到顶部 -->
-    <el-backtop target=".el-scrollbar__wrap" :right="20" :bottom="30" />
-    <!-- 阅读进度条 -->
-    <ReadProgress target=".el-scrollbar__wrap" />
-    <div class="post-detail-container">
-      <!-- 骨架屏：当文章内容为空时显示 -->
-      <el-skeleton
-        :loading="loading"
-        animated
-        :throttle="{
-          leading: skeletonDelay,
-          trailing: skeletonDelay,
-          initVal: true,
-        }"
-        class="skeleton-wrapper"
-      >
-        <template #template>
-          <div class="skeleton-header">
-            <el-skeleton-item
-              variant="circle"
-              style="width: 40px; height: 40px"
-            />
-            <el-skeleton-item variant="text" style="width: 120px" />
-          </div>
-          <!-- 文章标题骨架 -->
-          <div class="skeleton-title-section">
-            <el-skeleton-item
-              variant="text"
-              style="width: 75%; height: 22px; margin-bottom: 20px"
-            />
-          </div>
-          <!-- 文章内容骨架 -->
-          <div class="skeleton-content-section">
-            <el-skeleton-item
-              variant="text"
-              style="width: 100%; margin-bottom: 16px"
-            />
-            <el-skeleton-item
-              variant="text"
-              style="width: 95%; margin-bottom: 16px"
-            />
-            <el-skeleton-item
-              variant="text"
-              style="width: 88%; margin-bottom: 16px"
-            />
-            <div class="skeleton-spacer"></div>
-            <el-skeleton-item
-              variant="text"
-              style="width: 100%; margin-bottom: 16px"
-            />
-            <el-skeleton-item
-              variant="text"
-              style="width: 92%; margin-bottom: 16px"
-            />
-            <el-skeleton-item
-              variant="text"
-              style="width: 78%; margin-bottom: 16px"
-            />
-          </div>
-        </template>
-
-        <!-- 实际内容 -->
-        <template #default>
-          <div class="post-main-content">
-            <PostHeader :post="post" class="post-header" />
-
-            <PostContent
-              :postContent="post.content"
-              class="post-content"
-              :fontSize="fontSize"
-              ref="postContent"
-            />
-            <PostImage :postImages="post.post_images" class="post-images" />
-          </div>
-
-          <div class="post-actions">
-            <PostAction
-              :post="post"
-              :showShare="true"
-              :showEdit="true"
-              :showDelete="true"
-            />
-          </div>
-        </template>
-      </el-skeleton>
-      <div class="post-comments">
-        <CommentCard :post-id="postId" :post-author="post.author" />
-      </div>
-      <PostToc
-        v-if="showSkeletonComponents"
-        :toc="toc"
-        :activeId="activeHeadingId"
-        @navigate="scrollToHeading"
+    <PageScroll ref="pageScrollRef" max-height="calc(100vh - 45px - 47px)">
+      <!-- 回到顶部 -->
+      <el-backtop
+        target=".page-scroll .el-scrollbar__wrap"
+        :right="20"
+        :bottom="30"
       />
-      <!-- 字体大小调整悬浮按钮 -->
-      <FontSizeAdjuster
-        v-if="showSkeletonComponents"
-        :defaultFontSize="fontSize"
-        @update:fontSize="updateFontSize"
-        @save="saveFontSizeSettings"
-      />
-
-      <!-- 搜索按钮 -->
-      <div
-        v-if="showSkeletonComponents"
-        class="search-button"
-        @click="showSearch = !showSearch"
-      >
-        <el-button
-          type="primary"
-          circle
-          size="large"
-          :class="{ active: showSearch }"
+      <!-- 阅读进度条 -->
+      <ReadProgress target=".page-scroll .el-scrollbar__wrap" />
+      <div class="post-detail-container">
+        <!-- 骨架屏：当文章内容为空时显示 -->
+        <el-skeleton
+          :loading="loading"
+          animated
+          :throttle="{
+            leading: skeletonDelay,
+            trailing: skeletonDelay,
+            initVal: true,
+          }"
+          class="skeleton-wrapper"
         >
-          <el-icon><i-ep-Search /></el-icon>
-        </el-button>
-      </div>
+          <template #template>
+            <div class="skeleton-header">
+              <el-skeleton-item
+                variant="circle"
+                style="width: 40px; height: 40px"
+              />
+              <el-skeleton-item variant="text" style="width: 120px" />
+            </div>
+            <!-- 文章标题骨架 -->
+            <div class="skeleton-title-section">
+              <el-skeleton-item
+                variant="text"
+                style="width: 75%; height: 22px; margin-bottom: 20px"
+              />
+            </div>
+            <!-- 文章内容骨架 -->
+            <div class="skeleton-content-section">
+              <el-skeleton-item
+                variant="text"
+                style="width: 100%; margin-bottom: 16px"
+              />
+              <el-skeleton-item
+                variant="text"
+                style="width: 95%; margin-bottom: 16px"
+              />
+              <el-skeleton-item
+                variant="text"
+                style="width: 88%; margin-bottom: 16px"
+              />
+              <div class="skeleton-spacer"></div>
+              <el-skeleton-item
+                variant="text"
+                style="width: 100%; margin-bottom: 16px"
+              />
+              <el-skeleton-item
+                variant="text"
+                style="width: 92%; margin-bottom: 16px"
+              />
+              <el-skeleton-item
+                variant="text"
+                style="width: 78%; margin-bottom: 16px"
+              />
+            </div>
+          </template>
 
-      <!-- 搜索组件 -->
-      <PostSearch
-        v-if="showSearch"
-        :contentRef="$refs.postContent"
-        @close="showSearch = false"
-      />
-    </div>
+          <!-- 实际内容 -->
+          <template #default>
+            <div class="post-main-content">
+              <PostHeader :post="post" class="post-header" />
+
+              <PostContent
+                :postContent="post.content"
+                class="post-content"
+                :fontSize="fontSize"
+                ref="postContent"
+              />
+              <PostImage :postImages="post.post_images" class="post-images" />
+            </div>
+
+            <div class="post-actions">
+              <PostAction
+                :post="post"
+                :showShare="true"
+                :showEdit="true"
+                :showDelete="true"
+              />
+            </div>
+          </template>
+        </el-skeleton>
+        <div class="post-comments">
+          <CommentCard :post-id="postId" :post-author="post.author" />
+        </div>
+        <PostToc
+          v-if="showSkeletonComponents"
+          :toc="toc"
+          :activeId="activeHeadingId"
+          @navigate="scrollToHeading"
+        />
+        <!-- 字体大小调整悬浮按钮 -->
+        <FontSizeAdjuster
+          v-if="showSkeletonComponents"
+          :defaultFontSize="fontSize"
+          @update:fontSize="updateFontSize"
+          @save="saveFontSizeSettings"
+        />
+
+        <!-- 搜索按钮 -->
+        <div
+          v-if="showSkeletonComponents"
+          class="search-button"
+          @click="showSearch = !showSearch"
+        >
+          <el-button
+            type="primary"
+            circle
+            size="large"
+            :class="{ active: showSearch }"
+          >
+            <el-icon><i-ep-Search /></el-icon>
+          </el-button>
+        </div>
+
+        <!-- 搜索组件 -->
+        <PostSearch
+          v-if="showSearch"
+          :contentRef="$refs.postContent"
+          @close="showSearch = false"
+        />
+      </div>
+    </PageScroll>
   </PageHeadBack>
 </template>
 

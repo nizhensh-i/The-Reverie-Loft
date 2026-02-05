@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import { useCurrentUserStore } from "@/stores/user";
 import { cloneDeep } from "@pureadmin/utils";
 import editApi from "@/api/user/editApi.js";
@@ -297,331 +298,345 @@ const calTableHeight = async () => {
 
 <template>
   <PageHeadBack>
-    <!-- 统一卡片容器 -->
-    <el-card class="music-container" shadow="hover">
-      <!-- 卡片头部：搜索和已选择区域 -->
-      <template #header>
-        <div class="card-header" ref="h1">
-          <div class="header-left">
-            <span class="card-title">
-              <el-icon><i-ep-Headset /></el-icon>
-              音乐库
-            </span>
-            <el-tag
-              v-if="
-                userData.localUserInfo.music &&
-                userData.localUserInfo.music.name
-              "
-              type="success"
-              size="small"
-              class="selected-tag"
-              @click="showSelectedDrawer = true"
-            >
-              <el-icon><i-ep-Star /></el-icon>
-              已选择
-            </el-tag>
-          </div>
-
-          <div class="header-right">
-            <el-input
-              v-model="searchKeyword"
-              placeholder="搜索歌曲名或作者"
-              clearable
-              @keyup.enter="handleSearch"
-              @clear="handleResetSearch"
-              style="width: 280px"
-              size="small"
-            >
-              <template #prefix>
-                <el-icon><i-ep-Search /></el-icon>
-              </template>
-              <template #append>
-                <el-button
-                  type="primary"
-                  @click="handleSearch"
-                  size="small"
-                  :loading="musicInfoLoading"
-                >
-                  搜索
-                </el-button>
-              </template>
-            </el-input>
-          </div>
-        </div>
-      </template>
-
-      <!-- 卡片内容：音乐列表 -->
-      <!-- 桌面端：表格布局 -->
-      <el-table
-        v-if="!isMobile"
-        :data="paginatedMusicInfo"
-        v-loading="musicInfoLoading"
-        :height="tableHeight"
-        stripe
-        border
-        class="music-table desktop-table"
-        ref="h2"
-      >
-        <el-table-column prop="pic" label="封面" width="80" align="center">
-          <template #default="scope">
-            <el-image
-              :src="scope.row.pic"
-              style="width: 40px; height: 40px; border-radius: 4px"
-              fit="cover"
-              :preview-src-list="scope.row.pic ? [scope.row.pic] : []"
-              :preview-teleported="true"
-              :hide-on-click-modal="true"
-            >
-              <template #error>
-                <div class="image-error">
-                  <el-icon><i-ep-Picture /></el-icon>
-                </div>
-              </template>
-            </el-image>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="name" label="歌曲名" min-width="100" />
-
-        <el-table-column prop="artist" label="作者" min-width="60" />
-
-        <el-table-column label="试听" width="55" align="center">
-          <template #default="scope">
-            <el-button
-              circle
-              size="small"
-              :type="
-                currentPlayingMusic?.name === scope.row.name
-                  ? 'success'
-                  : 'primary'
-              "
-              @click="playMusic(scope.row)"
-              :disabled="!scope.row.url"
-            >
-              <el-icon>
-                <i-ep-VideoPlay
-                  v-if="
-                    !(currentPlayingMusic?.name === scope.row.name && isPlaying)
-                  "
-                />
-                <i-ep-VideoPause v-else />
-              </el-icon>
-            </el-button>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="选择" width="100" align="center" fixed="right">
-          <template #default="scope">
-            <el-button
-              :type="isSelected(scope.row) ? 'danger' : 'primary'"
-              size="small"
-              @click="
-                isSelected(scope.row)
-                  ? handleCancelSelect()
-                  : handleSelectMusic(scope.row)
-              "
-              :loading="setMusicLoading && isSelected(scope.row) === false"
-              :disabled="!scope.row.url"
-            >
-              {{ isSelected(scope.row) ? "取消选择" : "选择" }}
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 移动端：紧凑卡片布局 -->
-      <div v-else class="mobile-music-list" ref="h2">
-        <div
-          v-for="(music, index) in paginatedMusicInfo"
-          :key="index"
-          class="mobile-music-card"
-          :class="{
-            selected: isSelected(music),
-            playing: currentPlayingMusic?.name === music.name,
-          }"
-        >
-          <div class="card-content">
-            <!-- 左侧：封面和基础信息 -->
-            <div class="music-cover-info">
-              <div class="music-cover">
-                <el-image
-                  :src="music.pic"
-                  fit="cover"
-                  :preview-src-list="music.pic ? [music.pic] : []"
-                  :preview-teleported="true"
-                >
-                  <template #error>
-                    <div class="cover-error">
-                      <el-icon><i-ep-Picture /></el-icon>
-                    </div>
-                  </template>
-                </el-image>
-              </div>
-              <div class="music-basic-info">
-                <div class="music-name" :title="music.name">
-                  {{ music.name }}
-                </div>
-                <div class="music-artist" :title="music.artist">
-                  {{ music.artist }}
-                </div>
-              </div>
+    <PageScroll max-height="calc(100vh - 45px - 47px)">
+      <!-- 统一卡片容器 -->
+      <el-card class="music-container" shadow="hover">
+        <!-- 卡片头部：搜索和已选择区域 -->
+        <template #header>
+          <div class="card-header" ref="h1">
+            <div class="header-left">
+              <span class="card-title">
+                <el-icon><i-ep-Headset /></el-icon>
+                音乐库
+              </span>
+              <el-tag
+                v-if="
+                  userData.localUserInfo.music &&
+                  userData.localUserInfo.music.name
+                "
+                type="success"
+                size="small"
+                class="selected-tag"
+                @click="showSelectedDrawer = true"
+              >
+                <el-icon><i-ep-Star /></el-icon>
+                已选择
+              </el-tag>
             </div>
 
-            <!-- 右侧：操作按钮组 -->
-            <div class="music-actions-group">
+            <div class="header-right">
+              <el-input
+                v-model="searchKeyword"
+                placeholder="搜索歌曲名或作者"
+                clearable
+                @keyup.enter="handleSearch"
+                @clear="handleResetSearch"
+                style="width: 280px"
+                size="small"
+              >
+                <template #prefix>
+                  <el-icon><i-ep-Search /></el-icon>
+                </template>
+                <template #append>
+                  <el-button
+                    type="primary"
+                    @click="handleSearch"
+                    size="small"
+                    :loading="musicInfoLoading"
+                  >
+                    搜索
+                  </el-button>
+                </template>
+              </el-input>
+            </div>
+          </div>
+        </template>
+
+        <!-- 卡片内容：音乐列表 -->
+        <!-- 桌面端：表格布局 -->
+        <el-table
+          v-if="!isMobile"
+          :data="paginatedMusicInfo"
+          v-loading="musicInfoLoading"
+          :height="tableHeight"
+          stripe
+          border
+          class="music-table desktop-table"
+          ref="h2"
+        >
+          <el-table-column prop="pic" label="封面" width="80" align="center">
+            <template #default="scope">
+              <el-image
+                :src="scope.row.pic"
+                style="width: 40px; height: 40px; border-radius: 4px"
+                fit="cover"
+                :preview-src-list="scope.row.pic ? [scope.row.pic] : []"
+                :preview-teleported="true"
+                :hide-on-click-modal="true"
+              >
+                <template #error>
+                  <div class="image-error">
+                    <el-icon><i-ep-Picture /></el-icon>
+                  </div>
+                </template>
+              </el-image>
+            </template>
+          </el-table-column>
+
+          <el-table-column prop="name" label="歌曲名" min-width="100" />
+
+          <el-table-column prop="artist" label="作者" min-width="60" />
+
+          <el-table-column label="试听" width="55" align="center">
+            <template #default="scope">
               <el-button
                 circle
                 size="small"
                 :type="
-                  currentPlayingMusic?.name === music.name
+                  currentPlayingMusic?.name === scope.row.name
                     ? 'success'
                     : 'primary'
                 "
-                @click="playMusic(music)"
-                :disabled="!music.url"
-                class="play-btn"
+                @click="playMusic(scope.row)"
+                :disabled="!scope.row.url"
               >
                 <el-icon>
                   <i-ep-VideoPlay
                     v-if="
-                      !(currentPlayingMusic?.name === music.name && isPlaying)
+                      !(
+                        currentPlayingMusic?.name === scope.row.name &&
+                        isPlaying
+                      )
                     "
                   />
                   <i-ep-VideoPause v-else />
                 </el-icon>
               </el-button>
+            </template>
+          </el-table-column>
 
+          <el-table-column
+            label="选择"
+            width="100"
+            align="center"
+            fixed="right"
+          >
+            <template #default="scope">
               <el-button
-                :type="isSelected(music) ? 'danger' : 'primary'"
+                :type="isSelected(scope.row) ? 'danger' : 'primary'"
                 size="small"
                 @click="
-                  isSelected(music)
+                  isSelected(scope.row)
                     ? handleCancelSelect()
-                    : handleSelectMusic(music)
+                    : handleSelectMusic(scope.row)
                 "
-                :loading="setMusicLoading && isSelected(music) === false"
-                :disabled="!music.url"
-                class="select-btn"
+                :loading="setMusicLoading && isSelected(scope.row) === false"
+                :disabled="!scope.row.url"
               >
-                {{ isSelected(music) ? "取消" : "选择" }}
+                {{ isSelected(scope.row) ? "取消选择" : "选择" }}
               </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <!-- 移动端：紧凑卡片布局 -->
+        <div v-else class="mobile-music-list" ref="h2">
+          <div
+            v-for="(music, index) in paginatedMusicInfo"
+            :key="index"
+            class="mobile-music-card"
+            :class="{
+              selected: isSelected(music),
+              playing: currentPlayingMusic?.name === music.name,
+            }"
+          >
+            <div class="card-content">
+              <!-- 左侧：封面和基础信息 -->
+              <div class="music-cover-info">
+                <div class="music-cover">
+                  <el-image
+                    :src="music.pic"
+                    fit="cover"
+                    :preview-src-list="music.pic ? [music.pic] : []"
+                    :preview-teleported="true"
+                  >
+                    <template #error>
+                      <div class="cover-error">
+                        <el-icon><i-ep-Picture /></el-icon>
+                      </div>
+                    </template>
+                  </el-image>
+                </div>
+                <div class="music-basic-info">
+                  <div class="music-name" :title="music.name">
+                    {{ music.name }}
+                  </div>
+                  <div class="music-artist" :title="music.artist">
+                    {{ music.artist }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- 右侧：操作按钮组 -->
+              <div class="music-actions-group">
+                <el-button
+                  circle
+                  size="small"
+                  :type="
+                    currentPlayingMusic?.name === music.name
+                      ? 'success'
+                      : 'primary'
+                  "
+                  @click="playMusic(music)"
+                  :disabled="!music.url"
+                  class="play-btn"
+                >
+                  <el-icon>
+                    <i-ep-VideoPlay
+                      v-if="
+                        !(currentPlayingMusic?.name === music.name && isPlaying)
+                      "
+                    />
+                    <i-ep-VideoPause v-else />
+                  </el-icon>
+                </el-button>
+
+                <el-button
+                  :type="isSelected(music) ? 'danger' : 'primary'"
+                  size="small"
+                  @click="
+                    isSelected(music)
+                      ? handleCancelSelect()
+                      : handleSelectMusic(music)
+                  "
+                  :loading="setMusicLoading && isSelected(music) === false"
+                  :disabled="!music.url"
+                  class="select-btn"
+                >
+                  {{ isSelected(music) ? "取消" : "选择" }}
+                </el-button>
+              </div>
+            </div>
+
+            <!-- 状态指示器 -->
+            <div class="status-indicator">
+              <span v-if="isSelected(music)" class="selected-indicator">
+                <el-icon><i-ep-Star /></el-icon>已选择
+              </span>
+              <span
+                v-if="currentPlayingMusic?.name === music.name && isPlaying"
+                class="playing-indicator"
+              >
+                <el-icon><i-ep-Headset /></el-icon>播放中
+              </span>
             </div>
           </div>
 
-          <!-- 状态指示器 -->
-          <div class="status-indicator">
-            <span v-if="isSelected(music)" class="selected-indicator">
-              <el-icon><i-ep-Star /></el-icon>已选择
-            </span>
-            <span
-              v-if="currentPlayingMusic?.name === music.name && isPlaying"
-              class="playing-indicator"
-            >
-              <el-icon><i-ep-Headset /></el-icon>播放中
-            </span>
-          </div>
-        </div>
-
-        <div
-          v-if="paginatedMusicInfo.length === 0 && !musicInfoLoading"
-          class="empty-state"
-        >
-          <el-empty description="暂无音乐数据" />
-        </div>
-      </div>
-
-      <!-- 分页区域 -->
-      <div class="pagination-section" ref="h3">
-        <el-pagination
-          v-model:current-page="currentPage"
-          :page-size="pageSize"
-          :total="filteredMusicInfo.length"
-          layout="total, prev, pager, next"
-          :pager-count="5"
-          :hide-on-single-page="true"
-          size="small"
-          background
-          @size-change="
-            (size) => {
-              pageSize = size;
-              currentPage = 1;
-            }
-          "
-          @current-change="handlePageChange"
-        />
-      </div>
-
-      <!-- 播放器区域 - 集成在卡片底部 -->
-      <div class="player-section">
-        <div id="aplayer"></div>
-      </div>
-    </el-card>
-
-    <!-- 已选择音乐抽屉 -->
-    <el-drawer
-      v-model="showSelectedDrawer"
-      title="已选择的音乐"
-      direction="rtl"
-      size="350px"
-    >
-      <div
-        class="selected-music-drawer"
-        v-if="userData.localUserInfo.music && userData.localUserInfo.music.name"
-      >
-        <div class="selected-music-content">
-          <el-image
-            :src="userData.localUserInfo.music.pic"
-            style="
-              width: 120px;
-              height: 120px;
-              border-radius: 8px;
-              margin-bottom: 16px;
-            "
-            fit="cover"
-            :preview-src-list="
-              userData.localUserInfo.music.pic
-                ? [userData.localUserInfo.music.pic]
-                : []
-            "
-            :preview-teleported="true"
-            :hide-on-click-modal="true"
+          <div
+            v-if="paginatedMusicInfo.length === 0 && !musicInfoLoading"
+            class="empty-state"
           >
-            <template #error>
-              <div class="image-error-large">
-                <el-icon><i-ep-Picture /></el-icon>
-                <span>无封面</span>
-              </div>
-            </template>
-          </el-image>
-
-          <div class="music-info-drawer">
-            <h3 class="music-title">{{ userData.localUserInfo.music.name }}</h3>
-            <p class="music-author">
-              {{ userData.localUserInfo.music.artist }}
-            </p>
-          </div>
-
-          <div class="drawer-actions">
-            <el-button
-              type="primary"
-              @click="playMusic(userData.localUserInfo.music)"
-              :disabled="!userData.localUserInfo.music.url"
-            >
-              <el-icon><i-ep-VideoPlay /></el-icon>
-              播放
-            </el-button>
-            <el-button type="danger" @click="handleCancelSelect">
-              <el-icon><i-ep-Delete /></el-icon>
-              取消选择
-            </el-button>
+            <el-empty description="暂无音乐数据" />
           </div>
         </div>
-      </div>
 
-      <div v-else class="empty-selected">
-        <el-empty description="暂未选择音乐" />
-      </div>
-    </el-drawer>
+        <!-- 分页区域 -->
+        <div class="pagination-section" ref="h3">
+          <el-pagination
+            v-model:current-page="currentPage"
+            :page-size="pageSize"
+            :total="filteredMusicInfo.length"
+            layout="total, prev, pager, next"
+            :pager-count="5"
+            :hide-on-single-page="true"
+            size="small"
+            background
+            @size-change="
+              (size) => {
+                pageSize = size;
+                currentPage = 1;
+              }
+            "
+            @current-change="handlePageChange"
+          />
+        </div>
+
+        <!-- 播放器区域 - 集成在卡片底部 -->
+        <div class="player-section">
+          <div id="aplayer"></div>
+        </div>
+      </el-card>
+
+      <!-- 已选择音乐抽屉 -->
+      <el-drawer
+        v-model="showSelectedDrawer"
+        title="已选择的音乐"
+        direction="rtl"
+        size="350px"
+      >
+        <div
+          class="selected-music-drawer"
+          v-if="
+            userData.localUserInfo.music && userData.localUserInfo.music.name
+          "
+        >
+          <div class="selected-music-content">
+            <el-image
+              :src="userData.localUserInfo.music.pic"
+              style="
+                width: 120px;
+                height: 120px;
+                border-radius: 8px;
+                margin-bottom: 16px;
+              "
+              fit="cover"
+              :preview-src-list="
+                userData.localUserInfo.music.pic
+                  ? [userData.localUserInfo.music.pic]
+                  : []
+              "
+              :preview-teleported="true"
+              :hide-on-click-modal="true"
+            >
+              <template #error>
+                <div class="image-error-large">
+                  <el-icon><i-ep-Picture /></el-icon>
+                  <span>无封面</span>
+                </div>
+              </template>
+            </el-image>
+
+            <div class="music-info-drawer">
+              <h3 class="music-title">
+                {{ userData.localUserInfo.music.name }}
+              </h3>
+              <p class="music-author">
+                {{ userData.localUserInfo.music.artist }}
+              </p>
+            </div>
+
+            <div class="drawer-actions">
+              <el-button
+                type="primary"
+                @click="playMusic(userData.localUserInfo.music)"
+                :disabled="!userData.localUserInfo.music.url"
+              >
+                <el-icon><i-ep-VideoPlay /></el-icon>
+                播放
+              </el-button>
+              <el-button type="danger" @click="handleCancelSelect">
+                <el-icon><i-ep-Delete /></el-icon>
+                取消选择
+              </el-button>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="empty-selected">
+          <el-empty description="暂未选择音乐" />
+        </div>
+      </el-drawer>
+    </PageScroll>
   </PageHeadBack>
 </template>
 

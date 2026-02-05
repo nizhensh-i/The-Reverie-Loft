@@ -8,6 +8,7 @@ import SkeletonUtil from "@/utils/components/SkeletonUtil.vue";
 import ICP from "@/utils/components/ICP.vue";
 import PublishEntry from "@/views/posts/components/PublishEntry.vue";
 import RegisterPrompt from "@/views/posts/components/RegisterPrompt.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import emitter from "@/utils/emitter.js";
 
 export default {
@@ -18,6 +19,7 @@ export default {
     SkeletonUtil,
     ICP,
     RegisterPrompt,
+    PageScroll,
   },
   data() {
     return {
@@ -104,100 +106,102 @@ export default {
 </script>
 
 <template>
-  <div class="posts-container">
-    <RegisterPrompt
-      v-if="!currentUser.isLogin"
-      :key="'register-prompt'"
-      v-slide-in
-    />
+  <PageScroll max-height="calc(100vh - 45px - 5px)">
+    <div class="posts-container">
+      <RegisterPrompt
+        v-if="!currentUser.isLogin"
+        :key="'register-prompt'"
+        v-slide-in
+      />
 
-    <!-- 使用新的发布入口组件 -->
-    <PublishEntry
-      @loading-begin="(flag) => (loading.publishPost = flag)"
-      @newPost="getPostsResult"
-      v-if="currentUser.isLogin"
-    />
-    <el-tabs
-      v-model="activeName"
-      type="card"
-      class="demo-tabs"
-      @tab-change="changeTab"
-    >
-      <el-tab-pane label="广场" name="all">
-        <el-empty
-          :image-size="200"
-          v-if="activeName == 'all' && posts_count == 0 && !loading.card"
-        />
-        <SkeletonUtil
-          :loading="loading.card"
-          :row="5"
-          :throttle="throttle"
-          :useNew="true"
-        >
-          <div class="posts-list">
-            <transition-group name="slide-in">
-              <PostPreview
-                v-for="item in posts"
-                :key="item.id"
-                :post="item"
-                :containerStyle="{ marginBottom: '20px' }"
-                @click="$router.push(`/postDetail/${item.id}`)"
-                v-slide-in
-              >
-                <template #image>
-                  <PostImage :postImages="item.post_images" @click.stop="" />
-                </template>
-              </PostPreview>
-            </transition-group>
-          </div>
-        </SkeletonUtil>
-      </el-tab-pane>
-      <el-tab-pane name="showFollowed" v-if="currentUser.isLogin">
-        <template #label>
-          <van-badge :dot="showDot" :offset="[1, 10]"> 关注 </van-badge>
-        </template>
-        <el-empty
-          :image-size="200"
-          v-if="
-            activeName == 'showFollowed' && posts_count == 0 && !loading.card
-          "
-        />
-        <SkeletonUtil
-          :loading="loading.card"
-          :row="5"
-          :throttle="throttle"
-          :useNew="true"
-        >
-          <div class="posts-list">
-            <transition-group name="slide-in">
-              <PostPreview
-                v-for="item in posts"
-                :key="item.id"
-                :post="item"
-                :containerStyle="{ marginBottom: '20px' }"
-                @click="$router.push(`/postDetail/${item.id}`)"
-                v-slide-in
-              >
-                <template #image>
-                  <PostImage :postImages="item.post_images" @click.stop="" />
-                </template>
-              </PostPreview>
-            </transition-group>
-          </div>
-        </SkeletonUtil>
-      </el-tab-pane>
-    </el-tabs>
-    <el-pagination
-      v-model:current-page="currentPage"
-      :page-size="10"
-      layout="total, prev, pager, next"
-      :total="posts_count"
-      @current-change="handleCurrentChange"
-      :hide-on-single-page="true"
-      :pager-count="5"
-    />
-    <ICP />
-  </div>
+      <!-- 使用新的发布入口组件 -->
+      <PublishEntry
+        @loading-begin="(flag) => (loading.publishPost = flag)"
+        @newPost="getPostsResult"
+        v-if="currentUser.isLogin"
+      />
+      <el-tabs
+        v-model="activeName"
+        type="card"
+        class="demo-tabs"
+        @tab-change="changeTab"
+      >
+        <el-tab-pane label="广场" name="all">
+          <el-empty
+            :image-size="200"
+            v-if="activeName == 'all' && posts_count == 0 && !loading.card"
+          />
+          <SkeletonUtil
+            :loading="loading.card"
+            :row="5"
+            :throttle="throttle"
+            :useNew="true"
+          >
+            <div class="posts-list">
+              <transition-group name="slide-in">
+                <PostPreview
+                  v-for="item in posts"
+                  :key="item.id"
+                  :post="item"
+                  :containerStyle="{ marginBottom: '20px' }"
+                  @click="$router.push(`/postDetail/${item.id}`)"
+                  v-slide-in
+                >
+                  <template #image>
+                    <PostImage :postImages="item.post_images" @click.stop="" />
+                  </template>
+                </PostPreview>
+              </transition-group>
+            </div>
+          </SkeletonUtil>
+        </el-tab-pane>
+        <el-tab-pane name="showFollowed" v-if="currentUser.isLogin">
+          <template #label>
+            <van-badge :dot="showDot" :offset="[1, 10]"> 关注 </van-badge>
+          </template>
+          <el-empty
+            :image-size="200"
+            v-if="
+              activeName == 'showFollowed' && posts_count == 0 && !loading.card
+            "
+          />
+          <SkeletonUtil
+            :loading="loading.card"
+            :row="5"
+            :throttle="throttle"
+            :useNew="true"
+          >
+            <div class="posts-list">
+              <transition-group name="slide-in">
+                <PostPreview
+                  v-for="item in posts"
+                  :key="item.id"
+                  :post="item"
+                  :containerStyle="{ marginBottom: '20px' }"
+                  @click="$router.push(`/postDetail/${item.id}`)"
+                  v-slide-in
+                >
+                  <template #image>
+                    <PostImage :postImages="item.post_images" @click.stop="" />
+                  </template>
+                </PostPreview>
+              </transition-group>
+            </div>
+          </SkeletonUtil>
+        </el-tab-pane>
+      </el-tabs>
+      <el-pagination
+        v-model:current-page="currentPage"
+        :page-size="10"
+        layout="total, prev, pager, next"
+        :total="posts_count"
+        @current-change="handleCurrentChange"
+        :hide-on-single-page="true"
+        :pager-count="5"
+      />
+      <ICP />
+    </div>
+  </PageScroll>
 </template>
 <style lang="scss" scoped>
 @use "./components/PostCard.scss" as *;

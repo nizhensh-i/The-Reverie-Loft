@@ -5,6 +5,7 @@ import {
   beforePicUpload,
 } from "@/utils/common.js";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import { useCurrentUserStore } from "@/stores/user";
 import { useOtherUserStore } from "@/stores/otherUser";
 import { cloneDeep } from "@pureadmin/utils";
@@ -18,6 +19,7 @@ import userApi from "@/api/user/userApi.js";
 export default {
   components: {
     PageHeadBack,
+    PageScroll,
   },
   data() {
     return {
@@ -256,111 +258,113 @@ export default {
 
 <template>
   <PageHeadBack>
-    <el-upload
-      :show-file-list="false"
-      :auto-upload="false"
-      accept="image/jpeg,image/png,image/jpg,image/webp"
-      :on-change="handleFileChange"
-      :limit="1"
-    >
-      <template #trigger>
-        <van-cell title="图像" is-link>
-          <template #value>
-            <el-image
-              shape="square"
-              style="width: 30px; height: 30px"
-              :preview-src-list="imgList"
-              alt="用户图像"
-              :src="localUserInfo.image"
-              @click.stop=""
-            />
-          </template>
-        </van-cell>
-      </template>
-    </el-upload>
-
-    <van-cell
-      title="昵称"
-      is-link
-      :value="localUserInfo.nickname"
-      @click="$router.push({ path: '/editCommonField', query: { type: 1 } })"
-    />
-    <van-cell title="账号" :value="localUserInfo.username" />
-    <van-cell
-      title="性别"
-      is-link
-      :value="localUserInfo.sex"
-      @click="sexShow = !sexShow"
-    />
-    <van-cell
-      title="所在地"
-      is-link
-      :value="currentUser.cityName"
-      @click="cityShow = !cityShow"
-    />
-    <van-cell title="标签" is-link :value="tag" @click="openTag" />
-    <van-cell
-      title="签名"
-      is-link
-      :value="localUserInfo.about_me"
-      @click="$router.push({ path: '/editCommonField', query: { type: 2 } })"
-    />
-    <van-cell title="音乐" is-link @click="$router.push('/editMusic')" />
-
-    <van-cell
-      title="兴趣封面"
-      class="image"
-      is-link
-      @click="$router.push('/editInterest')"
-    />
-    <van-cell
-      title="背景图片"
-      is-link
-      @click="$router.push('/editBackGround')"
-    />
-    <van-cell
-      title="社交账号"
-      class="socical-link"
-      is-link
-      @click="$router.push({ path: '/editCommonField', query: { type: 3 } })"
-    />
-    <el-dialog v-model="sexShow" title="设置性别" width="80%" align-center>
-      <van-cell title="男" clickable @click="selectSex('男')" />
-      <van-cell title="女" clickable @click="selectSex('女')" />
-    </el-dialog>
-    <van-action-sheet v-model:show="cityShow" title="选择城市">
-      <van-area
-        v-model="localUserInfo.location"
-        :area-list="areaList"
-        @confirm="setCity"
-      />
-    </van-action-sheet>
-
-    <van-action-sheet v-model:show="tagShow" title="选择标签">
-      <div class="tag-container" v-loading="loading.tag">
-        <el-checkbox-group v-model="selectedTags" :min="0" :max="3">
-          <el-checkbox
-            v-for="tag in tagList"
-            :key="tag"
-            :value="tag"
-            size="large"
-          >
-            <template #default>
-              <el-tag type="primary" effect="plain" round size="small">{{
-                tag
-              }}</el-tag>
+    <PageScroll>
+      <el-upload
+        :show-file-list="false"
+        :auto-upload="false"
+        accept="image/jpeg,image/png,image/jpg,image/webp"
+        :on-change="handleFileChange"
+        :limit="1"
+      >
+        <template #trigger>
+          <van-cell title="图像" is-link>
+            <template #value>
+              <el-image
+                shape="square"
+                style="width: 30px; height: 30px"
+                :preview-src-list="imgList"
+                alt="用户图像"
+                :src="localUserInfo.image"
+                @click.stop=""
+              />
             </template>
-          </el-checkbox>
-        </el-checkbox-group>
-        <el-button
-          class="tag-but"
-          round
-          @click="saveTags"
-          :disabled="!tagChange"
-          >保存</el-button
-        >
-      </div>
-    </van-action-sheet>
+          </van-cell>
+        </template>
+      </el-upload>
+
+      <van-cell
+        title="昵称"
+        is-link
+        :value="localUserInfo.nickname"
+        @click="$router.push({ path: '/editCommonField', query: { type: 1 } })"
+      />
+      <van-cell title="账号" :value="localUserInfo.username" />
+      <van-cell
+        title="性别"
+        is-link
+        :value="localUserInfo.sex"
+        @click="sexShow = !sexShow"
+      />
+      <van-cell
+        title="所在地"
+        is-link
+        :value="currentUser.cityName"
+        @click="cityShow = !cityShow"
+      />
+      <van-cell title="标签" is-link :value="tag" @click="openTag" />
+      <van-cell
+        title="签名"
+        is-link
+        :value="localUserInfo.about_me"
+        @click="$router.push({ path: '/editCommonField', query: { type: 2 } })"
+      />
+      <van-cell title="音乐" is-link @click="$router.push('/editMusic')" />
+
+      <van-cell
+        title="兴趣封面"
+        class="image"
+        is-link
+        @click="$router.push('/editInterest')"
+      />
+      <van-cell
+        title="背景图片"
+        is-link
+        @click="$router.push('/editBackGround')"
+      />
+      <van-cell
+        title="社交账号"
+        class="socical-link"
+        is-link
+        @click="$router.push({ path: '/editCommonField', query: { type: 3 } })"
+      />
+      <el-dialog v-model="sexShow" title="设置性别" width="80%" align-center>
+        <van-cell title="男" clickable @click="selectSex('男')" />
+        <van-cell title="女" clickable @click="selectSex('女')" />
+      </el-dialog>
+      <van-action-sheet v-model:show="cityShow" title="选择城市">
+        <van-area
+          v-model="localUserInfo.location"
+          :area-list="areaList"
+          @confirm="setCity"
+        />
+      </van-action-sheet>
+
+      <van-action-sheet v-model:show="tagShow" title="选择标签">
+        <div class="tag-container" v-loading="loading.tag">
+          <el-checkbox-group v-model="selectedTags" :min="0" :max="3">
+            <el-checkbox
+              v-for="tag in tagList"
+              :key="tag"
+              :value="tag"
+              size="large"
+            >
+              <template #default>
+                <el-tag type="primary" effect="plain" round size="small">{{
+                  tag
+                }}</el-tag>
+              </template>
+            </el-checkbox>
+          </el-checkbox-group>
+          <el-button
+            class="tag-but"
+            round
+            @click="saveTags"
+            :disabled="!tagChange"
+            >保存</el-button
+          >
+        </div>
+      </van-action-sheet>
+    </PageScroll>
   </PageHeadBack>
 </template>
 <style scoped>

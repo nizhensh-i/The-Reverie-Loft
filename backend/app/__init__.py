@@ -17,6 +17,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .mycelery import celery_init_app
 from .utils.logger import setup_logging
+from .utils.response import server_error
 
 
 def my_key_func():
@@ -98,7 +99,6 @@ def create_app(config_name):
         logging.error(f"全局异常: {str(e)}", exc_info=True)
         if os.environ.get("FLASK_DEBUG", None):
             print(e)
-        from .utils.response import server_error
 
         return server_error(message=str(e))
 

@@ -2,10 +2,11 @@ import logging
 
 from app.exceptions import ValidationError
 from flask import request
+from sqlalchemy.exc import OperationalError
 
 from .. import jwt
 from .. import redis as jwt_redis_blocklist
-from ..utils.response import bad_request, error, unauthorized
+from ..utils.response import bad_request, error, server_error, unauthorized
 from . import api
 
 
@@ -13,6 +14,12 @@ from . import api
 def validation_error(e):
     logging.warning(f"验证错误: {e.args[0]}")
     return bad_request(message=e.args[0])
+
+
+@api.errorhandler(OperationalError)
+def mysql_error(e):
+    logging.info(f"数据库错误:{e}")
+    return server_error(message="数据库错误")
 
 
 # jwt无效的自定义回调

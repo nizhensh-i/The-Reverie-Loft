@@ -2,12 +2,14 @@
 import authApi from "@/api/auth/authApi.js";
 import ButtonClick from "@/utils/components/ButtonClick.vue";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import { ElLoading } from "element-plus";
 
 export default {
   components: {
     ButtonClick,
     PageHeadBack,
+    PageScroll,
   },
   data() {
     return {
@@ -168,126 +170,128 @@ export default {
 
 <template>
   <PageHeadBack>
-    <!-- 加载状态 -->
-    <div v-if="isCheckingFreshness" class="loading-state"></div>
+    <PageScroll max-height="calc(100vh - 45px - 47px)">
+      <!-- 加载状态 -->
+      <div v-if="isCheckingFreshness" class="loading-state"></div>
 
-    <!-- 主表单 -->
-    <div v-else class="email-change-container">
-      <div class="email-header">
-        <div class="email-icon">
-          <i class="el-icon-refresh"></i>
-        </div>
-        <h1>更换邮箱地址</h1>
-        <p class="subtitle">更新您的联系方式，保持信息畅通</p>
-      </div>
-
-      <div class="form-card">
-        <div class="steps-container">
-          <div class="step active">
-            <div class="step-number">1</div>
-            <div class="step-text">填写新邮箱</div>
+      <!-- 主表单 -->
+      <div v-else class="email-change-container">
+        <div class="email-header">
+          <div class="email-icon">
+            <i class="el-icon-refresh"></i>
           </div>
-          <div class="step-line"></div>
-          <div class="step" :class="{ active: form.new_email && form.code }">
-            <div class="step-number">2</div>
-            <div class="step-text">验证身份</div>
-          </div>
-          <div class="step-line"></div>
-          <div class="step" :class="{ active: !isSubmit }">
-            <div class="step-number">3</div>
-            <div class="step-text">完成更换</div>
-          </div>
+          <h1>更换邮箱地址</h1>
+          <p class="subtitle">更新您的联系方式，保持信息畅通</p>
         </div>
 
-        <el-form
-          label-position="top"
-          label-width="auto"
-          :model="form"
-          :rules="rules"
-          ref="formRef"
-        >
-          <el-form-item prop="new_email" label="新的邮箱地址">
-            <div class="input-group">
-              <el-input
-                v-model="form.new_email"
-                placeholder="请输入新的邮箱地址"
-                @blur="validateEmail"
-                prefix-icon="el-icon-message"
-              />
-              <div class="code-button">
-                <el-button
-                  @click="applyCode"
-                  type="primary"
-                  :disabled="!isEmailValid"
-                  v-if="showButton"
-                  class="send-code-btn"
-                >
-                  发送验证码
-                </el-button>
-                <el-countdown
-                  prefix="重新发送"
-                  format="ss秒"
-                  :value="value"
-                  @finish="finish"
-                  v-else
-                  class="countdown"
+        <div class="form-card">
+          <div class="steps-container">
+            <div class="step active">
+              <div class="step-number">1</div>
+              <div class="step-text">填写新邮箱</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step" :class="{ active: form.new_email && form.code }">
+              <div class="step-number">2</div>
+              <div class="step-text">验证身份</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step" :class="{ active: !isSubmit }">
+              <div class="step-number">3</div>
+              <div class="step-text">完成更换</div>
+            </div>
+          </div>
+
+          <el-form
+            label-position="top"
+            label-width="auto"
+            :model="form"
+            :rules="rules"
+            ref="formRef"
+          >
+            <el-form-item prop="new_email" label="新的邮箱地址">
+              <div class="input-group">
+                <el-input
+                  v-model="form.new_email"
+                  placeholder="请输入新的邮箱地址"
+                  @blur="validateEmail"
+                  prefix-icon="el-icon-message"
                 />
+                <div class="code-button">
+                  <el-button
+                    @click="applyCode"
+                    type="primary"
+                    :disabled="!isEmailValid"
+                    v-if="showButton"
+                    class="send-code-btn"
+                  >
+                    发送验证码
+                  </el-button>
+                  <el-countdown
+                    prefix="重新发送"
+                    format="ss秒"
+                    :value="value"
+                    @finish="finish"
+                    v-else
+                    class="countdown"
+                  />
+                </div>
               </div>
-            </div>
-          </el-form-item>
+            </el-form-item>
 
-          <el-form-item prop="code" label="验证码">
-            <el-input
-              v-model="form.code"
-              placeholder="请输入收到的验证码"
-              prefix-icon="el-icon-key"
-            />
-            <div class="verification-hint">
-              验证码已发送至您的新邮箱，请查收
-            </div>
-          </el-form-item>
-
-          <div class="security-section">
-            <div class="security-header">
-              <i class="el-icon-lock"></i>
-              <span>安全验证</span>
-            </div>
-            <el-form-item prop="password" label="当前账户密码">
+            <el-form-item prop="code" label="验证码">
               <el-input
-                v-model="form.password"
-                type="password"
-                show-password
-                prefix-icon="el-icon-lock"
-                placeholder="请输入当前账户密码"
+                v-model="form.code"
+                placeholder="请输入收到的验证码"
+                prefix-icon="el-icon-key"
+              />
+              <div class="verification-hint">
+                验证码已发送至您的新邮箱，请查收
+              </div>
+            </el-form-item>
+
+            <div class="security-section">
+              <div class="security-header">
+                <i class="el-icon-lock"></i>
+                <span>安全验证</span>
+              </div>
+              <el-form-item prop="password" label="当前账户密码">
+                <el-input
+                  v-model="form.password"
+                  type="password"
+                  show-password
+                  prefix-icon="el-icon-lock"
+                  placeholder="请输入当前账户密码"
+                />
+              </el-form-item>
+            </div>
+
+            <el-form-item>
+              <ButtonClick
+                content="确认更换邮箱"
+                type="primary"
+                :disabled="isSubmit"
+                :loading="loading"
+                @do-search="submitForm"
+                class="submit-btn"
               />
             </el-form-item>
-          </div>
+          </el-form>
 
-          <el-form-item>
-            <ButtonClick
-              content="确认更换邮箱"
-              type="primary"
-              :disabled="isSubmit"
-              :loading="loading"
-              @do-search="submitForm"
-              class="submit-btn"
-            />
-          </el-form-item>
-        </el-form>
-
-        <div class="notice">
-          <div class="notice-title">
-            <i class="el-icon-warning"></i>
-            <span>注意事项</span>
+          <div class="notice">
+            <div class="notice-title">
+              <i class="el-icon-warning"></i>
+              <span>注意事项</span>
+            </div>
+            <ul>
+              <!-- <li>更换邮箱后，系统通知将发送至新邮箱</li> -->
+              <li>新邮箱将用于密码找回等安全操作</li>
+              <li>请确保新邮箱真实有效且为您本人所有</li>
+            </ul>
           </div>
-          <ul>
-            <!-- <li>更换邮箱后，系统通知将发送至新邮箱</li> -->
-            <li>新邮箱将用于密码找回等安全操作</li>
-            <li>请确保新邮箱真实有效且为您本人所有</li>
-          </ul>
         </div>
       </div>
-    </div>
+    </PageScroll>
   </PageHeadBack>
 </template>
 

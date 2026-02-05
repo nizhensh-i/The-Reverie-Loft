@@ -9,6 +9,7 @@ import { useOtherUserStore } from "@/stores/otherUser";
 import SkeletonUtil from "@/utils/components/SkeletonUtil.vue";
 import PostImage from "@/views/posts/components/PostImage.vue";
 import PostPreview from "@/views/posts/components/PostPreview.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import userApi from "@/api/user/userApi.js";
 import date from "@/utils/date.js";
 import dayjs from "@/config/dayjsCfg";
@@ -25,6 +26,7 @@ export default {
     PostImage,
     PostPreview,
     musicPlayer,
+    PageScroll,
   },
   data() {
     return {
@@ -140,16 +142,6 @@ export default {
       }
     );
   },
-  mounted() {
-    if (typeof window !== "undefined") {
-      window.addEventListener("resize", this.handleResize);
-    }
-  },
-  beforeUnmount() {
-    if (typeof window !== "undefined") {
-      window.removeEventListener("resize", this.handleResize);
-    }
-  },
   methods: {
     checkIsMobile() {
       if (typeof window === "undefined") return false;
@@ -157,15 +149,6 @@ export default {
       return (
         /Mobi|Android|iPhone|iPad|iPod/i.test(ua) || window.innerWidth <= 768
       );
-    },
-    handleResize() {
-      const nextIsMobile = this.checkIsMobile();
-      if (nextIsMobile !== this.isMobileDevice) {
-        this.isMobileDevice = nextIsMobile;
-        if (this.isUserPage) {
-          this.setMainProperty();
-        }
-      }
     },
     setMainProperty() {
       if (!this.isUserPage) {
@@ -271,7 +254,7 @@ export default {
         })
         .catch((err) => {
           this.loading.userData = false;
-          ElMessage.error("获取用户数据失败");
+          ElMessage.error(err);
           console.error(err);
         });
     },

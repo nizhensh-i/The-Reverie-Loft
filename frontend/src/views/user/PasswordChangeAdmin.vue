@@ -2,11 +2,13 @@
 import authApi from "@/api/auth/authApi.js";
 import ButtonClick from "@/utils/components/ButtonClick.vue";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 
 export default {
   components: {
     ButtonClick,
     PageHeadBack,
+    PageScroll,
   },
   data() {
     var validatePass = (rule, value, callback) => {
@@ -86,47 +88,49 @@ export default {
 
 <template>
   <PageHeadBack>
-    <h1>找回其他用户密码</h1>
-    <el-form
-      :model="form"
-      label-position="top"
-      :rules="rules"
-      ref="form"
-      label-width="auto"
-      style="max-width: 600px"
-    >
-      <el-form-item prop="username" label="用户账号">
-        <el-input v-model="form.username" />
-      </el-form-item>
-      <el-form-item prop="newPassword" label="新密码">
-        <el-input v-model="form.newPassword" type="password" show-password />
-      </el-form-item>
-      <el-form-item prop="confirmNewPassword" label="确认新密码">
-        <el-input
-          v-model="form.confirmNewPassword"
-          type="password"
-          show-password
-        />
-      </el-form-item>
-      <el-form-item>
-        <ButtonClick
-          content="提交"
-          type="primary"
-          :disabled="!isChange"
-          :loading="loading"
-          @do-search="submitForm"
-        />
-      </el-form-item>
-    </el-form>
+    <PageScroll max-height="calc(100vh - 45px - 47px)">
+      <h1>找回其他用户密码</h1>
+      <el-form
+        :model="form"
+        label-position="top"
+        :rules="rules"
+        ref="form"
+        label-width="auto"
+        style="max-width: 600px"
+      >
+        <el-form-item prop="username" label="用户账号">
+          <el-input v-model="form.username" />
+        </el-form-item>
+        <el-form-item prop="newPassword" label="新密码">
+          <el-input v-model="form.newPassword" type="password" show-password />
+        </el-form-item>
+        <el-form-item prop="confirmNewPassword" label="确认新密码">
+          <el-input
+            v-model="form.confirmNewPassword"
+            type="password"
+            show-password
+          />
+        </el-form-item>
+        <el-form-item>
+          <ButtonClick
+            content="提交"
+            type="primary"
+            :disabled="!isChange"
+            :loading="loading"
+            @do-search="submitForm"
+          />
+        </el-form-item>
+      </el-form>
 
-    <van-dialog
-      v-model:show="dialogShow"
-      title="修改用户的密码？"
-      width="230"
-      show-cancel-button
-      confirm-button-color="red"
-      :beforeClose="beforeClose"
-    />
+      <van-dialog
+        v-model:show="dialogShow"
+        title="修改用户的密码？"
+        width="230"
+        show-cancel-button
+        confirm-button-color="red"
+        :beforeClose="beforeClose"
+      />
+    </PageScroll>
   </PageHeadBack>
 </template>
 <style scoped></style>

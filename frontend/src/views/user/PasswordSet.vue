@@ -2,12 +2,14 @@
 import authApi from "@/api/auth/authApi.js";
 import ButtonClick from "@/utils/components/ButtonClick.vue";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import { useCurrentUserStore } from "@/stores/user";
 
 export default {
   components: {
     ButtonClick,
     PageHeadBack,
+    PageScroll,
   },
   data() {
     var validateNewPassword = (rule, value, callback) => {
@@ -97,101 +99,103 @@ export default {
 
 <template>
   <PageHeadBack>
-    <div class="password-set-container">
-      <div class="password-header">
-        <div class="password-icon">
-          <i class="el-icon-lock"></i>
+    <PageScroll max-height="calc(100vh - 45px - 47px)">
+      <div class="password-set-container">
+        <div class="password-header">
+          <div class="password-icon">
+            <i class="el-icon-lock"></i>
+          </div>
+          <h1>设置登录密码</h1>
+          <p class="subtitle">设置密码后，您可以使用账号密码登录</p>
         </div>
-        <h1>设置登录密码</h1>
-        <p class="subtitle">设置密码后，您可以使用账号密码登录</p>
-      </div>
 
-      <div class="form-card">
-        <el-form
-          :model="form"
-          label-position="top"
-          :rules="rules"
-          ref="form"
-          label-width="auto"
-        >
-          <el-form-item prop="new_password" label="新密码">
-            <el-input
-              v-model="form.new_password"
-              type="password"
-              show-password
-              prefix-icon="el-icon-lock"
-              placeholder="请输入新密码"
-            />
-            <div class="password-strength" v-if="form.new_password">
-              <div class="strength-label">密码强度:</div>
-              <div class="strength-meter">
+        <div class="form-card">
+          <el-form
+            :model="form"
+            label-position="top"
+            :rules="rules"
+            ref="form"
+            label-width="auto"
+          >
+            <el-form-item prop="new_password" label="新密码">
+              <el-input
+                v-model="form.new_password"
+                type="password"
+                show-password
+                prefix-icon="el-icon-lock"
+                placeholder="请输入新密码"
+              />
+              <div class="password-strength" v-if="form.new_password">
+                <div class="strength-label">密码强度:</div>
+                <div class="strength-meter">
+                  <div
+                    class="strength-bar"
+                    :class="[
+                      form.new_password.length < 6
+                        ? 'weak'
+                        : form.new_password.length < 10
+                        ? 'medium'
+                        : 'strong',
+                    ]"
+                    :style="{
+                      width: `${Math.min(100, form.new_password.length * 10)}%`,
+                    }"
+                  ></div>
+                </div>
                 <div
-                  class="strength-bar"
+                  class="strength-text"
                   :class="[
                     form.new_password.length < 6
-                      ? 'weak'
+                      ? 'weak-text'
                       : form.new_password.length < 10
-                      ? 'medium'
-                      : 'strong',
+                      ? 'medium-text'
+                      : 'strong-text',
                   ]"
-                  :style="{
-                    width: `${Math.min(100, form.new_password.length * 10)}%`,
-                  }"
-                ></div>
+                >
+                  {{
+                    form.new_password.length < 6
+                      ? "弱"
+                      : form.new_password.length < 10
+                      ? "中"
+                      : "强"
+                  }}
+                </div>
               </div>
-              <div
-                class="strength-text"
-                :class="[
-                  form.new_password.length < 6
-                    ? 'weak-text'
-                    : form.new_password.length < 10
-                    ? 'medium-text'
-                    : 'strong-text',
-                ]"
-              >
-                {{
-                  form.new_password.length < 6
-                    ? "弱"
-                    : form.new_password.length < 10
-                    ? "中"
-                    : "强"
-                }}
-              </div>
-            </div>
-          </el-form-item>
+            </el-form-item>
 
-          <el-form-item prop="confirm_password" label="确认密码">
-            <el-input
-              v-model="form.confirm_password"
-              type="password"
-              show-password
-              prefix-icon="el-icon-check"
-              placeholder="请再次输入新密码"
-            />
-          </el-form-item>
+            <el-form-item prop="confirm_password" label="确认密码">
+              <el-input
+                v-model="form.confirm_password"
+                type="password"
+                show-password
+                prefix-icon="el-icon-check"
+                placeholder="请再次输入新密码"
+              />
+            </el-form-item>
 
-          <el-form-item>
-            <ButtonClick
-              content="设置密码"
-              type="primary"
-              :disabled="!isChange"
-              :loading="loading"
-              @do-search="submitForm"
-              class="submit-btn"
-            />
-          </el-form-item>
-        </el-form>
+            <el-form-item>
+              <ButtonClick
+                content="设置密码"
+                type="primary"
+                :disabled="!isChange"
+                :loading="loading"
+                @do-search="submitForm"
+                class="submit-btn"
+              />
+            </el-form-item>
+          </el-form>
 
-        <div class="password-tips">
-          <h4><i class="el-icon-info-filled"></i> 密码安全提示</h4>
-          <ul>
-            <li>密码长度至少3个字符</li>
-            <li>建议混合使用字母、数字和特殊字符</li>
-            <li>避免使用容易猜到的信息</li>
-          </ul>
+          <div class="password-tips">
+            <h4><i class="el-icon-info-filled"></i> 密码安全提示</h4>
+            <ul>
+              <li>密码长度至少3个字符</li>
+              <li>建议混合使用字母、数字和特殊字符</li>
+              <li>避免使用容易猜到的信息</li>
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
+    </PageScroll>
   </PageHeadBack>
 </template>
 

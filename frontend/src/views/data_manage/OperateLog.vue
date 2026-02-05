@@ -1,5 +1,6 @@
 <script>
 import ButtonClick from "@/utils/components/ButtonClick.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import logApi from "@/api/log/logApi.js";
 import ButtonReload from "@/utils/components/ButtonReload.vue";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
@@ -10,6 +11,7 @@ export default {
     ButtonClick,
     ButtonReload,
     PageHeadBack,
+    PageScroll,
   },
   data() {
     return {
@@ -181,152 +183,154 @@ export default {
 
 <template>
   <PageHeadBack>
-    <el-row ref="h1" :gutter="10">
-      <el-col :xs="20" :sm="16" :md="16" :lg="16" :xl="16">
-        <div @click="filter = true">
-          <el-input
-            v-model="input3"
+    <PageScroll>
+      <el-row ref="h1" :gutter="10">
+        <el-col :xs="20" :sm="16" :md="16" :lg="16" :xl="16">
+          <div @click="filter = true">
+            <el-input
+              v-model="input3"
+              size="small"
+              :disabled="true"
+              :class="{ input: filter, shrink: !filter }"
+            />
+          </div>
+        </el-col>
+        <el-col :xs="4" :sm="8" :md="8" :lg="8" :xl="8">
+          <ButtonClick
+            content="搜索"
+            type="warning"
             size="small"
-            :disabled="true"
-            :class="{ input: filter, shrink: !filter }"
+            :loading="loading.search"
+            @do-search="doSearch"
           />
-        </div>
-      </el-col>
-      <el-col :xs="4" :sm="8" :md="8" :lg="8" :xl="8">
-        <ButtonClick
-          content="搜索"
-          type="warning"
-          size="small"
-          :loading="loading.search"
-          @do-search="doSearch"
-        />
-      </el-col>
-    </el-row>
+        </el-col>
+      </el-row>
 
-    <el-row ref="h2">
-      <Transition @after-enter="reCalTableHeight">
-        <el-card v-show="filter" :class="{ disappear: !filter }">
-          分类
-          <div class="close-card">
-            <el-icon @click="filter = false"><i-ep-ArrowUp /></el-icon>
-          </div>
-        </el-card>
-      </Transition>
-    </el-row>
+      <el-row ref="h2">
+        <Transition @after-enter="reCalTableHeight">
+          <el-card v-show="filter" :class="{ disappear: !filter }">
+            分类
+            <div class="close-card">
+              <el-icon @click="filter = false"><i-ep-ArrowUp /></el-icon>
+            </div>
+          </el-card>
+        </Transition>
+      </el-row>
 
-    <el-skeleton
-      :rows="12"
-      animated
-      :loading="loading.search"
-      :throttle="{ leading: 500, trailing: 500 }"
-    >
-      <el-tabs
-        v-model="activeName"
-        type="card"
-        class="demo-tabs"
-        @tab-change="changeTab"
+      <el-skeleton
+        :rows="12"
+        animated
+        :loading="loading.search"
+        :throttle="{ leading: 500, trailing: 500 }"
       >
-        <el-tab-pane label="登录日志" name="log">
-          <ButtonReload
-            v-model:stop="loading.isRotating"
-            @click="reload"
-            class="button-reload"
-          />
-          <el-table
-            ref="table"
-            :data="table.tableData"
-            style="width: 100%"
-            :height="table.tableHeight"
-            :header-cell-class-name="tableHeadStyleName"
-            @selection-change="handleSelectionChange"
-            v-loading="loading.table"
-          >
-            <el-table-column type="selection" width="30" />
-            <el-table-column
-              type="index"
-              label="序号"
-              align="center"
-              fixed
-              :index="indexMethod"
-              width="52px"
+        <el-tabs
+          v-model="activeName"
+          type="card"
+          class="demo-tabs"
+          @tab-change="changeTab"
+        >
+          <el-tab-pane label="登录日志" name="log">
+            <ButtonReload
+              v-model:stop="loading.isRotating"
+              @click="reload"
+              class="button-reload"
             />
-            <el-table-column prop="username" label="用户名" width="70px" />
-            <el-table-column prop="ip" label="ip" width="120" />
-            <el-table-column prop="addr" label="位置" />
-            <el-table-column prop="os" label="操作系统" />
-            <el-table-column prop="device" label="设备" />
-            <el-table-column prop="browser" label="浏览器类型" />
-            <el-table-column prop="operate" label="操作" />
-            <el-table-column
-              prop="operateTime"
-              label="操作时间"
-              width="165px"
-            />
-            <el-table-column label="操作">
-              <template #default="scope">
-                <el-button
-                  size="small"
-                  type="danger"
-                  @click="sDel(scope.$index, scope.row)"
-                >
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-          <div class="check-button">
-            <el-button
-              type="primary"
-              size="small"
-              :disabled="table.multipleSelection.length == 0"
-              @click="bDel"
-              >批量删除</el-button
+            <el-table
+              ref="table"
+              :data="table.tableData"
+              style="width: 100%"
+              :height="table.tableHeight"
+              :header-cell-class-name="tableHeadStyleName"
+              @selection-change="handleSelectionChange"
+              v-loading="loading.table"
             >
-            <el-button
-              type="primary"
-              size="small"
-              :disabled="table.multipleSelection.length == 0"
-              @click="clearSelected"
-              >清除选中</el-button
-            >
-          </div>
-          <el-pagination
-            v-model:current-page="table.currentPage"
-            :page-size="15"
-            layout="total, prev, pager, next"
-            :total="table.log_count"
-            @current-change="handleCurrentChange"
-            :pager-count="5"
-          />
-        </el-tab-pane>
-        <el-tab-pane label="实时统计" name="online">
-          <ButtonReload
-            v-model:stop="loading.isRotating"
-            @click="getOnline"
-            class="button-reload"
-          />
-          <el-table :data="online.user">
-            <el-table-column
-              type="index"
-              label="序号"
-              align="center"
-              :index="indexMethod"
-              width="52px"
+              <el-table-column type="selection" width="30" />
+              <el-table-column
+                type="index"
+                label="序号"
+                align="center"
+                fixed
+                :index="indexMethod"
+                width="52px"
+              />
+              <el-table-column prop="username" label="用户名" width="70px" />
+              <el-table-column prop="ip" label="ip" width="120" />
+              <el-table-column prop="addr" label="位置" />
+              <el-table-column prop="os" label="操作系统" />
+              <el-table-column prop="device" label="设备" />
+              <el-table-column prop="browser" label="浏览器类型" />
+              <el-table-column prop="operate" label="操作" />
+              <el-table-column
+                prop="operateTime"
+                label="操作时间"
+                width="165px"
+              />
+              <el-table-column label="操作">
+                <template #default="scope">
+                  <el-button
+                    size="small"
+                    type="danger"
+                    @click="sDel(scope.$index, scope.row)"
+                  >
+                    删除
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div class="check-button">
+              <el-button
+                type="primary"
+                size="small"
+                :disabled="table.multipleSelection.length == 0"
+                @click="bDel"
+                >批量删除</el-button
+              >
+              <el-button
+                type="primary"
+                size="small"
+                :disabled="table.multipleSelection.length == 0"
+                @click="clearSelected"
+                >清除选中</el-button
+              >
+            </div>
+            <el-pagination
+              v-model:current-page="table.currentPage"
+              :page-size="15"
+              layout="total, prev, pager, next"
+              :total="table.log_count"
+              @current-change="handleCurrentChange"
+              :pager-count="5"
             />
-            <el-table-column prop="username" label="用户名" />
-            <el-table-column prop="nickName" label="昵称" />
-          </el-table>
-        </el-tab-pane>
-      </el-tabs>
-    </el-skeleton>
+          </el-tab-pane>
+          <el-tab-pane label="实时统计" name="online">
+            <ButtonReload
+              v-model:stop="loading.isRotating"
+              @click="getOnline"
+              class="button-reload"
+            />
+            <el-table :data="online.user">
+              <el-table-column
+                type="index"
+                label="序号"
+                align="center"
+                :index="indexMethod"
+                width="52px"
+              />
+              <el-table-column prop="username" label="用户名" />
+              <el-table-column prop="nickName" label="昵称" />
+            </el-table>
+          </el-tab-pane>
+        </el-tabs>
+      </el-skeleton>
 
-    <van-dialog
-      v-model:show="dialogShow"
-      :title="dialogData.title"
-      width="230"
-      show-cancel-button
-      :beforeClose="dialogData.beforeClose"
-    />
+      <van-dialog
+        v-model:show="dialogShow"
+        :title="dialogData.title"
+        width="230"
+        show-cancel-button
+        :beforeClose="dialogData.beforeClose"
+      />
+    </PageScroll>
   </PageHeadBack>
 </template>
 

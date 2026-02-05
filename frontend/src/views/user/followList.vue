@@ -3,6 +3,7 @@ import followApi from "@/api/user/followApi.js";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
 import FollowsList from "@/views/user/components/FollowsList.vue";
 import FollowRow from "@/views/user/components/FollowRow.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 import arrayUtil from "@/utils/arrayUtil.js";
 import { useCurrentUserStore } from "@/stores/user";
 export default {
@@ -10,6 +11,7 @@ export default {
     PageHeadBack,
     FollowsList,
     FollowRow,
+    PageScroll,
   },
   data() {
     return {
@@ -158,56 +160,58 @@ export default {
 
 <template>
   <PageHeadBack>
-    <van-tabs
-      v-model:active="action"
-      @click-tab="onClickTab"
-      animated
-      sticky
-      :offset-top="50"
-      title-active-color="rgb(51.2, 126.4, 204)"
-    >
-      <van-tab title="粉丝" name="follower">
-        <FollowsList
-          v-model:refreshing="refreshing"
-          v-model:loading="loading"
-          v-model:error="error"
-          v-model:finished="fanTab.finished"
-          :showSearch="isCurrentUser"
-          @refresh="onRefresh"
-          @load="getFollowList"
-          @searchFan="searchFan"
-        >
-          <FollowRow
-            v-for="i in follows.fan"
-            :key="i"
-            :follows="i"
-            :showFollowButton="isCurrentUser"
-          />
-        </FollowsList>
-      </van-tab>
-      <van-tab title="关注" name="followed">
-        <FollowsList
-          v-model:refreshing="refreshing"
-          v-model:loading="loading"
-          v-model:error="error"
-          v-model:finished="followedTab.finished"
-          tabAction="followed"
-          :showSearch="isCurrentUser"
-          @refresh="onRefresh"
-          @load="getFollowList"
-          @searchFollowed="searchFollowed"
-        >
-          <FollowRow
-            v-for="i in follows.followed"
-            :key="i"
-            :follows="i"
+    <PageScroll max-height="calc(100vh - 45px - 47px)">
+      <van-tabs
+        v-model:active="action"
+        @click-tab="onClickTab"
+        animated
+        sticky
+        :offset-top="50"
+        title-active-color="rgb(51.2, 126.4, 204)"
+      >
+        <van-tab title="粉丝" name="follower">
+          <FollowsList
+            v-model:refreshing="refreshing"
+            v-model:loading="loading"
+            v-model:error="error"
+            v-model:finished="fanTab.finished"
+            :showSearch="isCurrentUser"
+            @refresh="onRefresh"
+            @load="getFollowList"
+            @searchFan="searchFan"
+          >
+            <FollowRow
+              v-for="i in follows.fan"
+              :key="i"
+              :follows="i"
+              :showFollowButton="isCurrentUser"
+            />
+          </FollowsList>
+        </van-tab>
+        <van-tab title="关注" name="followed">
+          <FollowsList
+            v-model:refreshing="refreshing"
+            v-model:loading="loading"
+            v-model:error="error"
+            v-model:finished="followedTab.finished"
             tabAction="followed"
-            :showFollowButton="isCurrentUser"
-            @remove="remove"
-          />
-        </FollowsList>
-      </van-tab>
-    </van-tabs>
+            :showSearch="isCurrentUser"
+            @refresh="onRefresh"
+            @load="getFollowList"
+            @searchFollowed="searchFollowed"
+          >
+            <FollowRow
+              v-for="i in follows.followed"
+              :key="i"
+              :follows="i"
+              tabAction="followed"
+              :showFollowButton="isCurrentUser"
+              @remove="remove"
+            />
+          </FollowsList>
+        </van-tab>
+      </van-tabs>
+    </PageScroll>
   </PageHeadBack>
 </template>
 <style scoped>
