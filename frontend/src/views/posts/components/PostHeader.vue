@@ -50,7 +50,16 @@ export default {
         event.preventDefault();
         event.stopPropagation();
       }
-      this.toUser();
+      this.toUser(false);
+    },
+
+    handleMusicClick(event) {
+      // 阻止事件冒泡和默认行为
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      this.toUser(true);
     },
 
     handleTouchStart(event) {
@@ -69,10 +78,13 @@ export default {
       }
     },
 
-    toUser() {
+    toUser(playMusic = false) {
       // 接口都已改为根据用户id获取用户数据
       this.otherUser.userInfo.id = this.post.user_id;
-      this.$router.push(`/user/${this.post.author}`);
+      const url = playMusic
+        ? `/user/${this.post.author}?playMusic=true`
+        : `/user/${this.post.author}`;
+      this.$router.push(url);
     },
   },
 };
@@ -98,7 +110,7 @@ export default {
         >
         <div
           v-if="post.music?.name"
-          @click="handleUserClick"
+          @click="handleMusicClick"
           @touchstart="handleTouchStart"
           @touchend="handleTouchEnd"
           class="music"

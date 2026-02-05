@@ -15,6 +15,7 @@ import date from "@/utils/date.js";
 import dayjs from "@/config/dayjsCfg";
 import { loginReminder, waitImage } from "@/utils/common.js";
 import musicPlayer from "./music.vue";
+import { useMusicStore } from "@/stores/music";
 
 export default {
   components: {
@@ -49,7 +50,8 @@ export default {
   setup() {
     const currentUser = useCurrentUserStore();
     const otherUser = useOtherUserStore();
-    return { currentUser, otherUser, areaList };
+    const musicStore = useMusicStore();
+    return { currentUser, otherUser, areaList, musicStore };
   },
   computed: {
     location() {
@@ -236,6 +238,14 @@ export default {
             if (userData.pc_bg_image) {
               this.otherUser.userInfo.pc_bg_image = userData.pc_bg_image;
             }
+          }
+
+          // 只有从文章预览卡片的音乐部分点击进入时才自动播放音乐
+          const shouldPlayMusic = this.$route.query.playMusic === "true";
+          if (shouldPlayMusic && this.user?.music && this.user.music.url) {
+            this.$nextTick(() => {
+              this.musicStore.playMusic(this.user.music);
+            });
           }
 
           // 背景图片加载（不阻塞内容显示）

@@ -76,10 +76,17 @@ const showCloseBtn = ref(false);
 const touchStartTime = ref(0);
 const tooltipTimer = ref(null);
 const closeBtnTimer = ref(null);
+const windowWidth = ref(window.innerWidth);
+
+// 监听窗口大小变化
+const handleResize = () => {
+  windowWidth.value = window.innerWidth;
+};
 
 // 计算属性
+const isMobile = computed(() => windowWidth.value <= 768);
 const isVisible = computed(
-  () => musicStore.isMiniPlayerVisible && musicStore.isMobile
+  () => musicStore.isMiniPlayerVisible && isMobile.value
 );
 const hasMusic = computed(() => musicStore.hasMusic);
 const isPlaying = computed(() => musicStore.isPlaying);
@@ -145,19 +152,11 @@ const handleTouchEnd = () => {
   }, 2000);
 };
 
-const formatTime = (seconds) => {
-  if (!seconds || isNaN(seconds)) return "00:00";
-
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-
-  return `${mins.toString().padStart(2, "0")}:${secs
-    .toString()
-    .padStart(2, "0")}`;
-};
-
 // 生命周期
 onMounted(() => {
+  // 添加窗口大小监听
+  window.addEventListener("resize", handleResize);
+
   // 添加触摸事件监听
   const playerElement = document.querySelector(".mobile-floating-player");
   if (playerElement) {
@@ -181,6 +180,9 @@ onUnmounted(() => {
   if (closeBtnTimer.value) {
     clearTimeout(closeBtnTimer.value);
   }
+
+  // 移除窗口大小监听
+  window.removeEventListener("resize", handleResize);
 
   // 移除事件监听
   const playerElement = document.querySelector(".mobile-floating-player");
@@ -421,7 +423,7 @@ onUnmounted(() => {
 // 响应式适配
 @media (max-width: 768px) {
   .mobile-floating-player {
-    bottom: 100px;
+    bottom: 185px;
     right: 16px;
 
     .floating-btn {

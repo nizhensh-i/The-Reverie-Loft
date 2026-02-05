@@ -23,11 +23,6 @@ export const useMusicStore = defineStore("music", {
       url: state.currentMusic?.url || "",
       lrc: state.currentMusic?.lrc || "",
     }),
-    // 移动端检测
-    isMobile: () => {
-      if (typeof window === "undefined") return false;
-      return /Mobi|Android|iPhone/i.test(navigator.userAgent);
-    },
   },
   actions: {
     setAplayerInstance(instance) {
