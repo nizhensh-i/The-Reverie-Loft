@@ -12,7 +12,7 @@
         />
       </template>
     </div>
-    <span class="tip">{{ socialTip }}</span>
+    <!-- <span class="tip">{{ socialTip }}</span> -->
   </div>
 
   <van-dialog
@@ -114,7 +114,7 @@ function getSvgComponent(name) {
 .social {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   width: 100%;
   max-width: 460px;
   height: 42px;
@@ -127,23 +127,21 @@ function getSvgComponent(name) {
 
   @media (max-width: 840px) {
     max-width: 100%;
-    justify-content: center;
   }
 
   .link {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 20px;
 
     @media (max-width: 840px) {
-      justify-content: space-evenly;
       width: 80%;
     }
 
     .icon {
       width: 20px;
       height: 20px;
-      margin: 0 4px;
       cursor: pointer;
       transition: transform 0.3s;
 
@@ -157,23 +155,25 @@ function getSvgComponent(name) {
     }
   }
 
-  .tip {
-    display: none;
-    margin-right: 12px;
-    animation: fade 0.5s;
+  // .tip {
+  //   position: absolute;
+  //   right: 0;
+  //   display: none;
+  //   margin-right: 12px;
+  //   animation: fade 0.5s;
 
-    @media (max-width: 840px) {
-      display: none;
-    }
-  }
+  //   @media (max-width: 840px) {
+  //     display: none !important;
+  //   }
+  // }
 
   @media (min-width: 768px) {
     &:hover {
       backdrop-filter: blur(5px);
 
-      .tip {
-        display: block;
-      }
+      // .tip {
+      //   display: block;
+      // }
     }
   }
 }

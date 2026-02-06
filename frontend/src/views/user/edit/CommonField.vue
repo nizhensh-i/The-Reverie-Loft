@@ -90,10 +90,10 @@ function getAttr(type) {
 </script>
 <template>
   <PageHeadBack>
+    <template #action>
+      <el-button :disabled="!isChange" @click="save">保存</el-button>
+    </template>
     <PageScroll max-height="calc(100vh - 45px - 47px)">
-      <template #action>
-        <el-button :disabled="!isChange" @click="save">保存</el-button>
-      </template>
       <div v-if="data.type === 1">
         <div class="title">修改昵称</div>
         <el-input v-model="data.localUserInfo.nickname" />
