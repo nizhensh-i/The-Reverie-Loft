@@ -68,7 +68,6 @@ export default {
       const content = data[randomIndex].content;
 
       this.loadingStates[loadingKey] = false;
-      // ElMessage.success(successMessage);
       this.$emit("contentGenerated", content);
     },
   },

@@ -145,33 +145,28 @@ export default {
       });
     },
     parseContent(content) {
-      let r1 = this.replaceHeo(content);
-      let r2 = this.replaceDingtalk(r1);
-      return r2;
+      return this.replaceDingtalk(this.replaceHeo(content));
     },
 
     replaceHeo(content) {
       if (!/\[Heo:(.+?)\]/.test(content)) {
         return content;
       }
-      const withHeo = content.replace(
+      return content.replace(
         /\[Heo:(.+?)\]/g,
         `<img src="${emojiCfg.Heo_100.baseUrl}$1${emojiCfg.Heo_100.suffix}" ${this.eStyle}/>`
       );
-      return withHeo;
     },
     replaceDingtalk(content) {
       if (!/\[ding:(.+?)\]/.test(content)) {
         return content;
       }
-      const withDing = content.replace(
+      return content.replace(
         /\[ding:(.+?)\]/g,
         `<img src="${emojiCfg.dingtalk.baseUrl}$1${emojiCfg.dingtalk.suffix}" ${this.eStyle}/>`
       );
-      return withDing;
     },
     toUser() {
-      // 接口都已改为根据用户id获取用户数据
       this.otherUser.userInfo.id = this.post.user_id;
       this.$router.push(`/user/${this.post.author}`);
     },

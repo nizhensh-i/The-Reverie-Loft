@@ -6,6 +6,7 @@
   </el-page-header>
   <slot></slot>
 </template>
+
 <script>
 export default {
   props: {
@@ -14,11 +15,6 @@ export default {
       default: "返回",
     },
   },
-  data() {
-    return {};
-  },
-  computed: {},
-  mounted() {},
   methods: {
     goBack() {
       this.$router.back();

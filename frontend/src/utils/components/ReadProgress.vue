@@ -6,23 +6,27 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
+
 const props = defineProps({
   tartget: {
     type: String,
     default: ".el-scrollbar__wrap",
   },
 });
+
 const read = ref(0);
 let scrollEl = null;
 let throttleTimer = null;
 
 const updateReadProgress = () => {
   if (!scrollEl) return;
+
   const total = scrollEl.scrollHeight - scrollEl.clientHeight;
   if (total <= 0) {
     read.value = 0;
     return;
   }
+
   const percent = ((scrollEl.scrollTop / total) * 100).toFixed(2);
   read.value = Math.min(Math.max(Number(percent), 0), 100);
 };
@@ -30,6 +34,7 @@ const updateReadProgress = () => {
 // 100ms 节流
 const throttledUpdate = () => {
   if (throttleTimer) return;
+
   throttleTimer = setTimeout(() => {
     updateReadProgress();
     throttleTimer = null;

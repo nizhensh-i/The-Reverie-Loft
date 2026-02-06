@@ -8,21 +8,25 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 import TypeIt from "typeit";
-const prop = defineProps({
+
+const props = defineProps({
   content: {
     type: String,
     default: "",
   },
 });
-const text = ref("");
-let typeitInstance = null; // 新增变量保存实例
+
+const text = ref(null);
+let typeitInstance = null;
 
 function runTypeIt(str) {
   if (typeitInstance) {
-    typeitInstance.destroy(); // 销毁旧实例
+    typeitInstance.destroy();
     typeitInstance = null;
   }
-  text.value.innerHTML = ""; // 清空旧内容
+
+  if (!text.value) return;
+
   typeitInstance = new TypeIt(text.value, {
     strings: str,
     cursorChar:
@@ -37,15 +41,10 @@ function runTypeIt(str) {
 }
 
 onMounted(() => {
-  runTypeIt(prop.content);
+  runTypeIt(props.content);
 });
 
-watch(
-  () => prop.content,
-  (val) => {
-    runTypeIt(val);
-  }
-);
+watch(() => props.content, runTypeIt);
 </script>
 
 <style lang="scss" scoped>

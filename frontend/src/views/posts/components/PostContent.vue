@@ -55,7 +55,7 @@ export default {
       this.processCodeBlocks();
     });
   },
-  computed: {},
+
   methods: {
     updateFontSize(size) {
       const contentDom = this.$refs.md?.$el?.querySelector(".v-show-content");
@@ -83,7 +83,6 @@ export default {
         const contentDom = this.$refs.md?.$el?.querySelector(".v-show-content");
         if (!contentDom) return;
 
-        // 监听图片加载
         const imgs = contentDom.querySelectorAll("img");
         let loadedCount = 0;
         const totalImgs = imgs.length;
@@ -129,12 +128,6 @@ export default {
           mask.style.height = "40px";
           mask.style.background =
             "linear-gradient(rgba(255,255,255,0), #fff 80%)";
-          // mask.style.display = 'flex'
-          // mask.style.alignItems = 'flex-end'
-          // mask.style.justifyContent = 'flex-end'
-          // mask.style.pointerEvents = 'none'
-          // mask.innerHTML =
-          //   '<div style="color:#888;font-size:18px;padding:20px 10px 10px 10px;">...</div>'
           contentDom.appendChild(mask);
         } else {
           contentDom.style.maxHeight = "none";
@@ -237,7 +230,6 @@ export default {
             }
 
             if (isClipboardApiAvailable) {
-              // 使用现代Clipboard API
               try {
                 console.log("使用Clipboard API复制文本");
                 await navigator.clipboard.writeText(codeText);
@@ -288,11 +280,9 @@ export default {
 
       // 为每个图片添加点击事件
       imgs.forEach((img, index) => {
-        // 移除之前的点击事件监听器
         img._imageClickHandler &&
           img.removeEventListener("click", img._imageClickHandler);
 
-        // 添加新的点击事件
         const handler = (e) => {
           e.preventDefault();
           e.stopPropagation();

@@ -45,10 +45,10 @@ import imageCfg from "@/config/image.js";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
 import { useCurrentUserStore } from "@/stores/user";
 import { useOtherUserStore } from "@/stores/otherUser";
+
 const currentUser = useCurrentUserStore();
 const otherUser = useOtherUserStore();
 
-// 正在输入状态
 const isTyping = ref(false);
 let typingTimer = null;
 let typingTimeoutTimer = null;
@@ -57,23 +57,22 @@ const config = reactive({
   user: {
     id: currentUser.userInfo.id,
     username: currentUser.priorityName,
-    avatar: currentUser.userInfo.image
-      ? currentUser.userInfo.image
-      : imageCfg.logOut,
+    avatar: currentUser.userInfo.image || imageCfg.logOut,
   },
   data: [],
-  emoji: emoji, // 可选
+  emoji: emoji,
 });
+
 const query = reactive({
-  current: 0, // 当前页数
-  size: 15, // 页大小
-  total: 0, // 评论总数
+  current: 0,
+  size: 15,
+  total: 0,
   real_time_receive: false,
 });
+
 onMounted(() => {
   currentUser.enterChat(otherUser.userInfo.id);
 
-  // 监听新消息
   currentUser.socket.on("new_message", (msg) => {
     if (currentUser.activeChat === msg.sender_id) {
       query.real_time_receive = true;
@@ -82,7 +81,6 @@ onMounted(() => {
     query.real_time_receive = false;
   });
 
-  // 监听typing事件
   currentUser.socket.on("chat:typing", (data) => {
     if (data.sender_id === otherUser.userInfo.id) {
       showTypingIndicator();
@@ -90,19 +88,16 @@ onMounted(() => {
   });
 });
 
-// 组件卸载时清理定时器
 onUnmounted(() => {
   clearTypingTimers();
 });
+
 function loadMore(finish) {
-  // 打开页面第一次加载
   if (!query.current) {
     chatApi.getMessageHistory(otherUser.userInfo.id, 1).then((res) => {
       if (res.code === 200) {
         finish([...res.data]);
-        if (res.total !== undefined) {
-          query.total = res.total;
-        }
+        query.total = res.total ?? 0;
         query.current = 2;
       }
     });
@@ -110,7 +105,7 @@ function loadMore(finish) {
     chatApi
       .getMessageHistory(otherUser.userInfo.id, query.current)
       .then((res) => {
-        if (res.code == 200) {
+        if (res.code === 200) {
           query.current++;
           finish([...res.data]);
         }
@@ -129,22 +124,19 @@ function onInput() {
     target_id: otherUser.userInfo.id,
   });
 
-  // 设置防抖定时器
   typingTimer = setTimeout(() => {
     typingTimer = null;
-  }, 300); // 300ms防抖
+  }, 300);
 }
 
 // 显示正在输入提示
 function showTypingIndicator() {
   isTyping.value = true;
 
-  // 清除之前的定时器
   if (typingTimeoutTimer) {
     clearTimeout(typingTimeoutTimer);
   }
 
-  // 3秒后隐藏提示（后端TTL也是3秒）
   typingTimeoutTimer = setTimeout(() => {
     isTyping.value = false;
     typingTimeoutTimer = null;
@@ -164,33 +156,19 @@ function clearTypingTimers() {
 }
 
 function submit(val, finish) {
-  let chat = {
+  const chat = {
     content: val,
     uid: currentUser.userInfo.id,
     user: {
       username: currentUser.priorityName,
-      avatar: currentUser.userInfo.image
-        ? currentUser.userInfo.image
-        : imageCfg.logOut,
+      avatar: currentUser.userInfo.image || imageCfg.logOut,
     },
     createTime: new Date(),
   };
-  currentUser.sendMessage(chat, finish);
 
-  // 发送消息时隐藏正在输入提示
+  currentUser.sendMessage(chat, finish);
   isTyping.value = false;
 }
-// 监听消息
-// function newMessage() {
-//   currentUser.socket.on('new_message', (msg) => {
-//     console.log('接收消息', msg)
-//     if (currentUser.activeChat === msg.sender_id) {
-//       query.real_time_receive = true
-//       real_data.data = [msg]
-//       loadMore()
-//     }
-//   })
-// }
 </script>
 
 <style lang="scss" scoped>

@@ -11,14 +11,14 @@ export default {
     SocialOAuthButtons,
   },
   data() {
-    var validateUser = (rule, value, callback) => {
+    const validateUser = (rule, value, callback) => {
       if (value === "") {
         callback(new Error("请输入账户"));
       } else {
         callback();
       }
     };
-    var validatePass = (rule, value, callback) => {
+    const validatePass = (rule, value, callback) => {
       if (value === "") {
         callback(new Error("请输入密码"));
       } else {
@@ -26,7 +26,6 @@ export default {
       }
     };
 
-    // 根据环境设置初始数据
     const isDev = import.meta.env.DEV;
     const initialData = {
       ruleForm: {
@@ -43,7 +42,6 @@ export default {
       oauthLoading: false,
     };
 
-    // 生产环境添加验证相关数据
     if (!isDev) {
       initialData.ruleForm.isPassing2 = false;
       initialData.imgPic = imageCfg.login;

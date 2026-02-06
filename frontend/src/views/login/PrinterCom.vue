@@ -12,17 +12,14 @@
 <script>
 export default {
   props: {
-    //内容
     printerInfo: {
       type: String,
       default: "",
     },
-    //速度
     duration: {
       type: Number,
       default: 100,
     },
-    //延迟
     delay: {
       type: Number,
       default: 3000,
@@ -47,43 +44,34 @@ export default {
   },
   created() {
     if (this.working) {
-      //this.work：引用函数
-      //this.work()：执行函数
       this.start(this.work);
     } else {
       this.content = this.printerInfo;
     }
   },
   watch: {
-    working(newVal) {
+    working() {
       this.toBegin();
     },
-    printerInfo(newVal) {
+    printerInfo() {
       this.toBegin();
     },
     cursor(cursor) {
-      //slice(start,end)：不包含end
       this.content = this.printerInfo.slice(0, cursor);
     },
   },
   beforeUnmount() {
-    clearInterval(this.timer);
+    this.clearTimers();
   },
   methods: {
-    /**
-     * 定时
-     */
     start(work) {
-      //延迟
       this.timeout = setTimeout(() => {
-        //速度
         this.timer = setInterval(() => {
           work();
           if (
             this.cursor === 0 ||
             (this.cursor === this.printerInfo.length && !this.once)
           ) {
-            //此处为了延迟
             clearInterval(this.timer);
             this.start(this.work);
           } else if (this.cursor === this.printerInfo.length && this.once) {
@@ -92,9 +80,6 @@ export default {
         }, this.duration);
       }, this.delay);
     },
-    /**
-     * 逻辑
-     */
     work() {
       let cursor = this.cursor;
       cursor += this.print ? 1 : -1;
@@ -113,16 +98,21 @@ export default {
     },
     toBegin() {
       this.cursor = 0;
-      if (this.timeout !== null) {
-        clearTimeout(this.timeout);
-        if (this.timer !== null) {
-          clearInterval(this.timer);
-        }
-      }
+      this.clearTimers();
       if (this.working) {
         this.start(this.work);
       } else {
         this.content = this.printerInfo;
+      }
+    },
+    clearTimers() {
+      if (this.timeout !== null) {
+        clearTimeout(this.timeout);
+        this.timeout = null;
+      }
+      if (this.timer !== null) {
+        clearInterval(this.timer);
+        this.timer = null;
       }
     },
   },

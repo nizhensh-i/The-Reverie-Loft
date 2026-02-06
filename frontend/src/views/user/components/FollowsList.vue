@@ -114,11 +114,11 @@ export default {
       this.$emit("load");
     },
     onSearch() {
-      if (this.tabAction == "followed") {
+      if (this.tabAction === "followed") {
         followApi
           .getFollowing(this.currentUser.userInfo.username, 1, this.value)
           .then((res) => {
-            if (res.code == 200) {
+            if (res.code === 200) {
               this.$emit("searchFollowed", res.data);
             }
           });
@@ -126,7 +126,7 @@ export default {
         followApi
           .getFan(this.currentUser.userInfo.username, 1, this.value)
           .then((res) => {
-            if (res.code == 200) {
+            if (res.code === 200) {
               this.$emit("searchFan", res.data);
             }
           });

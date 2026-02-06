@@ -5,12 +5,17 @@ import { useCurrentUserStore } from "@/stores/user";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
 import SkeletonUtil from "@/utils/components/SkeletonUtil.vue";
 import PageScroll from "@/utils/components/PageScroll.vue";
+
 export default {
   components: {
     PostCard,
     PageHeadBack,
     SkeletonUtil,
     PageScroll,
+  },
+  setup() {
+    const currentUser = useCurrentUserStore();
+    return { currentUser };
   },
   data() {
     return {
@@ -21,10 +26,6 @@ export default {
         comment: false,
       },
     };
-  },
-  setup() {
-    const currentUser = useCurrentUserStore();
-    return { currentUser };
   },
   computed: {
     isCommentManage() {
@@ -40,31 +41,30 @@ export default {
       commentApi.getAllComments(page).then((res) => {
         if (res.code === 200) {
           this.comments = res.data;
-          if (res.total !== undefined) {
-            this.comments_count = res.total;
-          }
-          this.loading.comment = false;
+          this.comments_count = res.total ?? 0;
         }
+        this.loading.comment = false;
       });
     },
     handleCurrentChange() {
       this.getAllComments(this.currentPage);
     },
-    disabled(item) {
-      commentApi.enableOrDisable(item.id, "disable").then((res) => {
-        if (res.code == 200) {
+    toggleCommentStatus(item, action) {
+      commentApi.enableOrDisable(item.id, action).then((res) => {
+        if (res.code === 200) {
           this.comments = res.data;
-          ElMessage.warning("已禁用");
+          ElMessage({
+            type: action === "enable" ? "success" : "warning",
+            message: action === "enable" ? "已开启" : "已禁用",
+          });
         }
       });
     },
+    disabled(item) {
+      this.toggleCommentStatus(item, "disable");
+    },
     enable(item) {
-      commentApi.enableOrDisable(item.id, "enable").then((res) => {
-        if (res.code == 200) {
-          this.comments = res.data;
-          ElMessage.success("已开启");
-        }
-      });
+      this.toggleCommentStatus(item, "enable");
     },
   },
 };

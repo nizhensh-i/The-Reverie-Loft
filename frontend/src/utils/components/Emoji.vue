@@ -40,7 +40,12 @@
 import emojiCfg from "@/config/emojiCfg.js";
 import EmojiIcon from "@/asset/svg/emojiIcon.svg?component";
 import Dingtalk from "@/asset/svg/dingtalk.svg?component";
+
 export default {
+  components: {
+    EmojiIcon,
+    Dingtalk,
+  },
   props: {
     emoName: {
       type: String,
@@ -50,10 +55,6 @@ export default {
       type: Array,
       default: () => [0, 8],
     },
-  },
-  components: {
-    EmojiIcon,
-    Dingtalk,
   },
   emits: ["selectEmoji"],
   data() {
@@ -68,28 +69,26 @@ export default {
   },
   computed: {
     emoji() {
-      if (this.emoName === "Heo_100") {
-        return emojiCfg.Heo_100;
-      } else if (this.emoName === "dingtalk") {
-        return emojiCfg.dingtalk;
-      }
-      return "";
+      return emojiCfg[this.emoName] || {};
     },
     prefixName() {
       return this.prefix[this.emoName];
     },
   },
   created() {
-    this.emojiListURL = this.getEmojiList(this.emoji.name);
+    if (this.emoji.name) {
+      this.emojiListURL = this.getEmojiList(this.emoji.name);
+    }
   },
   methods: {
     getEmojiList(emojiList) {
-      let emojiName;
-      let url;
-      let result = {};
+      const result = {};
+      const prefixName = this.prefixName;
+      const { baseUrl = "", suffix = "" } = this.emoji;
+
       for (let i = 0; i < emojiList.length; i++) {
-        emojiName = "[" + this.prefixName + ":" + emojiList[i] + "]";
-        url = this.emoji.baseUrl + emojiList[i] + this.emoji.suffix;
+        const emojiName = `[${prefixName}:${emojiList[i]}]`;
+        const url = `${baseUrl}${emojiList[i]}${suffix}`;
         result[emojiName] = url;
       }
       return result;

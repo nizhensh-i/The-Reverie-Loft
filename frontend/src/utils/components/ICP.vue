@@ -1,15 +1,14 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
 
-let beginYear = "2024";
-let currentYear = new Date().getFullYear();
-let author = {
+const beginYear = "2024";
+const currentYear = new Date().getFullYear();
+const author = {
   name: "随想阁楼",
   link: "https://github.com/nizhensh-i/loft",
   title: "随想阁楼",
 };
-// ICP 备案
-let icp = {
+const icp = {
   code: import.meta.env.VITE_ICP,
   link: "http://beian.miit.gov.cn/",
 };

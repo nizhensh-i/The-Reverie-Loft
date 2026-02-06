@@ -1,7 +1,8 @@
-<!-- 父组件使用
-  <WaitData content="加载中..." :stop_loading="loading" />
--->
 <script>
+/**
+ * 加载中提示组件
+ * @example <WaitData content="加载中..." :stop_loading="loading" />
+ */
 export default {
   props: {
     // 加载文案
@@ -20,7 +21,6 @@ export default {
       default: "center",
     },
   },
-  emits: ["doSearch"],
 };
 </script>
 

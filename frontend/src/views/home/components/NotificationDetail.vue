@@ -16,10 +16,6 @@ export default {
   components: {
     NotificationTitle,
   },
-  data() {
-    return {};
-  },
-  mounted() {},
   methods: {
     formatTime(time) {
       return date.dateShow(time);

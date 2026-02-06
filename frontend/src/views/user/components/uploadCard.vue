@@ -139,7 +139,6 @@ export default {
       });
     },
     async submitForm() {
-      // 模拟上传图片到云存储成功后，将电影信息添加到 movies 数组中
       const valid = await this.validateForm();
       if (valid) {
         this.movies = this.internalFormData.coverImage.map((item, index) => {
@@ -149,15 +148,7 @@ export default {
             name: this.internalFormData[`name${index + 1}`],
           };
         });
-        // console.log('预览信息:', this.movies)
-        // console.log('names:', this.imageNames)
         await this.submitBlog();
-
-        // 清空表单数据
-        // this.internalFormData.coverImage = []
-        // this.internalFormData.name = ''
-        // this.originalFiles = []
-
         this.compressedImages = [];
       }
     },
@@ -168,9 +159,7 @@ export default {
       }
       this.button.loading = true;
       try {
-        // 获取上传凭证
         const uploadToken = await this.getUploadToken();
-        // 上传图片
         const { imageKey, imageUrls } = await uploadFiles(
           this.compressedImages,
           this.currentUser.uploadInterestBaseUrl,
@@ -178,7 +167,6 @@ export default {
         );
         this.imageKey = imageKey;
         this.imageUrls = imageUrls;
-        // 更新本地缓存
         this.updateLocalUser(this.imageUrls, this.imageNames, this.type);
         imageApi
           .saveInterestImage(this.currentUser.userInfo.id, {
@@ -187,7 +175,7 @@ export default {
             type: this.type,
           })
           .then((response) => {
-            if (response.code == 200) {
+            if (response.code === 200) {
               this.button.loading = false;
               this.button.type = "success";
               this.button.text = "提交成功";
@@ -295,7 +283,7 @@ export default {
           @do-search="submitForm"
         >
           <el-icon>
-            <i-ep-Check v-if="button.icon == 'Check'" />
+            <i-ep-Check v-if="button.icon === 'Check'" />
             <i-ep-Pointer v-else />
           </el-icon>
         </ButtonClick>

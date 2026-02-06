@@ -4,15 +4,16 @@ import { useCurrentUserStore } from "@/stores/user";
 import { useOtherUserStore } from "@/stores/otherUser";
 import userApi from "@/api/user/userApi.js";
 import { useRouter } from "vue-router";
+
 const props = defineProps({ scope: Object, loading: Boolean, config: Object });
 
 const currentUser = useCurrentUserStore();
 const otherUser = useOtherUserStore();
-
 const router = useRouter();
+
 function followUser() {
   userApi.follow(props.scope.uName).then((res) => {
-    if (res.code == 200) {
+    if (res.code === 200) {
       ElMessage.success("关注成功");
       currentUser.addItemFollowed({
         id: props.scope.id,
@@ -23,9 +24,10 @@ function followUser() {
     }
   });
 }
+
 function unFollowUser() {
   userApi.unFollow(props.scope.uName).then((res) => {
-    if (res.code == 200) {
+    if (res.code === 200) {
       currentUser.delItemFollowed(props.scope.uName);
       ElMessage.success("已取消关注");
     } else {
@@ -33,20 +35,20 @@ function unFollowUser() {
     }
   });
 }
+
 function chat() {
   otherUser.userInfo = props.scope;
   router.push("/chat");
 }
+
 function toUser() {
-  // 接口都已改为根据用户id获取用户数据
   otherUser.userInfo.id = props.scope.id;
   router.push(`/user/${props.scope.uName}`);
 }
-const isF = computed(() => {
-  return currentUser.userInfo.followed.some((item) => {
-    return item.uName === props.scope.uName;
-  });
-});
+
+const isF = computed(() =>
+  currentUser.userInfo.followed.some((item) => item.uName === props.scope.uName)
+);
 </script>
 
 <template>

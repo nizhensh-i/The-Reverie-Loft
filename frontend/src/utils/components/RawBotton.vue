@@ -1,6 +1,7 @@
 <template>
   <button class="emoji-button1">按钮</button>
 </template>
+
 <script>
 export default {
   props: {
@@ -9,10 +10,6 @@ export default {
       default: false,
     },
   },
-  data() {
-    return {};
-  },
-  methods: {},
 };
 </script>
 <style lang="scss" scoped>

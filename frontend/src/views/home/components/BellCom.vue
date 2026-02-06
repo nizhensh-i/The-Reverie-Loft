@@ -68,7 +68,6 @@ export default {
     async initLoad() {
       // 加载本地数据
       const localData = this.currentUser.notice.Notification_data;
-      // 请求服务器数据
       const notifications = await notificationApi
         .getCurrentUserNotification()
         .then((res) => res.data);
@@ -86,12 +85,11 @@ export default {
     },
 
     handleMakeAll() {
-      let ids = [];
-      this.notifications.forEach((item) => {
+      const ids = this.notifications.map((item) => {
         item.isRead = true;
-        ids.push(item.id);
+        return item.id;
       });
-      notificationApi.markRead({ ids: ids });
+      notificationApi.markRead({ ids });
     },
     handleNoticeRead(item) {
       if (!item.isRead) {
@@ -145,7 +143,6 @@ export default {
       // 合并远程数据
       serverUnRead.forEach((n) => {
         if (!map.has(n.id) || !map.get(n.id).isRead) {
-          // 强制未读状态
           map.set(n.id, { ...n, isRead: false });
         }
       });
@@ -170,10 +167,10 @@ export default {
       this.classification.newPost = this.notifications.filter(
         (item) => item.type === "新文章"
       );
-      let post_notice =
+      const postNotice =
         this.classification.newPost.length > 0 &&
         this.classification.newPost.some((item) => !item.isRead);
-      if (post_notice) {
+      if (postNotice) {
         emitter.emit("followPost", this.classification.newPost);
       }
     },

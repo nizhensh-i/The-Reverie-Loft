@@ -234,14 +234,10 @@ export default {
   },
   methods: {
     checkimgLoaded: function () {
-      //生成旋转角度
-      var minDegree = this.minDegree;
-      var maxDegree = this.maxDegree;
-      var ranRotate = Math.floor(
-        minDegree + Math.random() * (maxDegree - minDegree)
-      ); //生成随机角度
+      const ranRotate = Math.floor(
+        this.minDegree + Math.random() * (this.maxDegree - this.minDegree)
+      );
       this.ranRotate = ranRotate;
-      // console.log("旋转" + ranRotate);
       this.imgStyle = {
         transform: `rotateZ(${ranRotate}deg)`,
       };
@@ -257,19 +253,16 @@ export default {
     },
     dragMoving: function (e) {
       if (this.isMoving && !this.isPassing) {
-        var _x = (e.pageX || e.touches[0].pageX) - this.x;
-        // console.log(_x, "_x");
-        var handler = this.$refs.handler;
+        const _x = (e.pageX || e.touches[0].pageX) - this.x;
+        const handler = this.$refs.handler;
         handler.style.left = _x + "px";
         this.$refs.progressBar.style.width = _x + this.height / 2 + "px";
-        var cRotate = Math.ceil(
+        const cRotate = Math.ceil(
           (_x / (this.width - this.height)) * this.maxDegree * this.factor
         );
-        // console.log(cRotate, "cRotate");
         this.cRotate = cRotate;
-        var rotate = this.ranRotate - cRotate;
         this.imgStyle = {
-          transform: `rotateZ(${rotate}deg)`,
+          transform: `rotateZ(${this.ranRotate - cRotate}deg)`,
         };
       }
     },
@@ -280,11 +273,10 @@ export default {
           this.imgStyle = {
             transform: `rotateZ(${this.ranRotate}deg)`,
           };
-          var that = this;
-          setTimeout(function () {
-            that.$refs.handler.style.left = "0";
-            that.$refs.progressBar.style.width = "0";
-            that.isOk = false;
+          setTimeout(() => {
+            this.$refs.handler.style.left = "0";
+            this.$refs.progressBar.style.width = "0";
+            this.isOk = false;
           }, 500);
           this.showErrorTip = true;
           this.$emit("passfail");
@@ -297,7 +289,7 @@ export default {
     passVerify: function () {
       this.$emit("update:isPassing", true);
       this.isMoving = false;
-      var handler = this.$refs.handler;
+      const handler = this.$refs.handler;
       handler.children[0].className = this.successIcon;
       this.$refs.progressBar.style.background = this.completedBg;
       this.$refs.message.style["-webkit-text-fill-color"] = "unset";
@@ -313,13 +305,11 @@ export default {
     reImg: function () {
       this.$emit("update:isPassing", false);
       const oriData = this.$options.data();
-      for (const key in oriData) {
-        if (Object.prototype.hasOwnProperty.call(oriData, key)) {
-          this[key] = oriData[key];
-        }
-      }
-      var handler = this.$refs.handler;
-      var message = this.$refs.message;
+      Object.keys(oriData).forEach((key) => {
+        this[key] = oriData[key];
+      });
+      const handler = this.$refs.handler;
+      const message = this.$refs.message;
       handler.style.left = "0";
       this.$refs.progressBar.style.width = "0";
       handler.children[0].className = this.handlerIcon;
@@ -334,7 +324,7 @@ export default {
   watch: {
     imgsrc: {
       immediate: false,
-      handler: function () {
+      handler() {
         this.reImg();
       },
     },

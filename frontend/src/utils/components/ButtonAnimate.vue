@@ -15,10 +15,6 @@ export default {
       default: false,
     },
   },
-  data() {
-    return {};
-  },
-  methods: {},
 };
 </script>
 <template>

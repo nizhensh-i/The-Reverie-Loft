@@ -326,7 +326,7 @@ export default {
   position: fixed;
   right: 20px;
   bottom: 80px;
-  z-index: 999;
+  z-index: 1555;
 
   .el-button {
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);

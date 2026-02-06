@@ -130,7 +130,6 @@ export default {
   },
   methods: {
     handleCellClick(route) {
-      // 关闭弹出框
       this.closeToggleMenu();
       this.$router.push(route);
     },
@@ -160,7 +159,6 @@ export default {
         return Promise.resolve(true);
       } else {
         this.currentUser.disconnectSocket();
-        // 同时撤销访问令牌和刷新令牌
         return Promise.all([
           authApi.revokeToken("access_token"),
           authApi.revokeToken("refresh_token"),
@@ -173,7 +171,6 @@ export default {
           })
           .catch((err) => {
             console.error("撤销令牌失败:", err);
-            // 即使撤销失败也执行登出
             this.closeToggleMenu();
             this.currentUser.logOut();
             this.initImage();
@@ -199,9 +196,9 @@ export default {
       this.photo.Avatar = this.currentUser.userInfo.image;
     },
     onSelect(action) {
-      if (action.text == "登录") {
+      if (action.text === "登录") {
         this.$router.push("/login");
-      } else if (action.text == "注册") {
+      } else if (action.text === "注册") {
         this.$router.push("/register");
       }
     },

@@ -39,7 +39,6 @@ export default {
     };
   },
   computed: {
-    // 预览按钮可点击
     isPre() {
       return (
         this.formDataMovie.coverImage.length > 0 ||
@@ -47,7 +46,6 @@ export default {
       );
     },
   },
-  mounted() {},
   methods: {
     pre() {
       if (this.formDataMovie.coverImage) {
@@ -69,7 +67,6 @@ export default {
         });
       }
       this.showPre = !this.showPre;
-      console.log("11", this.preData);
     },
     setActive(type) {
       this.activeInterest = type;

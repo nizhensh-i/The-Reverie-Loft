@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { copy } from "@/utils/common.js";
 import github from "@/asset/svg/github.svg?component";
 import email from "@/asset/svg/email.svg?component";
@@ -40,65 +40,50 @@ import bilibili from "@/asset/svg/bilibili.svg?component";
 import twitter from "@/asset/svg/twitter.svg?component";
 
 const props = defineProps({
-  // 社交链接配置
   links: {
     type: Object,
-    default() {
-      return {
-        github: "",
-        email: "",
-        qq: "",
-        wechat: "",
-        bilibili: "",
-        twitter: "",
-      };
-    },
+    default: () => ({
+      github: "",
+      email: "",
+      qq: "",
+      wechat: "",
+      bilibili: "",
+      twitter: "",
+    }),
   },
 });
 
 const socialLinks = [
-  {
-    name: "Github",
-    tip: "去 Github 看看",
-  },
-  {
-    name: "Email",
-    tip: "来封 Email ~",
-  },
-  {
-    name: "QQ",
-    tip: "有什么事吗",
-  },
-  {
-    name: "WeChat",
-    tip: "你懂的 ~",
-  },
-  {
-    name: "BiliBili",
-    tip: "(゜-゜)つロ 干杯 ~",
-  },
-  {
-    name: "Twitter",
-    tip: "你懂的 ~",
-  },
+  { name: "Github", tip: "去 Github 看看" },
+  { name: "Email", tip: "来封 Email ~" },
+  { name: "QQ", tip: "有什么事吗" },
+  { name: "WeChat", tip: "你懂的 ~" },
+  { name: "BiliBili", tip: "(゜-゜)つロ 干杯 ~" },
+  { name: "Twitter", tip: "你懂的 ~" },
 ];
 
-const value = socialLinks.map((item) => ({
-  ...item,
-  url: props.links[item.name.toLowerCase()],
-}));
-const dialogShow = ref(false);
-const dialogData = ref({
-  title: "",
-  url: "",
-});
+const value = computed(() =>
+  socialLinks.map((item) => ({
+    ...item,
+    url: props.links[item.name.toLowerCase()],
+  }))
+);
 
-// 社交链接提示
+const dialogShow = ref(false);
+const dialogData = ref({ title: "", url: "" });
 const socialTip = ref("通过这里联系我吧");
 
+const componentMap = {
+  Github: github,
+  Email: email,
+  QQ: qqchat,
+  WeChat: wechat,
+  BiliBili: bilibili,
+  Twitter: twitter,
+};
+
 function handleSocialClick(item) {
-  // 第一个社交链接直接跳转，其他的显示弹窗
-  if (item === value[0]) {
+  if (item === value.value[0]) {
     window.open(item.url, "_blank");
   } else {
     openDialog(item);
@@ -112,25 +97,15 @@ function openDialog(item) {
   };
   dialogShow.value = true;
 }
+
 function beforeClose(action) {
-  if (action !== "confirm") {
-    return Promise.resolve(true);
-  } else {
+  if (action === "confirm") {
     copy(dialogData.value.url);
-    return Promise.resolve(true);
   }
+  return Promise.resolve(true);
 }
 
-// 根据社交链接名称获取对应的SVG组件
 function getSvgComponent(name) {
-  const componentMap = {
-    Github: github,
-    Email: email,
-    QQ: qqchat,
-    WeChat: wechat,
-    BiliBili: bilibili,
-    Twitter: twitter,
-  };
   return componentMap[name];
 }
 </script>

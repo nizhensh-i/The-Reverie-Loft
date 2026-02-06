@@ -149,31 +149,26 @@ const loading = ref(false);
 const isLoading = ref(true);
 // 骨架屏延时配置（毫秒）
 const skeletonDelay = 500;
-// 模拟请求获取用户详细信息
+
 const showInfo = (uid, finish) => {
   loading.value = true;
-  let userInfo;
-  // 模拟获取后端根据uid查询用户信息
 
   userApi
     .getUser(uid)
     .then((res) => {
-      // 适配新的统一接口返回格式
       if (res.code === 200) {
         const u = res.data;
-        userInfo = {
-          username: u.name ? u.name : u.username,
+        const userInfo = {
+          username: u.name || u.username,
           level: 6,
           avatar: u.image,
           like: u.praised_count,
           attention: u.followed_count,
           follower: u.followers_count,
-
           id: u.id,
-          isFollowed:
-            currentUser.userInfo.followed.findIndex(
-              (item) => item.uName == u.username
-            ) != -1,
+          isFollowed: currentUser.userInfo.followed.some(
+            (item) => item.uName === u.username
+          ),
           uName: u.username,
           nickname: u.nickname,
         };
@@ -181,6 +176,7 @@ const showInfo = (uid, finish) => {
         finish(userInfo);
       } else {
         ElMessage.error(res.message || "获取用户信息失败");
+        loading.value = false;
       }
     })
     .catch((error) => {

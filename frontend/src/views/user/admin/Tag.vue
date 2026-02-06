@@ -109,14 +109,12 @@ const showInput = () => {
 };
 
 const tagAdd = computed(() => {
-  // dynamicTags 里有，但 originTag 里没有（按 name 判断）
   return dynamicTags.value
     .filter((tag) => !originTag.value.some((o) => o.name === tag.name))
     .map((item) => item.name);
 });
 
 const tagRemove = computed(() => {
-  // originTag 里有，但 dynamicTags 里没有（按 name 判断）
   return originTag.value
     .filter((tag) => !dynamicTags.value.some((d) => d.name === tag.name))
     .map((item) => item.name);
@@ -130,12 +128,11 @@ const handleInputConfirm = () => {
     inputValue.value = "";
     return;
   }
-  // 可批量输入tag
   const t = [...new Set(inputValue.value.split(" "))].filter(
     (item) => item != ""
   );
   for (const item of t) {
-    const exits = dynamicTags.value.some((tag) => tag.name == item);
+    const exits = dynamicTags.value.some((tag) => tag.name === item);
     if (exits) {
       ElMessage.warning(`标签${item}已存在`);
       return;
@@ -154,7 +151,7 @@ const handleInputConfirm = () => {
 };
 function getTagList() {
   userApi.get_tag_list().then((res) => {
-    if (res.code == 200) {
+    if (res.code === 200) {
       res.data.map((item) => {
         const temp = {
           name: item,
@@ -193,13 +190,11 @@ const beforeClose = (action) => {
     return editApi
       .updateTag({ tagAdd: tagAdd.value, tagRemove: tagRemove.value })
       .then((res) => {
-        if (res.code == 200) {
+        if (res.code === 200) {
           const addLength = tagAdd.value.length;
           if (addLength) {
-            // 对新增的元素，提交成功后更新颜色
             changeColor(addLength);
           }
-          // 更新原始Tag数组
           updateOriginTag(tagAdd.value, tagRemove.value);
           ElMessage.success("保存成功");
         } else {
@@ -209,7 +204,7 @@ const beforeClose = (action) => {
       });
   }
 };
-// 对新增的元素，提交成功后更新颜色
+
 function changeColor(addNum) {
   let startIndex = dynamicTags.value.length - addNum - 1;
   for (let i = startIndex; i < dynamicTags.value.length; i++) {
@@ -217,7 +212,6 @@ function changeColor(addNum) {
   }
 }
 
-// 对新增或者删除的元素，同时更新原始数组
 function updateOriginTag(tagAdd, tagRemove) {
   if (tagAdd.length) {
     tagAdd.forEach((tag) => {
@@ -232,7 +226,7 @@ function updateOriginTag(tagAdd, tagRemove) {
   if (tagRemove.length) {
     tagRemove.forEach((tag) => {
       const index = originTag.value.findIndex((item) => item.name === tag);
-      if (index != -1) {
+      if (index !== -1) {
         originTag.value.splice(index, 1);
       }
     });

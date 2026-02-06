@@ -26,22 +26,18 @@ export default {
     },
   },
   data() {
-    return {};
+    return {
+      touchTimer: null,
+    };
   },
   setup() {
     const otherUser = useOtherUserStore();
     return { otherUser };
   },
-  mounted() {},
   computed: {
     from_now() {
       return date.dateShow(this.post.timestamp);
     },
-  },
-  data() {
-    return {
-      touchTimer: null,
-    };
   },
   methods: {
     handleUserClick(event) {
@@ -63,7 +59,6 @@ export default {
     },
 
     handleTouchStart(event) {
-      // 为移动端提供更好的响应
       if (this.touchTimer) {
         clearTimeout(this.touchTimer);
       }
@@ -79,7 +74,6 @@ export default {
     },
 
     toUser(playMusic = false) {
-      // 接口都已改为根据用户id获取用户数据
       this.otherUser.userInfo.id = this.post.user_id;
       const url = playMusic
         ? `/user/${this.post.author}?playMusic=true`

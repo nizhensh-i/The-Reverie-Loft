@@ -61,7 +61,7 @@ export default {
     const currentUser = useCurrentUserStore();
     return { currentUser };
   },
-  mounted() {},
+
   watch: {
     "post.praise_num": {
       handler(newValue) {
@@ -87,16 +87,12 @@ export default {
     },
 
     handlePraiseClick(event) {
-      // 阻止事件冒泡和默认行为
       if (event) {
         event.preventDefault();
         event.stopPropagation();
       }
 
-      // 如果已经点赞，可以选择取消点赞或什么都不做
       if (this.hasPraised) {
-        // 这里可以添加取消点赞的逻辑，或者什么都不做
-        // 暂时保持已点赞状态，不做任何操作
         return;
       }
 
@@ -165,20 +161,17 @@ export default {
     beforeDelete(action) {
       if (action !== "confirm") {
         return Promise.resolve(true);
-      } else {
-        return postApi.deletePost(this.post.id).then((res) => {
-          if (res.code === 200) {
-            ElMessage.success("文章删除成功");
-            // 发送删除事件，通知文章列表页刷新
-            emitter.emit("postDeleted");
-            // 跳转到首页或文章列表页
-            this.$router.push("/posts");
-          } else {
-            ElMessage.error(res.message || "删除文章失败");
-          }
-          return res;
-        });
       }
+      return postApi.deletePost(this.post.id).then((res) => {
+        if (res.code === 200) {
+          ElMessage.success("文章删除成功");
+          emitter.emit("postDeleted");
+          this.$router.push("/posts");
+        } else {
+          ElMessage.error(res.message || "删除文章失败");
+        }
+        return res;
+      });
     },
   },
 };

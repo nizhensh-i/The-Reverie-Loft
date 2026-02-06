@@ -62,8 +62,6 @@ export default {
       immediate: true,
     },
   },
-  computed: {},
-  methods: {},
 };
 </script>
 

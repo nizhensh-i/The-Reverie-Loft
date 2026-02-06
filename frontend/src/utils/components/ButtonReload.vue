@@ -1,9 +1,9 @@
-<!-- 
-    重新加载数据按钮
-    **父组件
-    <<ButtonReload v-model:stop="isRotating" @click="reload"/>
- -->
 <script>
+/**
+ * 重新加载数据按钮
+ * @example
+ * <ButtonReload v-model:stop="isRotating" @click="reload" />
+ */
 export default {
   props: {
     stop: {
@@ -12,9 +12,6 @@ export default {
     },
   },
   emits: ["update:stop"],
-  data() {
-    return {};
-  },
   computed: {
     internalStop: {
       get() {
@@ -25,8 +22,6 @@ export default {
       },
     },
   },
-  mounted() {},
-  methods: {},
 };
 </script>
 

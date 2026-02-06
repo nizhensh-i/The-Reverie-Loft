@@ -69,20 +69,14 @@ export default {
     getPosts(page, tabName) {
       this.loading.card = true;
       if (tabName === "showFollowed" && this.showDot) {
-        const ids = [];
-        this.followPost.forEach((item) => {
-          ids.push(item.id);
-        });
-        // 全部标记为已读
-        notificationApi.markRead({ ids: ids }).then(() => {
+        const ids = this.followPost.map((item) => item.id);
+        notificationApi.markRead({ ids }).then(() => {
           this.showDot = false;
         });
       }
       postApi.getPosts(page, tabName).then((res) => {
         this.loading.card = false;
-        // 适配新的统一接口返回格式
         if (res.code === 200) {
-          // 新格式
           this.posts = res.data;
           this.posts_count = res.total || 0;
         }

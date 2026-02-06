@@ -17,7 +17,6 @@ export default {
     defaultFontSize: {
       handler(newVal) {
         this.fontSize = newVal;
-        // 当默认字体大小变化时，更新临时字体大小
         if (!this.visible) {
           this.tempFontSize = newVal;
         }
@@ -29,7 +28,6 @@ export default {
     toggleVisible() {
       this.visible = !this.visible;
       if (this.visible) {
-        // 打开时使用当前实际的字体大小
         this.tempFontSize = this.fontSize;
       }
     },

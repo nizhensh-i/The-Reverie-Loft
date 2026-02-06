@@ -25,19 +25,18 @@ export default {
       showEmoji: false,
     };
   },
-  mounted() {},
+
   methods: {
     normalPublish() {
       this.$emit("loadingBegin", true);
       this.loading = true;
-      // 替换换行符为 <br>
       const formattedContent = this.content.replace(/\n/g, "<br>");
       postApi
         .publish_post({ content: formattedContent, type: "text" })
         .then((res) => {
           this.loading = false;
           this.$emit("postsResult", res);
-          if (res.code == 200) {
+          if (res.code === 200) {
             this.content = "";
             ElMessage.success("发布成功!");
           } else {
@@ -54,7 +53,7 @@ export default {
       postApi.publish_post(this.richContent).then((res) => {
         this.loading = false;
         this.$emit("postsResult", res);
-        if (res.code == 200) {
+        if (res.code === 200) {
           this.$refs.md.clean();
           ElMessage.success("发布成功!");
         } else {

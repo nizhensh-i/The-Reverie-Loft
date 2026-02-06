@@ -1,15 +1,19 @@
 <script>
 import { Editor, Toolbar } from "@wangeditor/editor-for-vue";
+
 export default {
+  components: { Editor, Toolbar },
   props: {
     bodyInit: {
+      type: String,
       default: null,
     },
     bodyHtmlInit: {
+      type: String,
       default: null,
     },
   },
-  components: { Editor, Toolbar },
+  emits: ["content_change"],
   data() {
     return {
       editor: null,
@@ -31,11 +35,17 @@ export default {
   methods: {
     onCreated(editor) {
       this.editor = Object.seal(editor);
-      if (this.bodyInit) this.editor.insertText(this.bodyInit);
-      if (this.bodyHtmlInit) this.editor.setHtml(this.bodyHtmlInit);
-      // 监听内容变化
+
+      if (this.bodyInit) {
+        this.editor.insertText(this.bodyInit);
+      }
+      if (this.bodyHtmlInit) {
+        this.editor.setHtml(this.bodyHtmlInit);
+      }
+
       editor.on("change", () => {
         this.body = this.editor.getText();
+        this.bodyHtml = this.editor.getHtml();
         this.$emit("content_change", {
           body: this.body,
           bodyHtml: this.bodyHtml,
@@ -48,10 +58,9 @@ export default {
     },
   },
   beforeUnmount() {
-    const editor = this.editor;
-    if (editor == null) return;
-    // 组件销毁时，及时销毁编辑器
-    editor.destroy();
+    if (this.editor) {
+      this.editor.destroy();
+    }
   },
 };
 </script>

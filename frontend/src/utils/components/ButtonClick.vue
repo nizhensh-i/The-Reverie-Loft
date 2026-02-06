@@ -1,10 +1,10 @@
-<!-- 
-    搜索按钮
-    点击按钮后，向父组件发生点击事件，由父组件来完成点击后的具体执行
-    **父组件
-    <ButtonClick content="搜索" type="warning" :loading="loading.queryButton" @do-search="doSearch"></ButtonClick>
- -->
 <script>
+/**
+ * 搜索按钮
+ * 点击后向父组件触发点击事件，由父组件完成具体执行逻辑
+ * @example
+ * <ButtonClick content="搜索" type="warning" :loading="loading.queryButton" @do-search="doSearch" />
+ */
 export default {
   props: {
     // 按钮文字
@@ -37,19 +37,21 @@ export default {
       type: Boolean,
       default: true,
     },
+    // 是否禁用
     disabled: {
       type: Boolean,
       default: false,
     },
+    // 是否圆角
     round: {
       type: Boolean,
       default: false,
     },
+    // 按钮宽度
     width: {
       type: String,
       default: "auto",
     },
-    // 是否圆角按钮
   },
   emits: ["doSearch"],
 };

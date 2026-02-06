@@ -30,7 +30,7 @@ function isBelowViewport(el) {
 
 export default {
   mounted(el) {
-    if (!isBelowViewport) {
+    if (!isBelowViewport(el)) {
       return;
     }
     const animation = el.animate(
@@ -40,7 +40,7 @@ export default {
           opacity: 0,
         },
         {
-          transform: `translateY(0)`,
+          transform: "translateY(0)",
           opacity: 1,
         },
       ],

@@ -368,15 +368,8 @@ export default {
   </PageHeadBack>
 </template>
 <style lang="scss" scoped>
-.avatar {
+:deep(.el-upload) {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 1rem;
-
-  :deep(.el-upload) {
-    display: flex;
-  }
 }
 
 .el-checkbox-group {

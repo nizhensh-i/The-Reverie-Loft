@@ -78,7 +78,7 @@ export default {
   },
   name: "RegisterPage",
   data() {
-    var validateUser = (rule, value, callback) => {
+    const validateUser = (rule, value, callback) => {
       const reg = /^[a-zA-Z0-9_@.\-]{3,16}$/;
       if (value === "") {
         callback(new Error("请输入用户名"));
@@ -90,7 +90,7 @@ export default {
         callback();
       }
     };
-    var validatePass = (rule, value, callback) => {
+    const validatePass = (rule, value, callback) => {
       const reg = /^[a-zA-Z0-9_@.\-]{3,16}$/;
       if (value === "") {
         callback(new Error("请输入密码"));
@@ -102,7 +102,7 @@ export default {
         callback();
       }
     };
-    var validateConfirmPass = (rule, value, callback) => {
+    const validateConfirmPass = (rule, value, callback) => {
       if (value !== this.ruleForm.password) {
         callback(new Error("两次密码不一致"));
       } else {

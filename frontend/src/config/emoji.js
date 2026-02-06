@@ -1,6 +1,6 @@
 let prefix = "/static";
 
-let emoji = {
+const emoji = {
   faceList: [
     { type: "emoji", label: "😀" },
     { label: `${prefix}/emoji/smile.webp` },
@@ -117,8 +117,8 @@ let emoji = {
 };
 
 if (emoji) {
-  let obj = emoji.emojiList.reduce((acc, cur) => {
-    let arr = cur.filter((e) => e.type != "emoji");
+  const obj = emoji.emojiList.reduce((acc, cur) => {
+    const arr = cur.filter((e) => e.type !== "emoji");
     arr.forEach((e) => {
       acc[e.label] = e.value;
     });

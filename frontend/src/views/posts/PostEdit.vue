@@ -30,7 +30,6 @@ export default {
     next((vm) => {
       vm.postId = to.params.id;
       vm.getPostById(vm.postId);
-      vm.$nextTick(() => {});
     });
   },
   watch: {

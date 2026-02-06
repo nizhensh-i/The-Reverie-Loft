@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onActivated, onDeactivated, onMounted } from "vue";
+import { ref, onActivated, onMounted } from "vue";
 
 const props = defineProps({
   maxHeight: {
@@ -25,11 +25,6 @@ onActivated(() => {
   if (scrollbarRef.value && scrollTop.value > 0) {
     scrollbarRef.value.setScrollTop(scrollTop.value);
   }
-});
-
-// 组件停用时，滚动位置会自动保存在 scrollTop 中
-onDeactivated(() => {
-  // 可以在这里添加额外的清理逻辑
 });
 
 // 滚动到顶部的方法，供父组件调用

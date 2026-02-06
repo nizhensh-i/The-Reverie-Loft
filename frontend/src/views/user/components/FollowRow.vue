@@ -75,7 +75,7 @@ export default {
   emits: ["remove"],
   data() {
     return {
-      isFollowed: this.tabAction == "fan" ? this.follows.is_following : true,
+      isFollowed: this.tabAction === "fan" ? this.follows.is_following : true,
       isMutualFollow: false,
       dialogShow: false,
     };
@@ -85,10 +85,12 @@ export default {
     return { currentUser };
   },
   mounted() {
-    // 初始状态 是否互关
-    if (this.tabAction == "fan" && this.follows.is_following) {
+    if (this.tabAction === "fan" && this.follows.is_following) {
       this.isMutualFollow = true;
-    } else if (this.tabAction == "followed" && this.follows.is_following_back) {
+    } else if (
+      this.tabAction === "followed" &&
+      this.follows.is_following_back
+    ) {
       this.isMutualFollow = true;
     } else {
       this.isMutualFollow = false;
@@ -97,7 +99,7 @@ export default {
   methods: {
     followUser() {
       userApi.follow(this.follows.username).then((res) => {
-        if (res.code == 200) {
+        if (res.code === 200) {
           this.isFollowed = true;
           this.isMutualFollow = true;
           this.currentUser.addItemFollowed({
@@ -118,21 +120,20 @@ export default {
     beforeClose(action) {
       if (action !== "confirm") {
         return Promise.resolve(true);
-      } else {
-        return userApi.unFollow(this.follows.username).then((res) => {
-          if (res.code == 200) {
-            this.currentUser.delItemFollowed(this.follows.username);
-            ElMessage.success("已取消关注");
-            if (this.tabAction == "followed") {
-              this.$emit("remove", this.follows.username);
-            } else {
-              this.isFollowed = false;
-              this.isMutualFollow = false;
-            }
-          }
-          return res;
-        });
       }
+      return userApi.unFollow(this.follows.username).then((res) => {
+        if (res.code === 200) {
+          this.currentUser.delItemFollowed(this.follows.username);
+          ElMessage.success("已取消关注");
+          if (this.tabAction === "followed") {
+            this.$emit("remove", this.follows.username);
+          } else {
+            this.isFollowed = false;
+            this.isMutualFollow = false;
+          }
+        }
+        return res;
+      });
     },
   },
 };

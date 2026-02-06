@@ -94,8 +94,6 @@ export default {
   },
   computed: {},
 
-  mounted() {},
-
   watch: {
     loading: {
       handler(newVal) {
@@ -216,7 +214,6 @@ export default {
       postApi
         .getPost(postId)
         .then((res) => {
-          // 适配新的统一接口返回格式
           if (res.code === 200) {
             this.post = res.data;
           }
@@ -230,11 +227,9 @@ export default {
         });
     },
     updateFontSize(size) {
-      // 这里不再实时更新字体大小，只在预览中显示
-      // 不做任何操作，因为我们只想在保存时更新字体大小
+      // 不做任何操作，只在预览中显示
     },
     saveFontSizeSettings(size) {
-      // 只有在保存时才更新实际的字体大小
       this.fontSize = size;
       localStorage.setItem("article-font-size", size.toString());
     },
