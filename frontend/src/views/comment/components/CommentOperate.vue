@@ -76,13 +76,15 @@ const onCommand = (command) => {
   transform: translateY(-50%);
   right: 0;
 }
+
 .operation-warp {
   font-size: 16px;
   color: #9499a0;
   cursor: pointer;
   position: relative;
-}
-.operation-warp:hover {
-  color: #00aeec;
+
+  &:hover {
+    color: #00aeec;
+  }
 }
 </style>

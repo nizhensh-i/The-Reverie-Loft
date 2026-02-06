@@ -45,12 +45,12 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 #main-view {
-  height: calc(var(--vh, 1vh) * 100);
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: calc(var(--vh, 1vh) * 100);
   overflow: hidden;
-  position: relative;
 }
 </style>

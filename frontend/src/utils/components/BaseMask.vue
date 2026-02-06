@@ -20,13 +20,11 @@ export default {
   --mask-white: transparent;
   --mask-lightgray: rgba(0, 0, 0, 0.25);
 }
+
 .Mask {
-  z-index: 3;
   position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  inset: 0;
+  z-index: 3;
   background: var(--mask-dark);
 
   &.dark {

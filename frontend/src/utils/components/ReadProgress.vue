@@ -55,16 +55,16 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .read-progress {
   position: fixed;
-  top: 0px;
-  left: 0px;
+  top: 0;
+  left: 0;
   width: 100%;
-}
 
-.read-progress .el-progress--line {
-  margin-bottom: 15px;
-  max-width: 600px;
+  :deep(.el-progress--line) {
+    max-width: 600px;
+    margin-bottom: 15px;
+  }
 }
 </style>

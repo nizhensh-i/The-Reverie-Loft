@@ -114,44 +114,49 @@ export default {
 :deep(.el-card__body) {
   padding: 5px 20px;
 }
+
 .skeleton-container {
   display: flex;
   gap: 10px;
 }
+
 .item {
-  width: 80%;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 80%;
 }
 
 .container {
   display: flex;
   flex-direction: column;
-  .container-head {
+
+  &-head {
     display: flex;
-    flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    .container-head-left {
+
+    &-left {
       display: flex;
       justify-content: space-between;
-      width: 30%;
       align-items: center;
+      width: 30%;
     }
   }
-  .container-content {
-    width: 100%;
-    padding: 15px 20px;
+
+  &-content {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    width: 100%;
+    padding: 15px 20px;
   }
 }
+
 .block {
   width: 100%;
   height: 5px;
+  margin: 5px 0;
   background-color: #f5f7fa;
-  margin: 5px 0px;
 }
 </style>

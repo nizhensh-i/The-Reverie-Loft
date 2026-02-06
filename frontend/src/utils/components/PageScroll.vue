@@ -67,9 +67,11 @@ defineExpose({
   </el-scrollbar>
 </template>
 
-<style scoped>
-.page-scroll :deep(.el-scrollbar__thumb) {
-  background-color: rgba(0, 0, 0, 0.3);
-  width: 0px;
+<style lang="scss" scoped>
+.page-scroll {
+  :deep(.el-scrollbar__thumb) {
+    width: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+  }
 }
 </style>

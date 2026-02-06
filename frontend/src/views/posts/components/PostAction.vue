@@ -275,8 +275,8 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
   width: 100%;
+  padding: 8px 0;
 }
 
 .action-left,
@@ -308,10 +308,6 @@ export default {
     transform: scale(1.2);
     filter: brightness(1.1);
   }
-
-  // &.praised {
-  //   color: #ff6b6b;
-  // }
 }
 
 .action-count {
@@ -319,6 +315,7 @@ export default {
   color: #666;
 }
 
+// 点赞动画
 .praise-enter-active,
 .praise-leave-active {
   transition: all 0.3s ease;
@@ -330,6 +327,7 @@ export default {
   transform: scale(0.5);
 }
 
+// 响应式
 @media (max-width: 768px) {
   .post-action-container {
     padding: 6px 0;

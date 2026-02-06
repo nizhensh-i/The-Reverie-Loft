@@ -214,25 +214,25 @@ export default {
 .register-prompt {
   position: relative;
   margin: 24px 0;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  overflow: hidden;
   cursor: pointer;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
     border-color: rgba(64, 158, 255, 0.15);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
   }
 }
 
 .prompt-content {
-  padding: 24px;
   position: relative;
   z-index: 2;
+  padding: 24px;
 }
 
 .prompt-header {
@@ -242,16 +242,16 @@ export default {
 .community-stats {
   display: flex;
   gap: 20px;
-  margin-bottom: 16px;
   flex-wrap: wrap;
+  margin-bottom: 16px;
 
   .stat-item {
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    color: #606266;
     font-weight: 500;
+    color: #606266;
 
     .el-icon {
       font-size: 16px;
@@ -268,25 +268,23 @@ export default {
   }
 }
 
-.preview-content {
-  .preview-card {
-    padding: 16px;
-    background: rgba(245, 247, 250, 0.7);
-    border-radius: 12px;
-    border: 1px solid rgba(0, 0, 0, 0.03);
+.preview-content .preview-card {
+  padding: 16px;
+  background: rgba(245, 247, 250, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
 
-    h4 {
-      font-size: 15px;
-      font-weight: 600;
-      margin: 0 0 4px 0;
-      color: #303133;
-    }
+  h4 {
+    margin: 0 0 4px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #303133;
+  }
 
-    p {
-      font-size: 13px;
-      color: #606266;
-      margin: 0;
-    }
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: #606266;
   }
 }
 
@@ -298,8 +296,8 @@ export default {
 
   @media (max-width: 768px) {
     flex-direction: column;
-    text-align: center;
     gap: 20px;
+    text-align: center;
   }
 }
 
@@ -307,18 +305,18 @@ export default {
   flex: 1;
 
   h3 {
+    margin: 0 0 6px 0;
     font-size: 18px;
     font-weight: 600;
-    margin: 0 0 6px 0;
-    color: #303133;
     line-height: 1.4;
+    color: #303133;
   }
 
   p {
-    font-size: 14px;
-    color: #606266;
     margin: 0;
+    font-size: 14px;
     line-height: 1.5;
+    color: #606266;
   }
 
   @media (max-width: 768px) {
@@ -348,12 +346,12 @@ export default {
 .floating-elements {
   position: absolute;
   top: 0;
-  left: 0;
   right: 0;
   bottom: 0;
+  left: 0;
+  z-index: 1;
   pointer-events: none;
   opacity: 0.25;
-  z-index: 1;
 }
 
 .floating-item {

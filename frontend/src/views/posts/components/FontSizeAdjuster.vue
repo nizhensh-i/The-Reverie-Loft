@@ -112,31 +112,31 @@ export default {
 }
 
 .font-size-content {
-  padding: 0 20px;
-  height: 100%;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  padding: 0 20px;
 }
 
 .font-size-preview {
-  margin-bottom: 24px;
-  padding: 16px;
-  border-radius: 8px;
-  background-color: #f5f7fa;
   max-height: 200px;
+  padding: 16px;
+  margin-bottom: 24px;
   overflow: auto;
-}
+  background-color: #f5f7fa;
+  border-radius: 8px;
 
-.preview-title {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 12px;
-  color: #606266;
-}
+  .preview-title {
+    margin-bottom: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #606266;
+  }
 
-.preview-text {
-  line-height: 1.8;
-  color: #303133;
+  .preview-text {
+    line-height: 1.8;
+    color: #303133;
+  }
 }
 
 .font-size-control {
@@ -145,8 +145,8 @@ export default {
 
 .control-label {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 12px;
 
   span {
@@ -158,7 +158,7 @@ export default {
 .control-buttons {
   display: flex;
   justify-content: flex-end;
-  margin-top: 24px;
   gap: 12px;
+  margin-top: 24px;
 }
 </style>

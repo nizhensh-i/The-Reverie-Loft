@@ -218,7 +218,7 @@ export default {
     </PageScroll>
   </PageHeadBack>
 </template>
-<style scoped>
+<style lang="scss" scoped>
 .password-reset-container {
   max-width: 500px;
   margin: 0 auto;
@@ -228,25 +228,25 @@ export default {
 .reset-header {
   text-align: center;
   margin-bottom: 40px;
-}
 
-.reset-icon {
-  margin-bottom: 20px;
-}
+  .reset-icon {
+    margin-bottom: 20px;
+  }
 
-.reset-title {
-  font-size: 28px;
-  font-weight: 600;
-  color: #303133;
-  margin: 0 0 12px 0;
-  line-height: 1.2;
-}
+  .reset-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #303133;
+    margin: 0 0 12px;
+    line-height: 1.2;
+  }
 
-.reset-subtitle {
-  font-size: 16px;
-  color: #909399;
-  margin: 0;
-  line-height: 1.5;
+  .reset-subtitle {
+    font-size: 16px;
+    color: #909399;
+    margin: 0;
+    line-height: 1.5;
+  }
 }
 
 .reset-form-wrapper {
@@ -269,47 +269,49 @@ export default {
   border: 2px solid #e4e7ed;
   transition: all 0.3s ease;
   position: relative;
-}
+  animation: slideInUp 0.6s ease-out;
 
-.form-step.step-completed {
-  background: #f0f9ff;
-  border-color: #409eff;
-}
+  &:last-of-type {
+    margin-bottom: 24px;
+  }
 
-.form-step:last-of-type {
-  margin-bottom: 24px;
+  &.step-completed {
+    background: #f0f9ff;
+    border-color: #409eff;
+    animation: pulse 0.6s ease-in-out;
+  }
 }
 
 .step-header {
   display: flex;
   align-items: center;
   margin-bottom: 16px;
-}
 
-.step-number {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #e4e7ed;
-  color: #909399;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
-  margin-right: 12px;
-  transition: all 0.3s ease;
+  .step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e4e7ed;
+    color: #909399;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    margin-right: 12px;
+    transition: all 0.3s ease;
+  }
+
+  .step-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #303133;
+  }
 }
 
 .step-completed .step-number {
   background: #409eff;
   color: white;
-}
-
-.step-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #303133;
 }
 
 .step-completed .step-title {
@@ -320,10 +322,10 @@ export default {
   display: flex;
   gap: 12px;
   align-items: flex-start;
-}
 
-.email-input {
-  flex: 1;
+  .email-input {
+    flex: 1;
+  }
 }
 
 .send-code-btn {
@@ -359,7 +361,7 @@ export default {
   font-weight: 600;
 }
 
-/* Element Plus 组件样式覆盖 */
+// Element Plus 组件样式覆盖
 :deep(.el-form-item__label) {
   font-weight: 600;
   color: #303133;
@@ -371,10 +373,10 @@ export default {
   border-radius: 8px;
   box-shadow: 0 0 0 1px #dcdfe6;
   transition: all 0.3s ease;
-}
 
-:deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px #c0c4cc;
+  &:hover {
+    box-shadow: 0 0 0 1px #c0c4cc;
+  }
 }
 
 :deep(.el-input.is-focus .el-input__wrapper) {
@@ -385,11 +387,11 @@ export default {
   border-radius: 8px;
   font-weight: 500;
   transition: all 0.3s ease;
-}
 
-:deep(.el-button:hover) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  }
 }
 
 :deep(.el-countdown) {
@@ -398,7 +400,7 @@ export default {
   font-weight: 500;
 }
 
-/* 响应式设计 */
+// 响应式设计
 @media (max-width: 768px) {
   .password-reset-container {
     padding: 16px;
@@ -431,11 +433,7 @@ export default {
   }
 }
 
-/* 动画效果 */
-.form-step {
-  animation: slideInUp 0.6s ease-out;
-}
-
+// 动画效果
 @keyframes slideInUp {
   from {
     opacity: 0;
@@ -445,10 +443,6 @@ export default {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.step-completed {
-  animation: pulse 0.6s ease-in-out;
 }
 
 @keyframes pulse {

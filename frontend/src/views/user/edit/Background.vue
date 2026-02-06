@@ -222,23 +222,25 @@ async function submitdata() {
 :deep(.van-tab__panel) {
   padding: 10px;
 }
+
 .title {
   margin-left: 10%;
 }
+
 .scroll-container {
   max-height: 300px;
   overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 4px;
+  }
 }
 
-/* 覆盖全局的滚动条样式 */
-.scroll-container::-webkit-scrollbar {
-  width: 5px; /* 设置滚动条宽度 */
-}
-
-.scroll-container::-webkit-scrollbar-thumb {
-  background-color: #888; /* 设置滚动条颜色 */
-  border-radius: 4px; /* 设置滚动条圆角 */
-}
 .el-image {
   max-width: 100px;
   max-height: 170px;
@@ -251,33 +253,35 @@ async function submitdata() {
   aspect-ratio: 16 / 9;
   height: auto;
   border-radius: 6px;
+
+  .el-image__inner {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
-.tab-pc :deep(.el-image__inner) {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+
 .img-loading {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100px;
 }
+
 .el-col {
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 12px;
 }
+
 .el-pagination {
-  // 水平居中
   display: flex;
   justify-content: center;
 }
+
 .selected-item {
-  /* 选中时的边框颜色 */
   border-color: rgb(206, 160, 160);
-  /* 选中时的阴影 */
   box-shadow: 0 0 10px #e11111;
 }
 
@@ -286,13 +290,5 @@ async function submitdata() {
   justify-content: center;
   margin-top: 24px;
   gap: 16px;
-}
-.snackbar {
-  position: fixed;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9999;
-  min-width: 180px;
 }
 </style>

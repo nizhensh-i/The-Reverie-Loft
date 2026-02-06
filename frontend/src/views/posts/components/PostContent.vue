@@ -510,14 +510,14 @@ export default {
 
   // 代码块内的 code 元素样式
   pre code {
-    font-family: Consolas, Monaco, "Andale Mono", monospace;
-    background-color: transparent !important;
-    padding: 0 !important;
-    border-radius: 0 !important;
-    font-size: 0.9em;
-    color: inherit;
     display: block;
+    padding: 0 !important;
+    font-family: Consolas, Monaco, "Andale Mono", monospace;
+    font-size: 0.9em;
     line-height: 1.5;
+    color: inherit;
+    background-color: transparent !important;
+    border-radius: 0 !important;
   }
 
   // 行内代码样式

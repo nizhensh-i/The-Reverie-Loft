@@ -381,29 +381,98 @@ export default {
 <style scoped lang="scss">
 @use "./components/PostDetail.scss" as *;
 
+// 文章容器
+.post-detail-container {
+  margin: 0 auto;
+  padding: $spacing-md;
+  background-color: #fff;
+  border-radius: $border-radius-md;
+  box-shadow: 0 1px 3px $shadow-color;
+  @extend .fade-in;
+
+  @include mobile {
+    padding: $spacing-sm;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+.post-main-content {
+  margin-bottom: $spacing-lg;
+  @extend .slide-up;
+}
+
+.post-header {
+  margin-bottom: $spacing-md;
+}
+
+.post-content {
+  margin-bottom: $spacing-md;
+}
+
+.post-images {
+  margin-bottom: $spacing-lg;
+}
+
+.post-actions {
+  padding: $spacing-sm 0;
+  margin-bottom: $spacing-md;
+  border-top: 1px solid $border-color;
+  border-bottom: 1px solid $border-color;
+}
+
+.post-comments {
+  margin-top: $spacing-md;
+}
+
+// 骨架屏样式
+.skeleton-wrapper {
+  // min-height: calc(100vh - 200px);
+}
+
+.skeleton-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.skeleton-title-section {
+  margin-bottom: 32px;
+}
+
+.skeleton-content-section {
+  margin-bottom: 40px;
+}
+
+.skeleton-spacer {
+  height: 24px;
+}
+
+// 目录容器
 .toc-container {
   position: sticky;
   top: 20px;
   max-height: calc(100vh - 100px);
-  overflow-y: auto;
   padding: 16px;
   margin-bottom: 20px;
+  overflow-y: auto;
   background: #f8f9fa;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
   .toc-title {
-    font-weight: bold;
-    margin-bottom: 12px;
     padding-bottom: 8px;
+    margin-bottom: 12px;
+    font-weight: bold;
     border-bottom: 1px solid #eaeaea;
   }
 
   .toc-item {
     margin-bottom: 8px;
+    color: #555;
     cursor: pointer;
     transition: all 0.2s;
-    color: #555;
 
     &:hover {
       color: #409eff;
@@ -412,10 +481,11 @@ export default {
   }
 }
 
+// 搜索按钮
 .search-button {
   position: fixed;
-  bottom: 80px;
   right: 20px;
+  bottom: 80px;
   z-index: 999;
   transition: all 0.3s ease;
 
@@ -438,79 +508,12 @@ export default {
   }
 }
 
-.skeleton-wrapper {
-  // min-height: calc(100vh - 200px);
-}
-
-.skeleton-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 24px;
-  gap: 12px;
-}
-
-.skeleton-title-section {
-  margin-bottom: 32px;
-}
-
-.skeleton-content-section {
-  margin-bottom: 40px;
-}
-
-.skeleton-spacer {
-  height: 24px;
-}
-
-.post-detail-container {
-  margin: 0 auto;
-  padding: $spacing-md;
-  background-color: #fff;
-  border-radius: $border-radius-md;
-  box-shadow: 0 1px 3px $shadow-color;
-  @extend .fade-in;
-}
-
-.post-main-content {
-  margin-bottom: $spacing-lg;
-  @extend .slide-up;
-}
-
-.post-header {
-  margin-bottom: $spacing-md;
-}
-
-.post-content {
-  margin-bottom: $spacing-md;
-}
-
-.post-images {
-  margin-bottom: $spacing-lg;
-}
-
-.post-actions {
-  padding: $spacing-sm 0;
-  border-top: 1px solid $border-color;
-  border-bottom: 1px solid $border-color;
-  margin-bottom: $spacing-md;
-}
-
-.post-comments {
-  margin-top: $spacing-md;
-}
-
+// 其他样式
 .el-button {
   margin-top: $spacing-sm;
 }
 
 .Scrollbar {
   height: calc(100vh - var(--el-main-padding) * 2 - 50px);
-}
-
-@include mobile {
-  .post-detail-container {
-    padding: $spacing-sm;
-    border-radius: 0;
-    box-shadow: none;
-  }
 }
 </style>

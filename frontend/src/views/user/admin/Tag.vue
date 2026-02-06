@@ -244,14 +244,16 @@ function updateOriginTag(tagAdd, tagRemove) {
 .el-tag {
   margin: 10px;
 }
+
 .del {
   margin: 20px;
 }
+
 .but {
   position: fixed;
   bottom: 20px;
-  //   margin: 30px 0px;
   width: 100%;
+
   .el-button {
     margin-top: 10px;
     width: 45%;

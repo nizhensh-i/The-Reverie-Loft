@@ -341,7 +341,7 @@ export default {
   },
 };
 </script>
-<style scoped>
+<style lang="scss" scoped>
 .drag_verify {
   position: relative;
   background-color: #e8e8e8;
@@ -349,81 +349,91 @@ export default {
   overflow: hidden;
   border: 1px solid #e8e8e8;
   margin-top: 1vh;
+
+  .dv_handler {
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: move;
+
+    i {
+      color: #666;
+      padding-left: 0;
+      font-size: 16px;
+    }
+
+    .el-icon-circle-check {
+      color: #6c6;
+      margin-top: 9px;
+    }
+  }
+
+  .dv_progress_bar {
+    position: absolute;
+    height: 34px;
+    width: 0;
+  }
+
+  .dv_text {
+    position: absolute;
+    top: 0;
+    color: transparent;
+    user-select: none;
+    background: -webkit-gradient(
+      linear,
+      left top,
+      right top,
+      color-stop(0, var(--textColor)),
+      color-stop(0.4, var(--textColor)),
+      color-stop(0.5, #fff),
+      color-stop(0.6, var(--textColor)),
+      color-stop(1, var(--textColor))
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-size-adjust: none;
+    animation: slidetounlock 3s infinite;
+
+    * {
+      -webkit-text-fill-color: var(--textColor);
+    }
+  }
 }
-.drag_verify .dv_handler {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  cursor: move;
-}
-.drag_verify .dv_handler i {
-  color: #666;
-  padding-left: 0;
-  font-size: 16px;
-}
-.drag_verify .dv_handler .el-icon-circle-check {
-  color: #6c6;
-  margin-top: 9px;
-}
-.drag_verify .dv_progress_bar {
-  position: absolute;
-  height: 34px;
-  width: 0px;
-}
-.drag_verify .dv_text {
-  position: absolute;
-  top: 0px;
-  color: transparent;
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  user-select: none;
-  -o-user-select: none;
-  -ms-user-select: none;
-  background: -webkit-gradient(
-    linear,
-    left top,
-    right top,
-    color-stop(0, var(--textColor)),
-    color-stop(0.4, var(--textColor)),
-    color-stop(0.5, #fff),
-    color-stop(0.6, var(--textColor)),
-    color-stop(1, var(--textColor))
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  -webkit-text-size-adjust: none;
-  animation: slidetounlock 3s infinite;
-}
-.drag_verify .dv_text * {
-  -webkit-text-fill-color: var(--textColor);
-}
+
 .goFirst {
-  left: 0px !important;
+  left: 0 !important;
   transition: left 0.5s;
 }
+
 .goOrigin {
   transition: transform 0.5s;
 }
+
 .goKeep {
   transition: left 0.2s;
 }
+
 .goFirst2 {
-  width: 0px !important;
+  width: 0 !important;
   transition: width 0.5s;
 }
+
 .drag-verify-container {
   position: relative;
   line-height: 0;
   border-radius: 50%;
 }
+
 .move-bar {
   position: absolute;
   z-index: 100;
 }
+
 .clip-bar {
   position: absolute;
   background: rgba(255, 255, 255, 0.8);
 }
+
 .refresh {
   position: absolute;
   right: 5px;
@@ -432,6 +442,7 @@ export default {
   font-size: 20px;
   z-index: 200;
 }
+
 .tips {
   position: absolute;
   bottom: 25px;
@@ -441,15 +452,18 @@ export default {
   width: 100%;
   font-size: 12px;
   z-index: 200;
+
+  &.success {
+    background: rgba(255, 255, 255, 0.6);
+    color: green;
+  }
+
+  &.danger {
+    background: rgba(0, 0, 0, 0.6);
+    color: yellow;
+  }
 }
-.tips.success {
-  background: rgba(255, 255, 255, 0.6);
-  color: green;
-}
-.tips.danger {
-  background: rgba(0, 0, 0, 0.6);
-  color: yellow;
-}
+
 .check-img {
   width: 100%;
   border-radius: 50%;

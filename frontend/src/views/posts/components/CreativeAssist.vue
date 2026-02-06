@@ -96,13 +96,13 @@ export default {
     gap: 6px;
 
     .el-button {
+      height: auto;
       padding: 4px 10px;
       font-size: 12px;
-      height: auto;
-      border-radius: 4px;
-      border: 1px solid #eee;
       color: #666;
       background: #fff;
+      border: 1px solid #eee;
+      border-radius: 4px;
       transition: all 0.2s;
 
       &:hover:not(:disabled) {

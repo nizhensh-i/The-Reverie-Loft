@@ -367,11 +367,11 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 16px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
     width: 30%;
+    padding: 16px;
+    cursor: pointer;
+    border-radius: 12px;
+    transition: all 0.3s ease;
 
     &:hover {
       background-color: #f5f7fa;
@@ -387,14 +387,14 @@ export default {
     }
 
     .publish-icon {
-      font-size: 24px;
       margin-bottom: 8px;
+      font-size: 24px;
     }
 
     span {
+      margin-bottom: 4px;
       font-size: 16px;
       font-weight: 500;
-      margin-bottom: 4px;
     }
 
     .type-desc {
@@ -406,8 +406,8 @@ export default {
 }
 
 .publish-content {
-  margin-bottom: 24px;
   min-height: 200px;
+  margin-bottom: 24px;
 
   .text-publish,
   .image-publish,
@@ -428,6 +428,7 @@ export default {
 .image-text {
   margin-bottom: 5px;
 }
+
 .publish-actions {
   display: flex;
   justify-content: flex-end;

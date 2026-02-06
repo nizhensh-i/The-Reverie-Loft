@@ -192,7 +192,7 @@ export default {
   </PageHeadBack>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .email-binding-container {
   max-width: 600px;
   margin: 0 auto;
@@ -202,29 +202,29 @@ export default {
 .email-header {
   text-align: center;
   margin-bottom: 30px;
-}
 
-.email-icon {
-  background: linear-gradient(135deg, #409eff, #007bff);
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 15px;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
-}
+  .email-icon {
+    background: linear-gradient(135deg, #409eff, #007bff);
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
 
-.email-icon i {
-  font-size: 32px;
-  color: white;
-}
+    i {
+      font-size: 32px;
+      color: white;
+    }
+  }
 
-.email-header h1 {
-  margin: 10px 0;
-  font-size: 28px;
-  color: #303133;
+  h1 {
+    margin: 10px 0;
+    font-size: 28px;
+    color: #303133;
+  }
 }
 
 .subtitle {
@@ -263,12 +263,12 @@ export default {
   padding: 10px 0;
   background: #f5f7fa;
   border-radius: 6px;
-}
 
-:deep(.el-statistic__content) {
-  font-size: 14px;
-  color: #909399;
-  font-weight: 500;
+  :deep(.el-statistic__content) {
+    font-size: 14px;
+    color: #909399;
+    font-weight: 500;
+  }
 }
 
 .submit-btn {
@@ -286,25 +286,25 @@ export default {
   background: #f0f9ff;
   border-radius: 8px;
   border-left: 4px solid #409eff;
-}
 
-.tips p {
-  color: #303133;
-  font-weight: 500;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
+  p {
+    color: #303133;
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
 
-.tips ul {
-  padding-left: 20px;
-  margin: 8px 0 0;
-}
+  ul {
+    padding-left: 20px;
+    margin: 8px 0 0;
 
-.tips li {
-  color: #606266;
-  margin-bottom: 5px;
-  font-size: 13px;
+    li {
+      color: #606266;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+  }
 }
 </style>

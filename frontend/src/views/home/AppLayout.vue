@@ -46,28 +46,31 @@ const isUserPage = computed(() => route.name === "user");
   </el-config-provider>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 body {
-  /* 移动端点击可点击元素时，出现蓝色默认背景色 */
   -webkit-tap-highlight-color: transparent;
 }
+
 .el-container {
   width: 100%;
   height: 100%;
 }
+
 .el-header {
   height: 45px;
-  padding: 0px;
+  padding: 0;
 }
+
 .el-main {
-  padding: 0px 20px 0px 20px;
-}
-.el-main.no-padding {
-  padding: 0 !important;
+  padding: 0 20px;
+
+  &.no-padding {
+    padding: 0 !important;
+  }
 }
 
 .el-divider--horizontal {
-  margin: 2px 0px 0px 0px;
-  height: 0px;
+  height: 0;
+  margin: 2px 0 0;
 }
 </style>

@@ -312,35 +312,36 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .settings-content {
   padding: 12px;
 }
 
 .cell-group {
   margin-bottom: 16px;
-}
 
-.cell-group-title {
-  padding: 8px 16px;
-  font-size: 14px;
-  color: #969799;
-  background-color: #f7f8fa;
+  &-title {
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #969799;
+    background-color: #f7f8fa;
+  }
+
+  :deep(.van-cell.is-bound) {
+    --van-cell-label-color: #07c160;
+  }
 }
 
 .logout-button {
-  margin-top: 24px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-}
-.el-button {
-  width: 92%;
-}
+  justify-content: center;
+  margin-top: 24px;
 
-:deep(.van-cell.is-bound) {
-  --van-cell-label-color: #07c160;
+  .el-button {
+    width: 92%;
+  }
 }
 
 .password-warning-banner {

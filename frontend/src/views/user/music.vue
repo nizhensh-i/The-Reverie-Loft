@@ -130,7 +130,7 @@ watch(
 );
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .music-player-container {
   display: flex;
   justify-content: center;
@@ -141,17 +141,17 @@ watch(
   position: relative;
   cursor: pointer;
   transition: all 0.3s ease;
-}
 
-.music-avatar:hover {
-  transform: scale(1.05);
-}
+  &:hover {
+    transform: scale(1.05);
+  }
 
-.music-avatar img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+  }
 }
 
 .avatar-placeholder {
@@ -168,7 +168,6 @@ watch(
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  /* background: rgba(0, 0, 0, 0); */
   backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
@@ -186,29 +185,29 @@ watch(
   color: white;
   font-size: 12px;
   pointer-events: none;
-}
 
-.song-title {
-  position: absolute;
-  top: 1.6rem;
-  left: 0;
-  right: 0;
-  font-weight: bold;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0 10px;
-}
+  .song-title {
+    position: absolute;
+    top: 1.6rem;
+    left: 0;
+    right: 0;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 10px;
+  }
 
-.song-author {
-  position: absolute;
-  bottom: 1.4rem;
-  left: 0;
-  right: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0 10px;
+  .song-author {
+    position: absolute;
+    bottom: 1.4rem;
+    left: 0;
+    right: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 10px;
+  }
 }
 
 .player-controls {
@@ -216,16 +215,16 @@ watch(
   align-items: center;
   gap: 8px;
   z-index: 1;
-}
 
-.play-btn {
-  background: rgba(255, 255, 255, 0.3) !important;
-  border: none !important;
-  color: white !important;
-}
+  .play-btn {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border: none !important;
+    color: white !important;
 
-.play-btn:hover {
-  background: rgba(255, 255, 255, 0.4) !important;
+    &:hover {
+      background: rgba(255, 255, 255, 0.4) !important;
+    }
+  }
 }
 
 .loading-spinner {
@@ -259,16 +258,18 @@ watch(
   opacity: 0;
 }
 
-/* 移动端适配 */
+// 移动端适配
 @media (max-width: 768px) {
-  .song-title {
-    font-size: 10px;
-    top: 1.2rem;
-  }
+  .song-info {
+    .song-title {
+      font-size: 10px;
+      top: 1.2rem;
+    }
 
-  .song-author {
-    font-size: 9px;
-    bottom: 1rem;
+    .song-author {
+      font-size: 9px;
+      bottom: 1rem;
+    }
   }
 
   .player-controls {

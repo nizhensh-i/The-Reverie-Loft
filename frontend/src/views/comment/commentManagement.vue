@@ -111,7 +111,7 @@ export default {
     </PageScroll>
   </PageHeadBack>
 </template>
-<style scoped>
+<style lang="scss" scoped>
 .el-pagination {
   margin-bottom: 15px;
 }

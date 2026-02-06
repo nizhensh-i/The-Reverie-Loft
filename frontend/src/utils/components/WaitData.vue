@@ -31,25 +31,24 @@ export default {
     </el-text>
   </div>
 </template>
-<style scoped>
+<style lang="scss" scoped>
 div {
   width: 100%;
   text-align: v-bind(position);
 }
+
 .el-text {
   animation: blink 2s infinite;
 }
+
 @keyframes blink {
-  0% {
+  0%,
+  100% {
     color: white;
   }
 
   50% {
     color: black;
-  }
-
-  100% {
-    color: white;
   }
 }
 </style>

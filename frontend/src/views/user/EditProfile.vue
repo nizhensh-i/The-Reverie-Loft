@@ -367,33 +367,24 @@ export default {
     </PageScroll>
   </PageHeadBack>
 </template>
-<style scoped>
-.form-name,
-.form-city,
-.form-about {
-  margin-bottom: 30px;
-}
-
+<style lang="scss" scoped>
 .avatar {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-bottom: 1rem;
-}
-:deep(.el-upload) {
-  display: flex;
-}
-.sava-but {
-  margin-top: 20px;
+
+  :deep(.el-upload) {
+    display: flex;
+  }
 }
 
 .el-checkbox-group {
   width: 85%;
   margin: 0 auto;
 }
-.image {
-  margin-top: 35px;
-}
+
+.image,
 .socical-link {
   margin-top: 35px;
 }
@@ -401,6 +392,7 @@ export default {
 .tag-container {
   min-height: 10px;
 }
+
 .tag-but {
   width: 100%;
   margin: 20px auto;

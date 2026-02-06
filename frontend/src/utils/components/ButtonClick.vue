@@ -70,12 +70,13 @@ export default {
     {{ content }} <slot />
   </el-button>
 </template>
-<style scoped>
-.el-icon {
-  margin-right: 6px;
-  font-size: 1.2em;
-}
+<style lang="scss" scoped>
 .el-button {
   letter-spacing: 0.08em;
+
+  :deep(.el-icon) {
+    margin-right: 6px;
+    font-size: 1.2em;
+  }
 }
 </style>

@@ -130,9 +130,11 @@ export default {
 $primary-color: #409eff;
 $text-main: #2c3e50;
 $text-light: #909399;
+
 .head {
   height: 40px;
-  margin: 0px 0px 10px 0px;
+  margin-bottom: 10px;
+
   .user-info {
     display: flex;
     align-items: center;
@@ -147,7 +149,6 @@ $text-light: #909399;
       &:hover {
         opacity: 0.8;
       }
-
       &:active {
         transform: scale(0.95);
       }
@@ -171,10 +172,9 @@ $text-light: #909399;
         display: flex;
         align-items: center;
         gap: 4px;
-
+        margin-top: 2px;
         font-size: 11px;
         color: $text-light;
-        margin-top: 2px;
       }
     }
   }

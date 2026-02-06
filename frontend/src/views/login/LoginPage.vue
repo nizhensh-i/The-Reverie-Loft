@@ -296,27 +296,26 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+// 基础变量
+$font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+  "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+$primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$form-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
+$button-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+$button-hover-gradient: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+
 // 基础样式
 * {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
-    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-family: $font-family;
   -webkit-tap-highlight-color: transparent;
-}
-
-// 表单元素基础样式
-a,
-button,
-input,
-textarea {
-  outline: none;
 }
 
 // 主容器 - PC端双栏布局
 .login-container {
   display: flex;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
+  background: $form-gradient;
 
   // 左侧插画区域
   .login-illustration {
@@ -324,7 +323,7 @@ textarea {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: $primary-gradient;
     position: relative;
     overflow: hidden;
 
@@ -360,7 +359,6 @@ textarea {
               height: 80px;
               top: 0;
               left: 20%;
-              animation-delay: 0s;
             }
 
             &.shape-2 {
@@ -391,14 +389,14 @@ textarea {
       h1 {
         font-size: 48px;
         font-weight: 700;
-        margin: 0 0 16px 0;
+        margin: 0 0 16px;
         text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
 
       > p {
         font-size: 20px;
         line-height: 1.6;
-        margin: 0 0 40px 0;
+        margin: 0 0 40px;
         opacity: 0.9;
       }
     }
@@ -445,7 +443,7 @@ textarea {
   h2 {
     font-size: 32px;
     color: #323639;
-    margin: 0 0 12px 0;
+    margin: 0 0 12px;
     font-weight: 700;
   }
 
@@ -528,12 +526,12 @@ textarea {
     font-size: 16px;
     height: 44px;
     margin: 0;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: $button-gradient;
     border: none;
     font-weight: 600;
 
     &:hover {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      background: $button-hover-gradient;
       transform: translateY(-1px);
       box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
     }
@@ -549,13 +547,16 @@ textarea {
   margin: 24px 0;
 }
 
-// 注册区域
-.register-container {
-  // width: 100%;
+// 注册和访问区域
+.register-container,
+.visit {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 8px;
+}
+
+.register-container {
   margin-top: 24px;
 
   .register-account {
@@ -574,10 +575,7 @@ textarea {
   }
 }
 
-// 游客访问
 .visit {
-  display: flex;
-  justify-content: center;
   margin-top: 16px;
 
   .register {
@@ -598,9 +596,11 @@ textarea {
   100% {
     transform: translateY(0) rotate(0deg);
   }
+
   33% {
     transform: translateY(-20px) rotate(120deg);
   }
+
   66% {
     transform: translateY(20px) rotate(240deg);
   }
@@ -611,6 +611,7 @@ textarea {
   100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.05);
   }
@@ -620,12 +621,13 @@ textarea {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
 }
 
-// 响应式设计 - 移动端保持原有样式
+// 响应式设计
 @media screen and (max-width: 768px) {
   .login-container {
     flex-direction: column;
@@ -646,18 +648,17 @@ textarea {
     }
   }
 
-  // 移动端表单样式保持原有设置
-  .el-form {
-    width: 90%;
-    padding: 0 20px;
-    margin: 20px 0;
-  }
-
+  .el-form,
   .el-row,
   .login-button,
   .register-container,
   .visit {
     padding: 0 20px;
+  }
+
+  .el-form {
+    width: 90%;
+    margin: 20px 0;
   }
 
   .header {
@@ -673,12 +674,9 @@ textarea {
   }
 }
 
-// 平板适配
 @media screen and (max-width: 1024px) and (min-width: 769px) {
-  .login-container {
-    .login-form-area {
-      width: 400px;
-    }
+  .login-container .login-form-area {
+    width: 400px;
   }
 }
 </style>

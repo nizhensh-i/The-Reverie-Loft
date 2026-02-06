@@ -211,9 +211,9 @@ export default {
 }
 
 .gradient-text {
-  margin: 0px 0px 10px 0px;
   position: relative;
   display: inline-block;
+  margin-bottom: 10px;
 
   &::after {
     content: "";
@@ -234,7 +234,6 @@ export default {
 // }
 .demo-tabs {
   margin-top: 20px;
-  /* 当内容较少时，让icp出现在最下方，而不是中间 */
   min-height: 47vh;
 
   :deep(.el-tabs__header) {
@@ -251,13 +250,13 @@ export default {
     height: 40px;
     line-height: 40px;
     padding: 0 20px;
+    margin-right: 10px;
     font-size: 15px;
     color: #606266;
+    background-color: #f5f7fa;
     border: none;
     border-radius: 20px;
     transition: all 0.3s ease;
-    margin-right: 10px;
-    background-color: #f5f7fa;
 
     &.is-active {
       color: #fff;

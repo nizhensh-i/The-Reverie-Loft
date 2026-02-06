@@ -81,6 +81,12 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+// 变量定义
+$text-primary: #333;
+$text-secondary: #999;
+$text-muted: #666;
+$text-accent: #444;
+
 .legal-content {
   padding: 60px 40px 80px;
   margin: 0 auto;
@@ -89,14 +95,14 @@ export default {
 .page-title {
   font-size: 32px;
   font-weight: 500;
-  margin: 0 0 8px 0;
-  color: #333;
+  margin: 0 0 8px;
+  color: $text-primary;
 }
 
 .last-updated {
   font-size: 13px;
-  color: #999;
-  margin: 0 0 40px 0;
+  color: $text-secondary;
+  margin: 0 0 40px;
 }
 
 .legal-section {
@@ -105,14 +111,14 @@ export default {
   h2 {
     font-size: 18px;
     font-weight: 500;
-    margin: 0 0 16px 0;
-    color: #444;
+    margin: 0 0 16px;
+    color: $text-accent;
   }
 
   p {
     font-size: 15px;
     line-height: 1.8;
-    color: #666;
+    color: $text-muted;
     margin: 0;
     font-weight: 350;
   }

@@ -194,52 +194,50 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 * {
-  font-family: -apple-system, blinkmacsystemfont, "Segoe UI", roboto,
-    "Helvetica Neue", arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   font-size: 14px;
   -webkit-tap-highlight-color: transparent;
-  padding-left: 3px;
 }
 
 .header {
-  margin-top: 5vh;
-  margin-bottom: 2rem;
-}
+  margin: 5vh 0 2rem;
 
-h2 {
-  font-size: 30px;
-  color: #323639;
-  margin: 0px 0px 12px 0px;
-}
+  h2 {
+    font-size: 30px;
+    color: #323639;
+    margin: 0 0 12px;
+  }
 
-p {
-  color: #71717a;
+  p {
+    color: #71717a;
+  }
 }
 
 .el-form {
   width: 95%;
-}
 
-.el-form-item {
-  padding-bottom: 0.8rem;
-}
+  .el-form-item {
+    padding-bottom: 0.8rem;
+  }
 
-.el-input {
-  height: 38px;
-}
+  .el-input {
+    height: 38px;
 
-:deep(.el-input__wrapper) {
-  border-radius: 7px;
-}
+    :deep(.el-input__wrapper) {
+      border-radius: 7px;
+    }
+  }
 
-.el-button {
-  width: 95%;
-  letter-spacing: 2px;
-  margin-left: 9px;
-  margin-top: 1rem;
+  .el-button {
+    width: 95%;
+    letter-spacing: 2px;
+    margin-left: 9px;
+    margin-top: 1rem;
+  }
 }
 
 .security-info {
@@ -248,13 +246,11 @@ p {
   color: #71717a;
   font-size: 0.9rem;
   margin-bottom: 1rem;
-  padding-left: 5px;
-}
 
-.security-info .el-icon {
-  margin-right: 8px;
-  font-size: 16px;
-  color: #71717a;
+  .el-icon {
+    margin-right: 8px;
+    font-size: 16px;
+  }
 }
 
 .login-container {
@@ -262,13 +258,13 @@ p {
   display: flex;
   justify-content: center;
   margin-top: 3vh;
-}
 
-.login-account {
-  color: #323639;
-}
+  .login-account {
+    color: #323639;
+  }
 
-.login {
-  color: #006be6;
+  .login {
+    color: #006be6;
+  }
 }
 </style>

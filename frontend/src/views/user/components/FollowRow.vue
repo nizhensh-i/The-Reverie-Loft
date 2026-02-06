@@ -137,7 +137,7 @@ export default {
   },
 };
 </script>
-<style scoped>
+<style lang="scss" scoped>
 .van-cell:active {
   background: #f5f7fa;
 }

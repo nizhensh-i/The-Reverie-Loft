@@ -156,7 +156,7 @@ function goToLogin() {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .oauth-callback {
   min-height: 100vh;
   display: flex;
@@ -173,26 +173,26 @@ function goToLogin() {
   width: min(720px, 92vw);
   text-align: center;
   margin-top: 18vh;
-}
 
-.title {
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: rgba(0, 0, 0, 0.88);
-  margin: 6px 0 8px;
-}
+  .title {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: rgba(0, 0, 0, 0.88);
+    margin: 6px 0 8px;
+  }
 
-.subtitle {
-  font-size: 15px;
-  line-height: 1.45;
-  color: rgba(0, 0, 0, 0.56);
-  margin: 0 0 24px;
-}
+  .subtitle {
+    font-size: 15px;
+    line-height: 1.45;
+    color: rgba(0, 0, 0, 0.56);
+    margin: 0 0 24px;
+  }
 
-.back-button {
-  margin-top: 58px;
-  min-width: 140px;
+  .back-button {
+    margin-top: 58px;
+    min-width: 140px;
+  }
 }
 
 .status {
@@ -200,29 +200,53 @@ function goToLogin() {
   justify-content: center;
   margin-bottom: 12px;
   min-height: 34px;
-}
 
-.dot-spinner {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-}
+  .dot-spinner {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
 
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(0, 113, 227, 0.9);
-  opacity: 0.35;
-  animation: bounce 1s infinite ease-in-out;
-}
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(0, 113, 227, 0.9);
+      opacity: 0.35;
+      animation: bounce 1s infinite ease-in-out;
 
-.dot:nth-child(2) {
-  animation-delay: 0.15s;
-}
+      &:nth-child(2) {
+        animation-delay: 0.15s;
+      }
 
-.dot:nth-child(3) {
-  animation-delay: 0.3s;
+      &:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+    }
+  }
+
+  .glyph {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    user-select: none;
+    color: rgba(0, 0, 0, 0.82);
+
+    &.success {
+      background: rgba(52, 199, 89, 0.16);
+      border: 1px solid rgba(52, 199, 89, 0.28);
+    }
+
+    &.error {
+      background: rgba(255, 59, 48, 0.14);
+      border: 1px solid rgba(255, 59, 48, 0.26);
+    }
+  }
 }
 
 @keyframes bounce {
@@ -232,33 +256,10 @@ function goToLogin() {
     transform: translateY(0);
     opacity: 0.35;
   }
+
   40% {
     transform: translateY(-4px);
     opacity: 1;
   }
-}
-
-.glyph {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1;
-  user-select: none;
-  color: rgba(0, 0, 0, 0.82);
-}
-
-.glyph.success {
-  background: rgba(52, 199, 89, 0.16);
-  border: 1px solid rgba(52, 199, 89, 0.28);
-}
-
-.glyph.error {
-  background: rgba(255, 59, 48, 0.14);
-  border: 1px solid rgba(255, 59, 48, 0.26);
 }
 </style>

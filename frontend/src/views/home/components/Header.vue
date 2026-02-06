@@ -209,22 +209,21 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .header-container {
-  width: 100%;
-  height: 48px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  height: 48px;
   padding: 0 24px;
   box-sizing: border-box;
 }
 
-/* 左侧区域 - 确保元素紧挨 */
 .header-left {
   display: flex;
-  align-items: center;
   flex-shrink: 0;
+  align-items: center;
 }
 
 .home-icon {
@@ -236,64 +235,60 @@ export default {
   border-radius: 8px 0 0 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-right: 0;
-}
 
-.home-icon:hover {
-  transform: translateY(-1px);
+  &:hover {
+    transform: translateY(-1px);
+  }
 }
 
 .daily-sentence {
   height: 40px;
   min-width: 250px;
+  padding: 0 12px;
   font-size: 14px;
   line-height: 40px;
-  padding: 0 12px;
-  border-radius: 0 8px 8px 0;
   white-space: nowrap;
   overflow: hidden;
+  border-radius: 0 8px 8px 0;
 }
 
-/* 中间空白区域 */
 .header-center {
   flex: 1;
   min-width: 0;
 }
 
-/* 右侧区域 - 确保元素紧挨 */
 .header-right {
   display: flex;
-  align-items: center;
   flex-shrink: 0;
+  align-items: center;
 }
 
 .notification-icon {
-  width: 40px;
-  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 40px;
+  height: 40px;
   border-radius: 8px 0 0 8px;
-  transition: all 0.2s ease;
   cursor: pointer;
-  margin-right: 0;
+  transition: all 0.2s ease;
 }
 
 .user-avatar {
   display: flex;
   align-items: center;
   height: 40px;
-  border-radius: 0 8px 8px 0;
   padding: 0 8px;
-}
+  border-radius: 0 8px 8px 0;
 
-.user-avatar .el-avatar {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+  .el-avatar {
+    cursor: pointer;
+    transition: all 0.2s ease;
 
-.user-avatar .el-avatar:hover {
-  transform: scale(1.05);
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
 }
 
 .van-cell {
@@ -301,22 +296,21 @@ export default {
 }
 
 .van-divider {
-  margin: 10px 0px 0px 0px;
+  margin: 10px 0 0;
 }
 
-/* 响应式适配 */
 @media (max-width: 768px) {
   .header-container {
-    padding: 0 16px;
     height: 48px;
+    padding: 0 16px;
   }
 
   .daily-sentence {
     max-width: 200px;
-    font-size: 13px;
     height: 36px;
+    padding: 0 8px 0 0;
+    font-size: 13px;
     line-height: 36px;
-    padding: 0 8px 0px 0px;
   }
 
   .header-right {

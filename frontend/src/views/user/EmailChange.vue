@@ -295,7 +295,7 @@ export default {
   </PageHeadBack>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .email-change-container {
   max-width: 600px;
   margin: 0 auto;
@@ -305,29 +305,29 @@ export default {
 .email-header {
   text-align: center;
   margin-bottom: 30px;
-}
 
-.email-icon {
-  background: linear-gradient(135deg, #e6a23c, #f56c6c);
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 15px;
-  box-shadow: 0 4px 12px rgba(230, 162, 60, 0.3);
-}
+  .email-icon {
+    background: linear-gradient(135deg, #e6a23c, #f56c6c);
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    box-shadow: 0 4px 12px rgba(230, 162, 60, 0.3);
 
-.email-icon i {
-  font-size: 32px;
-  color: white;
-}
+    i {
+      font-size: 32px;
+      color: white;
+    }
+  }
 
-.email-header h1 {
-  margin: 10px 0;
-  font-size: 28px;
-  color: #303133;
+  h1 {
+    margin: 10px 0;
+    font-size: 28px;
+    color: #303133;
+  }
 }
 
 .subtitle {
@@ -348,52 +348,51 @@ export default {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 30px;
-}
 
-.step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 80px;
-}
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 80px;
 
-.step-number {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background-color: #ebeef5;
-  color: #909399;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  margin-bottom: 8px;
-  transition: all 0.3s;
-}
+    .step-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background-color: #ebeef5;
+      color: #909399;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-bottom: 8px;
+      transition: all 0.3s;
+    }
 
-.step.active .step-number {
-  background-color: #409eff;
-  color: white;
-}
+    .step-text {
+      font-size: 12px;
+      color: #909399;
+      text-align: center;
+      transition: all 0.3s;
+    }
 
-.step-text {
-  font-size: 12px;
-  color: #909399;
-  text-align: center;
-  transition: all 0.3s;
-}
+    &.active .step-number {
+      background-color: #409eff;
+      color: white;
+    }
 
-.step.active .step-text {
-  color: #409eff;
-  font-weight: 500;
-}
+    &.active .step-text {
+      color: #409eff;
+      font-weight: 500;
+    }
+  }
 
-.step-line {
-  flex: 1;
-  height: 2px;
-  background-color: #ebeef5;
-  margin: 0 10px;
-  margin-bottom: 20px;
+  .step-line {
+    flex: 1;
+    height: 2px;
+    background-color: #ebeef5;
+    margin: 0 10px 20px;
+  }
 }
 
 .input-group {
@@ -419,12 +418,12 @@ export default {
   padding: 10px 0;
   background: #f5f7fa;
   border-radius: 6px;
-}
 
-:deep(.el-statistic__content) {
-  font-size: 14px;
-  color: #909399;
-  font-weight: 500;
+  :deep(.el-statistic__content) {
+    font-size: 14px;
+    color: #909399;
+    font-weight: 500;
+  }
 }
 
 .verification-hint {
@@ -440,19 +439,19 @@ export default {
   background: #f9f9f9;
   border-radius: 8px;
   border: 1px dashed #dcdfe6;
-}
 
-.security-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 15px;
-  color: #606266;
-  font-weight: 500;
-}
+  .security-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+    color: #606266;
+    font-weight: 500;
 
-.security-header i {
-  color: #f56c6c;
+    i {
+      color: #f56c6c;
+    }
+  }
 }
 
 .submit-btn {
@@ -470,26 +469,26 @@ export default {
   background: #fff9f9;
   border-radius: 8px;
   border-left: 4px solid #f56c6c;
-}
 
-.notice-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #f56c6c;
-  font-weight: 500;
-  margin-bottom: 10px;
-}
+  .notice-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #f56c6c;
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
 
-.notice ul {
-  padding-left: 20px;
-  margin: 8px 0 0;
-}
+  ul {
+    padding-left: 20px;
+    margin: 8px 0 0;
 
-.notice li {
-  color: #606266;
-  margin-bottom: 5px;
-  font-size: 13px;
+    li {
+      color: #606266;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+  }
 }
 
 .loading-state {

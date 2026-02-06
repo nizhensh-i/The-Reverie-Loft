@@ -992,15 +992,12 @@ const calTableHeight = async () => {
     }
   }
 
-  // 桌面端表格在移动端隐藏
   .desktop-table {
     display: none;
   }
 }
 
-// 桌面端适配
 @media (min-width: 769px) {
-  // 移动端卡片在桌面端隐藏
   .mobile-music-list {
     display: none;
   }

@@ -14,9 +14,10 @@ defineProps({
 
 <style lang="scss" scoped>
 .ban-touch-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 999;
   width: 100%;
   height: 100%;
-  z-index: 999;
-  position: absolute;
 }
 </style>

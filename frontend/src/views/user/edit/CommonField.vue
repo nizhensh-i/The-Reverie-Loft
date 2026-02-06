@@ -173,9 +173,11 @@ function getAttr(type) {
   text-align: center;
   margin-bottom: 20px;
 }
+
 img {
   background-color: black;
 }
+
 .icon {
   width: 32px;
   height: 32px;

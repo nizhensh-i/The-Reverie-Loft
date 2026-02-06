@@ -531,7 +531,7 @@ export default {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 0;
   transform: translateY(20px);
-  min-height: 240px; // 确保有最小高度
+  min-height: 240px;
   display: flex;
   flex-direction: column;
 
@@ -549,11 +549,9 @@ export default {
       opacity: 1;
     }
 
-    .image-info {
-      .image-actions {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .image-info .image-actions {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 
@@ -642,48 +640,48 @@ export default {
   );
   border-radius: 0 0 12px 12px;
   border-top: 1px solid rgba(240, 240, 240, 0.8);
-}
 
-.image-name {
-  font-size: 13px;
-  color: #303133;
-  font-weight: 500;
-  margin-bottom: 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: center;
-  letter-spacing: 0.5px;
-}
+  .image-name {
+    font-size: 13px;
+    color: #303133;
+    font-weight: 500;
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
 
-.image-actions {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  .image-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-  .el-button {
-    border-radius: 8px;
-    font-size: 12px;
-    padding: 4px 8px;
-    height: 28px;
+    .el-button {
+      border-radius: 8px;
+      font-size: 12px;
+      padding: 4px 8px;
+      height: 28px;
 
-    &.is-link {
-      border: none;
-      background: rgba(64, 158, 255, 0.1);
-
-      &:hover {
-        background: rgba(64, 158, 255, 0.2);
-        transform: translateY(-2px);
-      }
-
-      &.el-button--danger {
-        background: rgba(245, 108, 108, 0.1);
+      &.is-link {
+        border: none;
+        background: rgba(64, 158, 255, 0.1);
 
         &:hover {
-          background: rgba(245, 108, 108, 0.2);
+          background: rgba(64, 158, 255, 0.2);
+          transform: translateY(-2px);
+        }
+
+        &.el-button--danger {
+          background: rgba(245, 108, 108, 0.1);
+
+          &:hover {
+            background: rgba(245, 108, 108, 0.2);
+          }
         }
       }
     }
@@ -705,18 +703,6 @@ export default {
   .el-icon {
     font-size: 32px;
     margin-bottom: 8px;
-  }
-}
-
-@keyframes checkBounce {
-  0% {
-    transform: scale(0.8);
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1);
   }
 }
 
@@ -748,6 +734,7 @@ export default {
   background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
   border-radius: 12px;
   border: 1px solid #f0f0f0;
+
   .el-button {
     border-radius: 10px;
     padding: 14px 15px;
@@ -784,6 +771,18 @@ export default {
   .empty-tip {
     font-size: 14px;
     opacity: 0.7;
+  }
+}
+
+@keyframes checkBounce {
+  0% {
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 </style>

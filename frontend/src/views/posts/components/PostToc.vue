@@ -76,20 +76,22 @@ export default {
   top: 150px;
   right: 20px;
   z-index: 999;
+
   .font-icon {
     font-size: 13px;
   }
 }
+
 .toc-content {
   flex: 1;
   overflow-y: auto;
 
   .toc-item {
     margin-bottom: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
     color: #555;
     font-weight: normal;
+    cursor: pointer;
+    transition: all 0.2s;
 
     &.active {
       color: #409eff;

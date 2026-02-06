@@ -214,20 +214,23 @@ export default {
     </PageScroll>
   </PageHeadBack>
 </template>
-<style scoped>
+<style lang="scss" scoped>
 .el-link {
   display: flex;
   align-items: center;
   justify-content: flex-start;
   height: 50px;
   padding: 10px;
+
+  &:active {
+    background: #f5f7fa;
+  }
+
+  .el-avatar {
+    margin-right: 20px;
+  }
 }
-.el-avatar {
-  margin-right: 20px;
-}
-.el-link:active {
-  background: #f5f7fa;
-}
+
 .follow-icon {
   color: white;
   background-color: #cdd0d6;

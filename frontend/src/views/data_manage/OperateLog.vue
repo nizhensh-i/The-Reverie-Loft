@@ -334,55 +334,79 @@ export default {
   </PageHeadBack>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
+// 变量定义
+$primary-color: #333333;
+$card-bg-color: #f0f0f0;
+$button-margin: 10px;
+
+// 输入框样式
 .el-input {
   left: 60%;
   width: 40%;
   border-radius: 40px;
+
+  &.input {
+    animation: expand 1s forwards;
+  }
+
+  &.shrink {
+    animation: shrink 1s forwards;
+  }
 }
-.input {
-  animation: expand 1s forwards;
+
+// 表格相关样式
+:deep(.table-header) {
+  color: $primary-color;
 }
-.shrink {
-  animation: _shrink 1s forwards;
+
+.el-table {
+  color: $primary-color;
 }
+
+// 卡片样式
+.el-card {
+  width: 100%;
+  height: 200px;
+  background-color: $card-bg-color;
+  animation: slideIn 0.6s forwards;
+
+  &.disappear {
+    animation: fadeOut 1.2s forwards;
+  }
+
+  .close-card {
+    font-size: 1.3rem;
+    position: relative;
+    top: 135px;
+    left: 90%;
+  }
+}
+
+// 按钮样式
 .check-button {
   float: right;
-  margin-top: 10px;
+  margin-top: $button-margin;
   margin-right: 20px;
 }
-:deep(.table-header) {
-  color: #333333;
-}
-.el-table {
-  color: #333333;
+
+.button-reload {
+  float: right;
+  margin: $button-margin 5px 5px;
 }
 
 .el-pagination {
   float: right;
 }
-.el-card {
-  width: 100%;
-  height: 200px;
-  background-color: #f0f0f0;
-  animation: slideIn 0.6s forwards;
-}
 
-.disappear {
-  animation: fadeOut 1.2s forwards;
-}
-.close-card {
-  font-size: 1.3rem;
-  position: relative;
-  top: 135px;
-  left: 90%;
-}
+// 动画定义
 @keyframes slideIn {
   from {
     width: 0;
     height: 0;
     opacity: 0;
   }
+
   to {
     height: 200px;
     opacity: 1;
@@ -391,8 +415,8 @@ export default {
 
 @keyframes fadeOut {
   to {
-    width: 0; /* 卡片宽度 */
-    height: 0; /* 卡片高度 */
+    width: 0;
+    height: 0;
     opacity: 0;
   }
 }
@@ -408,18 +432,15 @@ export default {
   }
 }
 
-@keyframes _shrink {
+@keyframes shrink {
   from {
     transform: scale(2, 1);
     left: 40%;
   }
+
   to {
     transform: scale(1);
     left: 60%;
   }
-}
-.button-reload {
-  float: right;
-  margin: 10px 5px 5px 5px;
 }
 </style>

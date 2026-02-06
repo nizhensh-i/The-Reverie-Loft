@@ -334,10 +334,10 @@ export default {
   right: 20px;
   z-index: 1000;
   width: 320px;
+  padding: 12px;
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  padding: 12px;
   transform: translateX(100%);
   opacity: 0;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -369,9 +369,9 @@ export default {
       padding: 0;
 
       .el-button {
-        border-radius: 0 4px 4px 0;
-        margin: 0;
         height: 36px;
+        margin: 0;
+        border-radius: 0 4px 4px 0;
       }
     }
   }
@@ -380,9 +380,9 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 4px 0;
     font-size: 14px;
     color: #606266;
-    padding: 4px 0;
     animation: fadeIn 0.3s ease;
 
     .search-navigation {
@@ -392,10 +392,10 @@ export default {
   }
 
   .no-results {
+    padding: 4px 0;
     color: #f56c6c;
     font-size: 14px;
     text-align: center;
-    padding: 4px 0;
     animation: fadeIn 0.3s ease;
   }
 }
@@ -413,14 +413,14 @@ export default {
 
 @media (max-width: 768px) {
   .post-search-container {
-    width: calc(100% - 40px);
     top: 60px;
     right: 20px;
+    width: calc(100% - 40px);
   }
 }
 </style>
 
-<style>
+<style lang="scss">
 /* 全局样式，用于高亮搜索结果 */
 .search-highlight {
   background-color: rgba(255, 230, 0, 0.4);
@@ -444,9 +444,11 @@ export default {
   0% {
     box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.7);
   }
+
   70% {
     box-shadow: 0 0 0 5px rgba(255, 165, 0, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(255, 165, 0, 0);
   }
@@ -457,6 +459,7 @@ export default {
   100% {
     background-color: rgba(255, 165, 0, 0.7);
   }
+
   50% {
     background-color: rgba(255, 69, 0, 0.9);
   }

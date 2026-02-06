@@ -48,34 +48,39 @@ watch(
 );
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+.leleo-typewriter {
+  text-align: center;
+}
+
 .msg,
 .qm {
   color: #ffffff;
-  letter-spacing: 2px;
-  font-family: Arial, sans-serif;
   font-size: 25px;
   font-weight: bold;
+  font-family: Arial, sans-serif;
+  letter-spacing: 2px;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-}
 
-.msg :deep(.cursorChar) {
-  display: inline-block;
-  margin-left: 2px;
-}
-@media screen and (min-width: 960px) and (max-width: 1200px) {
-  .msg,
-  .qm {
+  @media screen and (min-width: 960px) and (max-width: 1200px) {
     font-size: 20px;
   }
+
+  @media (max-width: 960px) {
+    font-size: 16px;
+  }
 }
+
+.msg {
+  :deep(.cursorChar) {
+    display: inline-block;
+    margin-left: 2px;
+  }
+}
+
 @media (max-width: 960px) {
   .leleo-typewriter {
     min-height: 76px;
-  }
-  .msg,
-  .qm {
-    font-size: 16px;
   }
 }
 </style>

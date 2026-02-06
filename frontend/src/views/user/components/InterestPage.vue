@@ -30,89 +30,93 @@ export default {
       immediate: true,
     },
   },
-  computed: {},
-  mounted() {},
-  methods: {},
 };
 </script>
 
 <template>
   <div class="interest-container">
-    <el-row :gutter="10" class="bookshelf">
-      <el-col :span="8" v-for="(movie, index) in interest" :key="index">
-        <div class="book">
-          <el-image
-            alt="兴趣图片"
-            :src="movie.url"
-            fit="cover"
-            :preview-src-list="preList"
-            :initial-index="index"
-            preview-teleported
-          ></el-image>
-          <el-text class="book-name" truncated>{{ movie.describe }}</el-text>
-          <!-- <el-text class="book-descirbe">111111</el-text> -->
-        </div>
-      </el-col>
-      <el-col>
-        <div class="book" v-if="interest.length === 0">
-          <el-text class="book-empty">空空如页...</el-text>
-        </div>
-      </el-col>
-    </el-row>
+    <div class="bookshelf">
+      <div class="book" v-for="(movie, index) in interest" :key="index">
+        <el-image
+          alt="兴趣图片"
+          :src="movie.url"
+          fit="cover"
+          :preview-src-list="preList"
+          :initial-index="index"
+          preview-teleported
+        ></el-image>
+        <el-text class="book-name" truncated>{{ movie.describe }}</el-text>
+      </div>
+      <div class="book" v-if="interest.length === 0">
+        <el-text class="book-empty">空空如页...</el-text>
+      </div>
+    </div>
   </div>
 </template>
 <style lang="scss" scoped>
-//设置为毛玻璃样式
+// 设置为毛玻璃样式
 .glass {
   backdrop-filter: blur(7px);
   border-radius: 5%;
   color: #ffffff;
-  /* 确保背景透明，显示毛玻璃效果 */
   background-color: transparent;
-  /* 移除默认边框 */
   border: none;
 }
+
 .interest-container {
-  margin: 0px auto;
+  margin: 0 auto;
   width: 90%;
 }
 
-:deep(.van-badge) {
-  border: none;
-  color: green;
+.bookshelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+  justify-items: center;
 }
 
 .book {
   @extend .glass;
-  width: 117px;
+  width: 100%;
+  max-width: 117px;
   position: relative;
   display: flex;
   flex-direction: column;
-  margin: 10px 0px;
+  margin: 10px 0;
+
   .el-image {
-    width: 110px;
+    width: 100%;
     height: 130px;
     border-radius: 5%;
   }
+
   .text-base {
     width: 97%;
-    margin-top: 3px 0px 0px 2px;
+    margin-top: 3px 0 0 2px;
     color: #ffffff;
     line-height: 1.6;
   }
+
   .book-name {
     @extend .text-base;
     font-size: 0.9rem;
   }
-  .book-descirbe {
-    @extend .text-base;
-    font-size: 0.6rem;
-    opacity: 0.6;
-  }
+
   .book-empty {
     @extend .text-base;
     font-size: 0.8rem;
     margin-left: 5px;
+  }
+}
+
+@media (min-width: 768px) {
+  .interest-container {
+    width: 97%;
+  }
+
+  .bookshelf {
+    grid-template-columns: repeat(auto-fill, minmax(117px, 1fr));
+    gap: 15px;
   }
 }
 </style>

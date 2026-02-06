@@ -248,11 +248,8 @@
 }
 
 .vapp-fullscreen-background {
-  position: position;
   height: 100%;
   width: 100%;
-  top: 0;
-  left: 0;
   z-index: -1;
 
   // 背景图片层
@@ -307,7 +304,7 @@
       transition: filter 0.6s ease, color 0.6s ease;
       background-color: transparent;
       margin: 4px;
-      padding: 0px 10px;
+      padding: 0 10px;
       border-color: rgba(0, 0, 0, 0.12);
     }
   }
@@ -369,8 +366,8 @@
     }
 
     .user-info-container {
-      width: 90%;
-      margin: 0 auto;
+      width: 95%;
+      padding: 0 20px;
 
       .user-info {
         min-height: 190px;
@@ -403,7 +400,7 @@
 
     .socialLinks {
       max-width: 270px;
-      margin: 0px auto;
+      margin: 0 auto;
 
       :deep(.el-card__body) {
         padding: 2px;
@@ -440,11 +437,11 @@
   // 底部固定操作栏
   .footer {
     position: fixed;
-    bottom: 0px;
+    bottom: 0;
     padding: 10px;
     height: 40px;
     width: 95%;
-    margin: 0px auto;
+    margin: 0 auto;
     display: flex;
     justify-content: space-between;
 
@@ -467,7 +464,7 @@
   }
 
   .posts-container {
-    margin: 0px 20px;
+    margin: 0 20px;
   }
 
   .block {
@@ -487,12 +484,9 @@
 
 // 移动端适配
 @media (max-width: 768px) {
-  .vapp-fullscreen-background {
-    .area-container {
-      .user-info-container {
-        width: 95%;
-      }
-    }
+  .vapp-fullscreen-background .area-container .user-info-container {
+    width: 92%;
+    padding: 0 15px;
   }
 }
 </style>

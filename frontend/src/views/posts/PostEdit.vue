@@ -122,12 +122,13 @@ export default {
     </PageScroll>
   </PageHeadBack>
 </template>
-<style scoped>
+<style lang="scss" scoped>
 .el-button {
   margin-top: 10px;
 }
+
 .el-switch {
-  margin-top: 10px;
   float: right;
+  margin-top: 10px;
 }
 </style>

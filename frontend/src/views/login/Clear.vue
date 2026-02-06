@@ -17,16 +17,16 @@ export default {
     >
   </div>
 </template>
-<style scoped>
+<style lang="scss" scoped>
 .container {
   display: flex;
   flex-direction: column;
-  justify-items: center;
   align-items: center;
   gap: 20px;
-}
-.el-button {
-  width: 50%;
-  margin: 0px;
+
+  .el-button {
+    width: 50%;
+    margin: 0;
+  }
 }
 </style>

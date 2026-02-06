@@ -55,18 +55,21 @@ export default {
     gap: 5px;
     width: 100%;
     margin: 0 auto;
+
     .el-image {
       width: 100%;
       aspect-ratio: 1;
+
       .image-slot {
         display: flex;
-        justify-content: center;
         align-items: center;
+        justify-content: center;
         width: 100%;
         height: 100%;
-        background: var(--el-fill-color-light);
         color: var(--el-text-color-secondary);
         font-size: 14px;
+        background: var(--el-fill-color-light);
+
         .el-icon {
           font-size: 30px;
         }

@@ -65,70 +65,77 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 @import url("@/asset/css/animate.scss");
+
 .logo-area {
-  background-size: cover !important;
-  background-position: center !important;
-  overflow: hidden;
+  display: flex;
   align-items: center;
   justify-content: center;
-  display: flex;
+  overflow: hidden;
+  background-size: cover !important;
+  background-position: center !important;
   border-radius: 100%;
-  /* 初始展开动画 */
-  animation: logoEnter 1.2s;
-  animation-fill-mode: forwards;
+  animation: logoEnter 1.2s forwards;
   transition: all 0.8s;
+
   &.is-blur {
     filter: blur(5px);
   }
+
   .img-shadow {
-    content: "";
+    position: absolute;
     width: 100%;
     height: 100%;
-    position: absolute;
     background-color: #fda085;
-    overflow: hidden;
-    transition: background-color 0.5s;
     border-radius: 100%;
-    animation: shadowEnter 1.2s;
-    animation-fill-mode: forwards;
+    overflow: hidden;
+    animation: shadowEnter 1.2s forwards;
+    transition: background-color 0.5s;
+
+    &.img-shadow-show {
+      background-color: rgba(0, 0, 0, 0.5);
+    }
   }
-  .img-shadow-show {
-    background-color: rgba(0, 0, 0, 0.5);
-  }
+
   .inner {
     position: relative;
+
     .main-logo {
-      height: 6rem;
       position: absolute;
-      transform: translate(-50%, -50%);
-      transition: all 1s;
       top: 0;
-    }
-    .main-logo-top {
-      top: -3.2rem;
-    }
-    .hello {
-      color: #ffffff;
-      width: 18.75rem;
-      text-align: center;
-      position: absolute;
+      height: 6rem;
       transform: translate(-50%, -50%);
-      font-size: 21px;
-      opacity: 0;
-      top: 100px;
       transition: all 1s;
+
+      &.main-logo-top {
+        top: -3.2rem;
+      }
     }
-    .hello_bottom {
-      opacity: 1;
-      top: 3.5rem;
-      .hello_bottom_text {
-        font-size: 14px;
-        margin-top: 0.5rem;
-        padding-top: 0.5rem;
-        border-top: 1px solid #fff;
-        .slide-up {
-          margin-top: 15px;
-          animation: float 4s infinite ease-in-out;
+
+    .hello {
+      position: absolute;
+      top: 100px;
+      width: 18.75rem;
+      font-size: 21px;
+      color: #ffffff;
+      text-align: center;
+      opacity: 0;
+      transform: translate(-50%, -50%);
+      transition: all 1s;
+
+      &_bottom {
+        top: 3.5rem;
+        opacity: 1;
+
+        &_text {
+          margin-top: 0.5rem;
+          padding-top: 0.5rem;
+          font-size: 14px;
+          border-top: 1px solid #fff;
+
+          .slide-up {
+            margin-top: 15px;
+            animation: float 4s infinite ease-in-out;
+          }
         }
       }
     }

@@ -15,18 +15,19 @@ export default {
   methods: {},
 };
 </script>
-<style scoped>
+<style lang="scss" scoped>
 .emoji-button1 {
+  position: relative;
   display: inline-block;
   font-size: 1rem;
   background-color: transparent;
-  border-radius: 50%;
   border: none;
+  border-radius: 50%;
   cursor: pointer;
-  position: relative;
-  transition: all 0.5s;
-}
-.emoji-button1:hover {
-  transform: scale(1.2);
+  transition: transform 0.5s;
+
+  &:hover {
+    transform: scale(1.2);
+  }
 }
 </style>

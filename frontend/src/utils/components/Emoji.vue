@@ -97,10 +97,11 @@ export default {
   },
 };
 </script>
-<style scoped>
+<style lang="scss" scoped>
 .emoji-body {
   max-width: 400px;
 }
+
 .body-enter-active,
 .body-leave-active {
   transition: all 0.3s;
@@ -114,12 +115,13 @@ export default {
 
 .emoji-button {
   margin-top: 2px;
+  padding: 0;
   border: none;
-  padding: 0px;
   transition: all 0.5s;
-}
-.emoji-button:hover {
-  background-color: transparent;
-  transform: scale(1.2);
+
+  &:hover {
+    background-color: transparent;
+    transform: scale(1.2);
+  }
 }
 </style>

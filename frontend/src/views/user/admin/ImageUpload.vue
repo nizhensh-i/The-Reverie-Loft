@@ -165,27 +165,21 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .container {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-}
 
-:deep(.el-textarea__inner) {
-  /* 去掉去除右下角默认小图标 */
-  resize: none;
-  /* 隐藏滚动条 */
-  /* overflow: hidden; */
-}
-
-.note {
-  padding: 5px;
+  :deep(.el-textarea__inner) {
+    resize: none;
+  }
 }
 
 img {
   width: 100%;
 }
+
 .button {
   margin-top: 20px;
 }

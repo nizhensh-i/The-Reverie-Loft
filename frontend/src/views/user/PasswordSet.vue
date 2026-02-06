@@ -199,7 +199,7 @@ export default {
   </PageHeadBack>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .password-set-container {
   max-width: 600px;
   margin: 0 auto;
@@ -209,29 +209,29 @@ export default {
 .password-header {
   text-align: center;
   margin-bottom: 30px;
-}
 
-.password-icon {
-  background: linear-gradient(135deg, #409eff, #67c23a);
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 15px;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
-}
+  .password-icon {
+    background: linear-gradient(135deg, #409eff, #67c23a);
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
 
-.password-icon i {
-  font-size: 32px;
-  color: white;
-}
+    i {
+      font-size: 32px;
+      color: white;
+    }
+  }
 
-.password-header h1 {
-  margin: 10px 0;
-  font-size: 28px;
-  color: #303133;
+  h1 {
+    margin: 10px 0;
+    font-size: 28px;
+    color: #303133;
+  }
 }
 
 .subtitle {
@@ -252,55 +252,55 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
-}
 
-.strength-label {
-  font-size: 12px;
-  color: #909399;
-  width: 60px;
-}
+  .strength-label {
+    font-size: 12px;
+    color: #909399;
+    width: 60px;
+  }
 
-.strength-meter {
-  flex: 1;
-  height: 6px;
-  background: #ebeef5;
-  border-radius: 3px;
-  overflow: hidden;
-}
+  .strength-meter {
+    flex: 1;
+    height: 6px;
+    background: #ebeef5;
+    border-radius: 3px;
+    overflow: hidden;
 
-.strength-bar {
-  height: 100%;
-  transition: width 0.3s, background-color 0.3s;
-}
+    .strength-bar {
+      height: 100%;
+      transition: width 0.3s, background-color 0.3s;
 
-.strength-bar.weak {
-  background-color: #f56c6c;
-}
+      &.weak {
+        background-color: #f56c6c;
+      }
 
-.strength-bar.medium {
-  background-color: #e6a23c;
-}
+      &.medium {
+        background-color: #e6a23c;
+      }
 
-.strength-bar.strong {
-  background-color: #67c23a;
-}
+      &.strong {
+        background-color: #67c23a;
+      }
+    }
+  }
 
-.strength-text {
-  font-size: 12px;
-  font-weight: bold;
-  width: 20px;
-}
+  .strength-text {
+    font-size: 12px;
+    font-weight: bold;
+    width: 20px;
 
-.weak-text {
-  color: #f56c6c;
-}
+    &.weak-text {
+      color: #f56c6c;
+    }
 
-.medium-text {
-  color: #e6a23c;
-}
+    &.medium-text {
+      color: #e6a23c;
+    }
 
-.strong-text {
-  color: #67c23a;
+    &.strong-text {
+      color: #67c23a;
+    }
+  }
 }
 
 .submit-btn {
@@ -318,25 +318,25 @@ export default {
   background: #f0f9eb;
   border-radius: 8px;
   border-left: 4px solid #67c23a;
-}
 
-.password-tips h4 {
-  color: #303133;
-  font-weight: 500;
-  margin: 0 0 10px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
+  h4 {
+    color: #303133;
+    font-weight: 500;
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
 
-.password-tips ul {
-  padding-left: 20px;
-  margin: 8px 0 0;
-}
+  ul {
+    padding-left: 20px;
+    margin: 8px 0 0;
 
-.password-tips li {
-  color: #606266;
-  margin-bottom: 5px;
-  font-size: 13px;
+    li {
+      color: #606266;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+  }
 }
 </style>

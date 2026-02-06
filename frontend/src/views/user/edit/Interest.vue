@@ -122,19 +122,22 @@ export default {
   </PageHeadBack>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .page-head {
-  margin: 20px 0px 70px 10px;
+  margin: 20px 0 70px 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 :deep(.el-dialog) {
-  padding: 0px;
+  padding: 0;
 }
+
 .upload-card {
-  margin: 0px 0px 70px 0px;
+  margin: 0 0 70px;
 }
+
 .el-button {
   width: 70px;
 }

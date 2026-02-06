@@ -22,19 +22,19 @@ export default {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .container {
   display: flex;
   flex-direction: column;
-  justify-items: center;
   align-items: center;
-}
+  justify-items: center;
 
-p {
-  color: #71717a;
-}
+  p {
+    color: #71717a;
+  }
 
-.el-button {
-  width: 50%;
+  .el-button {
+    width: 50%;
+  }
 }
 </style>

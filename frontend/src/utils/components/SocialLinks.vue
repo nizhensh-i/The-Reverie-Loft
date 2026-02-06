@@ -137,57 +137,65 @@ function getSvgComponent(name) {
 
 <style lang="scss" scoped>
 .social {
-  margin: 0px auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 460px;
   width: 100%;
+  max-width: 460px;
   height: 42px;
+  margin: 0 auto;
   background-color: transparent;
   border-radius: 6px;
   backdrop-filter: blur(0);
   animation: fade 0.5s;
   transition: background-color 0.3s, backdrop-filter 0.3s;
+
   @media (max-width: 840px) {
     max-width: 100%;
     justify-content: center;
-    .link {
-      justify-content: space-evenly !important;
-      width: 80%;
-    }
-    .tip {
-      display: none !important;
-    }
   }
 
   .link {
     display: flex;
     align-items: center;
     justify-content: center;
+
+    @media (max-width: 840px) {
+      justify-content: space-evenly;
+      width: 80%;
+    }
+
     .icon {
-      margin: 0 4px;
       width: 20px;
       height: 20px;
+      margin: 0 4px;
       cursor: pointer;
       transition: transform 0.3s;
+
       &:hover {
         transform: scale(1.2);
       }
+
       &:active {
         transform: scale(1);
       }
     }
   }
+
   .tip {
     display: none;
     margin-right: 12px;
     animation: fade 0.5s;
+
+    @media (max-width: 840px) {
+      display: none;
+    }
   }
+
   @media (min-width: 768px) {
     &:hover {
-      // background-color: #00000040;
       backdrop-filter: blur(5px);
+
       .tip {
         display: block;
       }

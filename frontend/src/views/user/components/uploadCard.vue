@@ -303,22 +303,23 @@ export default {
     </el-form>
   </div>
 </template>
-<style scoped>
+<style lang="scss" scoped>
 .movie-list {
   display: flex;
   flex-wrap: wrap;
+
+  .movie-item {
+    width: 33.33%;
+    padding: 10px;
+    box-sizing: border-box;
+
+    img {
+      width: 100%;
+      height: auto;
+    }
+  }
 }
 
-.movie-item {
-  width: 33.33%;
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-.movie-item img {
-  width: 100%;
-  height: auto;
-}
 :deep(.el-upload--picture-card) {
   display: v-bind(selectShow);
 }

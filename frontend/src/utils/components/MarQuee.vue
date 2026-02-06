@@ -47,25 +47,25 @@ const resumeAnimation = () => {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .scroll-container {
-  overflow: hidden;
-  white-space: nowrap;
-  width: 90%;
-  height: 40px;
   position: relative;
   display: grid;
   align-content: center;
+  width: 90%;
+  height: 40px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .scroll-text {
   display: inline-block;
-  white-space: nowrap;
-  animation: scroll-left linear infinite;
   margin-top: 8px;
   margin-left: 5px;
   color: #303133;
+  white-space: nowrap;
   letter-spacing: 0.02rem;
+  animation: scroll-left linear infinite;
 }
 
 @keyframes scroll-left {

@@ -122,27 +122,35 @@ export default {
 </template>
 <style lang="scss" scoped>
 .text-title {
-  margin: 10px 0px 10px 0px;
+  margin: 10px 0;
 }
+
 :deep(.el-card__body) {
   padding: 5px;
 }
+
 .el-input {
   width: 100%;
 }
+
 .custom-button {
-  margin: 10px 0px;
+  margin: 10px 0;
 }
+
 .switch {
-  margin-top: 10px;
   float: right;
+  margin-top: 10px;
+
   .el-switch {
     margin-left: 10px;
   }
 }
+
+// 过渡动画
 .v-enter-active {
   transition: opacity 0.3s ease;
 }
+
 .v-enter-from {
   opacity: 0;
 }

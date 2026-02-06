@@ -39,10 +39,9 @@ export default {
     </template>
   </el-button>
 </template>
-<style scoped>
+<style lang="scss" scoped>
 .spin {
   animation: rotate 1s linear infinite;
-  cursor: point;
 }
 
 @keyframes rotate {

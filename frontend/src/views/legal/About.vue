@@ -85,14 +85,22 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+// 变量定义
+$max-width: 600px;
+$bg-color: #fff;
+$text-color: #333;
+$text-secondary: #999;
+$text-muted: #666;
+$border-color: #eee;
+
 .about-container {
-  background: #fff;
+  background: $bg-color;
 }
 
 .about-content {
-  max-width: 600px;
+  max-width: $max-width;
   width: 100%;
-  padding: 20px 20px;
+  padding: 20px;
   margin: 0 auto;
 }
 
@@ -104,7 +112,6 @@ export default {
 
   .about-content {
     margin: 0;
-    padding: 20px 20px;
     max-width: none;
     width: auto;
   }
@@ -129,7 +136,7 @@ export default {
     .avatar-circle {
       width: 80px;
       height: 80px;
-      background: #333;
+      background: $text-color;
       border-radius: 50%;
       display: inline-flex;
       align-items: center;
@@ -146,22 +153,22 @@ export default {
   .name {
     font-size: 28px;
     font-weight: 400;
-    margin: 0 0 8px 0;
-    color: #333;
+    margin: 0 0 8px;
+    color: $text-color;
     letter-spacing: 1px;
   }
 
   .title {
     font-size: 14px;
-    color: #999;
-    margin: 0 0 16px 0;
+    color: $text-secondary;
+    margin: 0 0 16px;
     font-weight: 400;
     letter-spacing: 0.5px;
   }
 
   .bio {
     font-size: 15px;
-    color: #666;
+    color: $text-muted;
     line-height: 1.7;
     margin: 0 auto;
     max-width: 400px;
@@ -172,12 +179,12 @@ export default {
 .section-title {
   font-size: 14px;
   font-weight: 500;
-  margin: 0 0 20px 0;
-  color: #999;
+  margin: 0 0 20px;
+  color: $text-secondary;
   text-transform: uppercase;
   letter-spacing: 1px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid $border-color;
 }
 
 // 项目介绍
@@ -191,7 +198,7 @@ export default {
       font-size: 16px;
       line-height: 1.8;
       color: #444;
-      margin: 0 0 16px 0;
+      margin: 0 0 16px;
       font-weight: 350;
 
       &:last-child {
@@ -205,29 +212,27 @@ export default {
 .contact-section {
   margin-bottom: 40px;
 
-  .contact-links {
-    .contact-link {
-      display: block;
-      padding: 12px 0;
-      color: #555;
-      transition: color 0.2s ease;
+  .contact-links .contact-link {
+    display: block;
+    padding: 12px 0;
+    color: #555;
+    transition: color 0.2s ease;
 
-      &:hover {
-        color: #333;
-      }
+    &:hover {
+      color: $text-color;
+    }
 
-      .link-icon {
-        margin-right: 8px;
-        font-size: 16px;
-        color: #999;
-        vertical-align: middle;
-      }
+    .link-icon {
+      margin-right: 8px;
+      font-size: 16px;
+      color: $text-secondary;
+      vertical-align: middle;
+    }
 
-      .link-text {
-        font-size: 15px;
-        vertical-align: middle;
-        font-weight: 350;
-      }
+    .link-text {
+      font-size: 15px;
+      vertical-align: middle;
+      font-weight: 350;
     }
   }
 }
@@ -235,30 +240,29 @@ export default {
 // 底部
 .footer-section {
   padding-top: 32px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid $border-color;
   margin-bottom: 40px;
   text-align: center;
 
   .copyright {
     font-size: 13px;
-    color: #999;
-    margin: 0 0 8px 0;
+    color: $text-secondary;
+    margin: 0 0 8px;
     font-weight: 350;
+
     a {
-      color: #999;
+      color: $text-secondary;
     }
   }
 
   .motto {
     font-size: 15px;
-    color: #666;
+    color: $text-muted;
     font-style: italic;
     margin: 0;
     font-weight: 350;
   }
 }
-
-// ==================== 响应式样式 ====================
 
 // 手机设备 (< 768px)
 @media (max-width: 767px) {
@@ -270,7 +274,7 @@ export default {
 
   .about-content {
     margin: 0 auto;
-    padding: 0px 20px;
+    padding: 0 20px;
   }
 
   .intro-section {
@@ -290,10 +294,7 @@ export default {
     }
   }
 
-  .project-section {
-    margin-bottom: 32px;
-  }
-
+  .project-section,
   .contact-section {
     margin-bottom: 32px;
   }

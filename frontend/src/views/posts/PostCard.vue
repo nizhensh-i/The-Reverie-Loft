@@ -280,34 +280,42 @@ export default {
     <slot></slot>
   </el-card>
 </template>
-<style scoped>
+<style lang="scss" scoped>
+.el-card {
+  background-color: v-bind(cardBgColor);
+
+  :deep(.el-card__body) {
+    padding: 5px 20px;
+  }
+}
+
 .content {
   min-height: 60px;
 }
 
 .el-button {
-  padding: 0px 5px;
+  padding: 0 5px;
 }
-:deep(.el-card__body) {
-  padding: 5px 20px;
-}
-.el-card {
-  background-color: v-bind(cardBgColor);
-}
+
 .van-skeleton {
-  padding: 0px;
+  padding: 0;
 }
+
 .icon-event {
   height: 22px;
 }
+
+// 点赞动画
 .praise-enter-active,
 .praise-leave-active {
   transition: all 0.15s cubic-bezier(0.42, 0, 0.34, 1.55);
 }
+
 .praise-enter-from,
 .praise-leave-to {
   transform: scale(0);
 }
+
 .praise-enter-to,
 .praise-leave-from {
   transform: scale(1);
