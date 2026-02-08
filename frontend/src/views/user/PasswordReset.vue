@@ -2,6 +2,7 @@
 import authApi from "@/api/auth/authApi.js";
 import ButtonClick from "@/utils/components/ButtonClick.vue";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
+import PageScroll from "@/utils/components/PageScroll.vue";
 
 export default {
   components: {

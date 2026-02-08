@@ -1,6 +1,31 @@
 <script>
 import { mavonEditor } from "mavon-editor";
 import "mavon-editor/dist/css/index.css";
+
+const TRUNCATION_MAX_HEIGHT = 300;
+const TRUNCATION_MASK_HEIGHT = 40;
+const COPY_FEEDBACK_RESET_DELAY = 3000;
+
+const SVG_ICONS = {
+  copy: `
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="copy-icon">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+  `,
+  success: `
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="copy-icon">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  `,
+  error: `
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="copy-icon">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  `,
+};
+
 export default {
   props: {
     postContent: {
@@ -22,23 +47,27 @@ export default {
   data() {
     return {
       pContent: "",
-      truncationTryCount: 0, // 新增
       // 图片预览相关状态
       imageViewerVisible: false,
       imageViewerUrls: [],
       imageViewerIndex: 0,
+      // 观察内容渲染与代码块处理
+      contentObserver: null,
+      lastContentEl: null,
+      codeBlockProcessRaf: null,
+      isProcessingCodeBlocks: false,
+      needsFullRebuild: false,
+      // 截断高度观察器
+      truncationObserver: null,
+      truncationObservedEl: null,
+      truncationRaf: null,
     };
   },
   watch: {
     postContent: {
       handler(newVal) {
         this.pContent = newVal;
-        this.truncationTryCount = 0; // 重置
-        this.$nextTick(() => {
-          this.updateFontSize(this.fontSize);
-          this.updateTruncation();
-          this.processCodeBlocks();
-        });
+        this.refreshContent(true);
       },
       immediate: true,
     },
@@ -48,17 +77,79 @@ export default {
       },
     },
   },
-  mounted() {
-    this.$nextTick(() => {
-      this.updateFontSize(this.fontSize);
-      this.updateTruncation();
-      this.processCodeBlocks();
-    });
+  beforeUnmount() {
+    if (this.contentObserver) {
+      this.contentObserver.disconnect();
+      this.contentObserver = null;
+    }
+    if (this.codeBlockProcessRaf) {
+      cancelAnimationFrame(this.codeBlockProcessRaf);
+      this.codeBlockProcessRaf = null;
+    }
+    this.teardownTruncationObserver();
   },
 
   methods: {
+    getContentDom() {
+      return this.$refs.md?.$el?.querySelector(".v-show-content") || null;
+    },
+
+    refreshContent(forceRebuild = false) {
+      this.needsFullRebuild = this.needsFullRebuild || forceRebuild;
+      this.$nextTick(() => {
+        this.updateFontSize(this.fontSize);
+        this.updateTruncation();
+        this.setupContentObserver();
+        this.scheduleProcessCodeBlocks(forceRebuild);
+      });
+    },
+
+    setupContentObserver() {
+      const contentDom = this.getContentDom();
+      if (!contentDom) return;
+
+      if (this.lastContentEl === contentDom && this.contentObserver) {
+        return;
+      }
+
+      if (this.contentObserver) {
+        this.contentObserver.disconnect();
+      }
+
+      this.lastContentEl = contentDom;
+      this.contentObserver = new MutationObserver((mutations) => {
+        if (this.isProcessingCodeBlocks) return;
+
+        const hasRelevantChange = mutations.some((m) => m.type === "childList");
+        if (!hasRelevantChange) return;
+
+        this.scheduleProcessCodeBlocks(false);
+      });
+
+      this.contentObserver.observe(contentDom, {
+        childList: true,
+        subtree: true,
+      });
+    },
+
+    scheduleProcessCodeBlocks(fullRebuild = false) {
+      if (fullRebuild) {
+        this.needsFullRebuild = true;
+      }
+
+      if (this.codeBlockProcessRaf) {
+        cancelAnimationFrame(this.codeBlockProcessRaf);
+      }
+
+      this.codeBlockProcessRaf = requestAnimationFrame(() => {
+        this.codeBlockProcessRaf = null;
+        const doFullRebuild = this.needsFullRebuild;
+        this.needsFullRebuild = false;
+        this.processCodeBlocks(doFullRebuild);
+      });
+    },
     updateFontSize(size) {
-      const contentDom = this.$refs.md?.$el?.querySelector(".v-show-content");
+      const contentDom = this.getContentDom();
       if (contentDom) {
         contentDom.style.fontSize = `${size}px`;
 
@@ -77,123 +168,148 @@ export default {
     },
 
     updateTruncation() {
-      if (!this.preview) return;
-
-      this.$nextTick(() => {
-        const contentDom = this.$refs.md?.$el?.querySelector(".v-show-content");
-        if (!contentDom) return;
-
-        const imgs = contentDom.querySelectorAll("img");
-        let loadedCount = 0;
-        const totalImgs = imgs.length;
-
-        const checkAllLoaded = () => {
-          loadedCount++;
-          if (loadedCount === totalImgs && this.truncationTryCount < 10) {
-            this.truncationTryCount++;
-            setTimeout(() => {
-              this.updateTruncation();
-            }, 50);
-          }
-        };
-
-        if (totalImgs > 0) {
-          imgs.forEach((img) => {
-            if (!img._truncationLoaded) {
-              img._truncationLoaded = true;
-              img.addEventListener("load", checkAllLoaded);
-              img.addEventListener("error", checkAllLoaded);
-            }
-          });
+      const contentDom = this.getContentDom();
+      if (!this.preview) {
+        if (contentDom) {
+          this.clearTruncationStyles(contentDom);
         }
+        this.teardownTruncationObserver();
+        return;
+      }
+      if (!contentDom) return;
 
-        // 先移除旧的遮罩
-        const oldMask = contentDom.querySelector(".truncation-mask");
-        if (oldMask) oldMask.remove();
+      if (this.canUseResizeObserver()) {
+        this.setupTruncationObserver(contentDom);
+      } else {
+        this.bindTruncationImageListeners(contentDom);
+      }
 
-        // 判断是否超出最大高度
-        const maxHeight = 300;
-        if (contentDom.scrollHeight > maxHeight) {
-          contentDom.style.maxHeight = maxHeight + "px";
-          contentDom.style.overflow = "hidden";
-          contentDom.style.position = "relative";
+      this.applyTruncationStyles(contentDom);
+    },
 
-          // 添加遮罩和省略号
-          const mask = document.createElement("div");
-          mask.className = "truncation-mask";
-          mask.style.position = "absolute";
-          mask.style.left = 0;
-          mask.style.right = 0;
-          mask.style.bottom = 0;
-          mask.style.height = "40px";
-          mask.style.background =
-            "linear-gradient(rgba(255,255,255,0), #fff 80%)";
-          contentDom.appendChild(mask);
-        } else {
-          contentDom.style.maxHeight = "none";
-          contentDom.style.overflow = "auto";
-          contentDom.style.position = "static";
-        }
+    canUseResizeObserver() {
+      return typeof ResizeObserver !== "undefined";
+    },
 
-        // 延迟再触发一次，兜底
-        if (this.truncationTryCount < 10) {
-          this.truncationTryCount++;
-          setTimeout(() => {
-            const dom = this.$refs.md?.$el?.querySelector(".v-show-content");
-            if (dom && dom.scrollHeight > maxHeight) {
-              this.updateTruncation();
-            }
-          }, 300);
+    setupTruncationObserver(contentDom) {
+      if (this.truncationObservedEl === contentDom && this.truncationObserver) {
+        return;
+      }
+
+      this.teardownTruncationObserver();
+      this.truncationObservedEl = contentDom;
+
+      this.truncationObserver = new ResizeObserver(() => {
+        this.scheduleTruncationApply();
+      });
+
+      this.truncationObserver.observe(contentDom);
+    },
+
+    teardownTruncationObserver() {
+      if (this.truncationObserver) {
+        this.truncationObserver.disconnect();
+        this.truncationObserver = null;
+      }
+      this.truncationObservedEl = null;
+      if (this.truncationRaf) {
+        cancelAnimationFrame(this.truncationRaf);
+        this.truncationRaf = null;
+      }
+    },
+
+    scheduleTruncationApply() {
+      if (this.truncationRaf) {
+        cancelAnimationFrame(this.truncationRaf);
+      }
+
+      this.truncationRaf = requestAnimationFrame(() => {
+        this.truncationRaf = null;
+        const dom = this.getContentDom();
+        if (dom && this.preview) {
+          this.applyTruncationStyles(dom);
         }
       });
     },
 
-    // 定义SVG图标变量
-    getSvgIcons() {
-      return {
-        copy: `
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="copy-icon">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-        `,
-        success: `
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="copy-icon">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        `,
-        error: `
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="copy-icon">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        `,
-      };
+    bindTruncationImageListeners(contentDom) {
+      const imgs = contentDom.querySelectorAll("img");
+      if (imgs.length === 0) return;
+
+      const schedule = () => this.scheduleTruncationApply();
+
+      imgs.forEach((img) => {
+        if (img._truncationLoaded) return;
+        img._truncationLoaded = true;
+        img.addEventListener("load", schedule);
+        img.addEventListener("error", schedule);
+        if (img.complete) {
+          schedule();
+        }
+      });
+    },
+
+    clearTruncationStyles(contentDom) {
+      const oldMask = contentDom.querySelector(".truncation-mask");
+      if (oldMask) oldMask.remove();
+      contentDom.style.maxHeight = "none";
+      contentDom.style.overflow = "auto";
+      contentDom.style.position = "static";
+    },
+
+    applyTruncationStyles(contentDom) {
+      const oldMask = contentDom.querySelector(".truncation-mask");
+      if (oldMask) oldMask.remove();
+
+      if (contentDom.scrollHeight > TRUNCATION_MAX_HEIGHT) {
+        contentDom.style.maxHeight = `${TRUNCATION_MAX_HEIGHT}px`;
+        contentDom.style.overflow = "hidden";
+        contentDom.style.position = "relative";
+
+        const mask = document.createElement("div");
+        mask.className = "truncation-mask";
+        mask.style.position = "absolute";
+        mask.style.left = 0;
+        mask.style.right = 0;
+        mask.style.bottom = 0;
+        mask.style.height = `${TRUNCATION_MASK_HEIGHT}px`;
+        mask.style.background =
+          "linear-gradient(rgba(255,255,255,0), #fff 80%)";
+        contentDom.appendChild(mask);
+      } else {
+        contentDom.style.maxHeight = "none";
+        contentDom.style.overflow = "auto";
+        contentDom.style.position = "static";
+      }
     },
 
     // 创建复制按钮HTML
     createCopyButtonHtml(icon, text) {
-      const svgIcons = this.getSvgIcons();
-      return `${svgIcons[icon]}<span>${text}</span>`;
+      return `${SVG_ICONS[icon]}<span>${text}</span>`;
     },
 
     // 处理代码块，添加复制按钮
-    processCodeBlocks() {
-      this.$nextTick(() => {
-        const contentDom = this.$refs.md?.$el?.querySelector(".v-show-content");
-        if (!contentDom) return;
+    processCodeBlocks(forceRebuild = false) {
+      this.isProcessingCodeBlocks = true;
+      try {
+        const contentDom = this.getContentDom();
+        if (!contentDom) {
+          return;
+        }
 
-        // 移除已存在的代码块包装器
-        const existingWrappers = contentDom.querySelectorAll(
-          ".code-block-wrapper"
-        );
-        existingWrappers.forEach((wrapper) => {
-          const pre = wrapper.querySelector("pre");
-          if (pre) {
-            wrapper.parentNode?.insertBefore(pre, wrapper);
-            wrapper.remove();
-          }
-        });
+        if (forceRebuild) {
+          // 移除已存在的代码块包装器
+          const existingWrappers = contentDom.querySelectorAll(
+            ".code-block-wrapper"
+          );
+          existingWrappers.forEach((wrapper) => {
+            const pre = wrapper.querySelector("pre");
+            if (pre) {
+              wrapper.parentNode?.insertBefore(pre, wrapper);
+              wrapper.remove();
+            }
+          });
+        }
 
         // 处理所有代码块
         const preElements = contentDom.querySelectorAll("pre");
@@ -231,16 +347,13 @@ export default {
 
             if (isClipboardApiAvailable) {
               try {
-                console.log("使用Clipboard API复制文本");
                 await navigator.clipboard.writeText(codeText);
                 this.handleCopySuccess(copyBtn);
               } catch (err) {
-                console.error("Clipboard API失败，尝试降级方案：", err);
                 this.fallbackCopyText(codeText, copyBtn);
               }
             } else {
               // 直接使用降级方案
-              console.log("使用降级方案复制文本");
               this.fallbackCopyText(codeText, copyBtn);
             }
           };
@@ -257,7 +370,9 @@ export default {
 
         // 处理图片点击事件
         this.processImages();
-      });
+      } finally {
+        this.isProcessingCodeBlocks = false;
+      }
     },
 
     // 处理图片点击事件，使用 Element Plus 的图片查看器
@@ -327,7 +442,7 @@ export default {
       setTimeout(() => {
         copyBtn.innerHTML = this.createCopyButtonHtml("copy", "复制");
         copyBtn.classList.remove("copied");
-      }, 3000);
+      }, COPY_FEEDBACK_RESET_DELAY);
     },
 
     // 处理复制失败
@@ -338,7 +453,7 @@ export default {
       setTimeout(() => {
         copyBtn.innerHTML = this.createCopyButtonHtml("copy", "复制");
         copyBtn.classList.remove("copied");
-      }, 3000);
+      }, COPY_FEEDBACK_RESET_DELAY);
     },
 
     // 降级复制方案

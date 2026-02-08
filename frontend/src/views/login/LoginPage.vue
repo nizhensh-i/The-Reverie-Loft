@@ -39,7 +39,7 @@ export default {
       isRemember: false,
       loading: false,
       oauthProviders: [],
-      oauthLoading: false,
+      activeProvider: "",
     };
 
     if (!isDev) {
@@ -164,7 +164,7 @@ export default {
       }
     },
     async startOAuth(provider) {
-      this.oauthLoading = provider;
+      this.activeProvider = provider;
       try {
         const res = await authApi.oauthAuthorize(provider);
         const url = res.data?.authorize_url;
@@ -176,7 +176,7 @@ export default {
       } catch (error) {
         ElMessage.error("获取授权链接失败");
       } finally {
-        this.oauthLoading = false;
+        this.activeProvider = "";
       }
     },
   },
@@ -273,7 +273,7 @@ export default {
 
         <SocialOAuthButtons
           :providers="oauthProviders"
-          :loading="oauthLoading"
+          :active-provider="activeProvider"
           @start="startOAuth"
         />
 

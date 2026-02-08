@@ -6,7 +6,7 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
-  loading: {
+  activeProvider: {
     type: String,
     default: "",
   },
@@ -54,8 +54,8 @@ function handleClick(provider) {
         v-for="item in renderProviders"
         :key="item.provider"
         class="oauth-chip"
-        :class="{ loading: loading === item.provider }"
-        :disabled="loading === item.provider"
+        :class="{ loading: activeProvider === item.provider }"
+        :disabled="activeProvider === item.provider"
         @click="handleClick(item.provider)"
         :title="item.label"
       >
