@@ -30,6 +30,7 @@ export default {
       loading: {
         publishPost: false,
         card: false,
+        more: false,
       },
       showEmoji: false,
       // 延迟渲染会导致与空页面闪烁
@@ -42,12 +43,21 @@ export default {
       followPost: [],
     };
   },
+  computed: {
+    noMore() {
+      if (this.posts_count < 0) return false;
+      return this.posts.length >= this.posts_count;
+    },
+    infiniteDisabled() {
+      return this.loading.card || this.loading.more || this.noMore;
+    },
+  },
   setup() {
     const currentUser = useCurrentUserStore();
     return { currentUser };
   },
   mounted() {
-    this.getPosts(this.currentPage, this.activeName);
+    this.resetPosts(this.activeName);
     // 关注的用户发布了新文章
     emitter.on("followPost", (newPost) => {
       this.showDot = true;
@@ -56,35 +66,64 @@ export default {
     });
     // 监听文章删除事件，刷新页面
     emitter.on("postDeleted", () => {
-      this.getPosts(this.currentPage, this.activeName);
+      this.resetPosts(this.activeName);
     });
   },
   methods: {
     changeTab(tabName) {
-      this.getPosts(this.currentPage, tabName);
+      this.resetPosts(tabName);
     },
-    handleCurrentChange() {
-      this.getPosts(this.currentPage, this.activeName);
+    resetPosts(tabName) {
+      this.currentPage = 1;
+      this.posts = [];
+      this.posts_count = -1;
+      this.loading.more = false;
+      this.fetchPosts(1, tabName, { append: false });
     },
-    getPosts(page, tabName) {
-      this.loading.card = true;
-      if (tabName === "showFollowed" && this.showDot) {
+    async fetchPosts(page, tabName, { append = false } = {}) {
+      const loadingKey = append ? "more" : "card";
+      this.loading[loadingKey] = true;
+      if (tabName === "showFollowed" && this.showDot && page === 1) {
         const ids = this.followPost.map((item) => item.id);
         notificationApi.markRead({ ids }).then(() => {
           this.showDot = false;
         });
       }
-      postApi.getPosts(page, tabName).then((res) => {
-        this.loading.card = false;
+      try {
+        const res = await postApi.getPosts(page, tabName);
         if (res.code === 200) {
-          this.posts = res.data;
-          this.posts_count = res.total || 0;
+          const list = Array.isArray(res.data) ? res.data : [];
+          this.posts = append ? [...this.posts, ...list] : list;
+          if (typeof res.total === "number") {
+            this.posts_count = res.total;
+          } else if (!append) {
+            this.posts_count = list.length;
+          } else {
+            this.posts_count = Math.max(this.posts_count, this.posts.length);
+          }
+          return true;
         }
+      } finally {
+        this.loading[loadingKey] = false;
+      }
+      return false;
+    },
+    async loadMore() {
+      if (this.infiniteDisabled) return;
+      const nextPage = this.currentPage + 1;
+      const ok = await this.fetchPosts(nextPage, this.activeName, {
+        append: true,
       });
+      if (ok) {
+        this.currentPage = nextPage;
+      }
     },
     getPostsResult(post) {
-      this.posts.unshift(...post);
-      this.posts_count++;
+      const newPosts = Array.isArray(post) ? post : [post];
+      this.posts.unshift(...newPosts);
+      if (this.posts_count >= 0) {
+        this.posts_count += newPosts.length;
+      }
 
       // 首页设置了缓存，手动更新为第一页
       this.currentPage = 1;
@@ -101,7 +140,14 @@ export default {
 
 <template>
   <PageScroll max-height="calc(100vh - 45px - 5px)">
-    <div class="posts-container">
+    <div
+      class="posts-container"
+      v-infinite-scroll="loadMore"
+      :infinite-scroll-delay="200"
+      :infinite-scroll-distance="160"
+      :infinite-scroll-disabled="infiniteDisabled"
+      :infinite-scroll-immediate="true"
+    >
       <RegisterPrompt
         v-if="!currentUser.isLogin"
         :key="'register-prompt'"
@@ -131,23 +177,26 @@ export default {
             :throttle="throttle"
             :useNew="true"
           >
-            <div class="posts-list">
-              <transition-group name="slide-in">
-                <PostPreview
-                  v-for="item in posts"
-                  :key="item.id"
-                  :post="item"
-                  :containerStyle="{ marginBottom: '20px' }"
-                  @click="$router.push(`/postDetail/${item.id}`)"
-                  v-slide-in
-                >
-                  <template #image>
-                    <PostImage :postImages="item.post_images" @click.stop="" />
-                  </template>
-                </PostPreview>
-              </transition-group>
-            </div>
+            <transition-group name="slide-in" tag="div" class="posts-list">
+              <PostPreview
+                v-for="item in posts"
+                :key="item.id"
+                :post="item"
+                @click="$router.push(`/postDetail/${item.id}`)"
+                v-slide-in
+              >
+                <template #image>
+                  <PostImage :postImages="item.post_images" @click.stop="" />
+                </template>
+              </PostPreview>
+            </transition-group>
           </SkeletonUtil>
+          <div class="posts-infinite-footer">
+            <div v-if="loading.more" class="posts-loading">加载中...</div>
+            <div v-else-if="noMore && posts.length" class="posts-end">
+              没有更多内容了
+            </div>
+          </div>
         </el-tab-pane>
         <el-tab-pane name="showFollowed" v-if="currentUser.isLogin">
           <template #label>
@@ -165,44 +214,34 @@ export default {
             :throttle="throttle"
             :useNew="true"
           >
-            <div class="posts-list">
-              <transition-group name="slide-in">
-                <PostPreview
-                  v-for="item in posts"
-                  :key="item.id"
-                  :post="item"
-                  :containerStyle="{ marginBottom: '20px' }"
-                  @click="$router.push(`/postDetail/${item.id}`)"
-                  v-slide-in
-                >
-                  <template #image>
-                    <PostImage :postImages="item.post_images" @click.stop="" />
-                  </template>
-                </PostPreview>
-              </transition-group>
-            </div>
+            <transition-group name="slide-in" tag="div" class="posts-list">
+              <PostPreview
+                v-for="item in posts"
+                :key="item.id"
+                :post="item"
+                @click="$router.push(`/postDetail/${item.id}`)"
+                v-slide-in
+              >
+                <template #image>
+                  <PostImage :postImages="item.post_images" @click.stop="" />
+                </template>
+              </PostPreview>
+            </transition-group>
           </SkeletonUtil>
+          <div class="posts-infinite-footer">
+            <div v-if="loading.more" class="posts-loading">加载中...</div>
+            <div v-else-if="noMore && posts.length" class="posts-end">
+              没有更多内容了
+            </div>
+          </div>
         </el-tab-pane>
       </el-tabs>
-      <el-pagination
-        v-model:current-page="currentPage"
-        :page-size="10"
-        layout="total, prev, pager, next"
-        :total="posts_count"
-        @current-change="handleCurrentChange"
-        :hide-on-single-page="true"
-        :pager-count="5"
-      />
       <ICP />
     </div>
   </PageScroll>
 </template>
 <style lang="scss" scoped>
 @use "./components/PostCard.scss" as *;
-
-.posts-container {
-  padding: 10px;
-}
 
 .gradient-text {
   position: relative;
@@ -266,6 +305,46 @@ export default {
 
   :deep(.el-tabs__nav-wrap::after) {
     display: none;
+  }
+}
+
+.posts-infinite-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 0 24px;
+  color: #909399;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+
+  .posts-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    &::before {
+      content: "";
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid rgba(9, 200, 206, 0.25);
+      border-top-color: #09c8ce;
+      animation: posts-spin 0.9s linear infinite;
+    }
+  }
+
+  .posts-end {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #f5f7fa;
+    color: #909399;
+  }
+}
+
+@keyframes posts-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>

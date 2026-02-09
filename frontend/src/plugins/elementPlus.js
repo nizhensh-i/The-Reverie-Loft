@@ -112,7 +112,7 @@ import {
    * 导出来源：https://github.com/element-plus/element-plus/blob/dev/packages/element-plus/plugin.ts#L11-L16
    * */
   ElLoading, // v-loading 指令
-  //   ElInfiniteScroll, // v-infinite-scroll 指令
+  ElInfiniteScroll, // v-infinite-scroll 指令
   //   ElPopoverDirective, // v-popover 指令
   ElMessage, // $message 全局属性对象globalProperties
   //   ElMessageBox, // $msgbox、$alert、$confirm、$prompt 全局属性对象globalProperties
@@ -227,7 +227,7 @@ const components = [
 
 const plugins = [
   ElLoading,
-  //   ElInfiniteScroll,
+  ElInfiniteScroll,
   //   ElPopoverDirective,
   ElMessage,
   //   ElMessageBox,

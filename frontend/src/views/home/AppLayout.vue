@@ -3,13 +3,13 @@ import Header from "./components/Header.vue";
 import GlobalPlayer from "@/views/user/components/music/GlobalPlayer.vue";
 import MiniPlayer from "@/views/user/components/music/MiniPlayer.vue";
 import MobileFloatingPlayer from "@/views/user/components/music/MobileFloatingPlayer.vue";
-import { useRoute } from "vue-router";
-import { computed } from "vue";
+// import { useRoute } from "vue-router";
+// import { computed } from "vue";
 import zhCn from "element-plus/es/locale/lang/zh-cn";
 
-const route = useRoute();
+// const route = useRoute();
 // 判断是否为 用户资料页面
-const isUserPage = computed(() => route.name === "user");
+// const isUserPage = computed(() => route.name === "user");
 </script>
 
 <template>
@@ -19,7 +19,7 @@ const isUserPage = computed(() => route.name === "user");
         <Header />
       </el-header>
       <el-divider />
-      <el-main :class="{ 'no-padding': isUserPage }">
+      <el-main>
         <router-view v-slot="{ Component, route }">
           <keep-alive>
             <component
@@ -62,11 +62,12 @@ body {
 }
 
 .el-main {
-  padding: 0 20px;
+  // padding: 0 20px;
 
-  &.no-padding {
-    padding: 0 !important;
-  }
+  // &.no-padding {
+  //   padding: 0 !important;
+  // }
+  padding: 0;
 }
 
 .el-divider--horizontal {

@@ -165,8 +165,8 @@
     
     .posts-list {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
       align-items: start;
       
       /* 瀑布流布局配置 - 更优雅的错落布局 */
@@ -176,9 +176,12 @@
   
   /* 大屏幕优化 */
   @media (min-width: 1024px) {
+    max-width: 1280px;
+    padding: 24px;
+    
     .posts-list {
-      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-      gap: 28px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 26px;
     }
   }
   
@@ -187,7 +190,7 @@
     max-width: 1400px;
     
     .posts-list {
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 32px;
     }
   }

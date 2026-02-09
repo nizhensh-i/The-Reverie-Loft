@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onActivated, onMounted } from "vue";
+import { ref, computed, onActivated, onMounted } from "vue";
+import { useRoute } from "vue-router";
 
 const props = defineProps({
   maxHeight: {
@@ -11,6 +12,10 @@ const props = defineProps({
     default: false,
   },
 });
+
+const route = useRoute();
+// 判断是否为 用户资料页面
+const noPadding = computed(() => route.name === "user");
 
 const scrollbarRef = ref();
 const scrollTop = ref(0);
@@ -58,7 +63,9 @@ defineExpose({
     @scroll="handleScroll"
     class="page-scroll"
   >
-    <slot></slot>
+    <div :class="['page-container', { 'no-padding': noPadding }]">
+      <slot />
+    </div>
   </el-scrollbar>
 </template>
 
@@ -67,6 +74,13 @@ defineExpose({
   :deep(.el-scrollbar__thumb) {
     width: 0;
     background-color: rgba(0, 0, 0, 0.3);
+  }
+}
+
+.page-container {
+  padding: 20px;
+  &.no-padding {
+    padding: 0;
   }
 }
 </style>

@@ -313,10 +313,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.settings-content {
-  padding: 12px;
-}
-
 .cell-group {
   margin-bottom: 16px;
 
