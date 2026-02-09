@@ -11,6 +11,7 @@
   "dependencies": {
     "@pureadmin/utils": "^2.5.0",
     "@vant/area-data": "^2.0.0",
+    "@vant/touch-emulator": "^1.5.0",
     "aplayer": "^1.10.1",
     "axios": "^1.6.2",
     "canvas-confetti": "^1.9.3",

@@ -210,6 +210,7 @@ const submit = ({ content, parentId, reply, finish, mentionList }) => {
       // 适配新的统一接口返回格式
       if (res.code === 200) {
         finish(res.data);
+        query.total++;
         ElMessage.info("评论成功!");
       } else {
         ElMessage.error(res.message || "评论失败");

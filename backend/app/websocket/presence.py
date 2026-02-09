@@ -18,6 +18,9 @@ class UserPresenceService:
     - last_active  -> unix_timestamp
     """
 
+    # 心跳超时时间：5分钟（300秒）
+    HEARTBEAT_TIMEOUT = 300
+
     def __init__(self, redis):
         self.redis = redis
 
@@ -54,21 +57,46 @@ class UserPresenceService:
 
     def is_user_online(self, user_id: int) -> bool:
         """
-        判断用户是否在线
+        判断用户是否在线（检查心跳是否超时）
         """
-        return self.redis.sismember("online:users", user_id)
+        if not self.redis.sismember("online:users", user_id):
+            return False
+
+        # 检查最后活跃时间是否超时
+        status = self.get_user_presence(user_id)
+        if not status:
+            return False
+
+        last_active = int(status.get("last_active", 0))
+        current_time = int(time.time())
+
+        # 如果超过心跳超时时间，认为已离线
+        if current_time - last_active > self.HEARTBEAT_TIMEOUT:
+            # 异步清理（不阻塞当前调用）
+            self.mark_user_offline(user_id)
+            return False
+
+        return True
 
     def list_online_users(self) -> set[int]:
         """
-        获取所有在线用户 ID
+        获取所有在线用户 ID（过滤心跳超时的用户）
         """
-        return {int(user_id) for user_id in self.redis.smembers("online:users")}
+        online_users = self.redis.smembers("online:users")
+        active_users = set()
+
+        for user_id in online_users:
+            user_id_int = int(user_id)
+            if self.is_user_online(user_id_int):  # 这会检查心跳超时
+                active_users.add(user_id_int)
+
+        return active_users
 
     def count_online_users(self) -> int:
         """
-        获取在线用户数量
+        获取在线用户数量（过滤心跳超时）
         """
-        return self.redis.scard("online:users")
+        return len(self.list_online_users())
 
     def get_user_presence(self, user_id: int) -> dict:
         """

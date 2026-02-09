@@ -19,7 +19,7 @@ def online():
     """获取在线用户信息"""
     logging.info("获取在线用户信息")
 
-    _, presence, _ = init_ws_services(redis)
+    _, presence, _, _ = init_ws_services(redis)
     # 在线人数信息
     user_ids = presence.list_online_users()
     logging.info(f"在线用户:{user_ids}")

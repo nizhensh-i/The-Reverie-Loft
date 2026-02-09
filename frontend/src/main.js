@@ -22,6 +22,9 @@ import vSlideIn from "@/directives/vSlideIn.js";
 // 解决 Added non-passive event listener to a scroll-blocking 'touchstart' event. 问题
 import "default-passive-events";
 
+// vant桌面端适配
+import "@vant/touch-emulator";
+
 // 变灰色
 enableGrayscale();
 

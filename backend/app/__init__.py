@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import logging
 import os
 
@@ -136,8 +137,17 @@ def create_ws_app(config_name):
         ping_interval=60,
         message_queue=app.config["SOCKETIO_MESSAGE_QUEUE"],
     )
-    # 注册WS事件
-    from app.event import register_ws_events
+
+    # 注册WS事件和清理服务
+    from app.event import cleanup, register_cleanup_handlers, register_ws_events
 
     register_ws_events(socketio, app)
+
+    # 启动WebSocket清理服务
+    cleanup.start()
+    logging.info("WebSocket 应用初始化完成，清理服务已启动")
+
+    # 注册优雅停机处理器（只在WebSocket应用中注册）
+    register_cleanup_handlers(app)
+
     return app

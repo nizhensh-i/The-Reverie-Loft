@@ -1,4 +1,8 @@
+# -*- coding: utf-8 -*-
+import atexit
 import logging
+import signal
+import sys
 
 import eventlet
 from flask import request
@@ -10,7 +14,41 @@ from .models import Message, Notification, NotificationType, User
 from .mycelery.notification_task import create_chat_notifications
 from .websocket import init_ws_services
 
-connection, presence, conversation = init_ws_services(redis)
+connection, presence, conversation, cleanup = init_ws_services(redis)
+
+
+def register_cleanup_handlers(app):
+    """注册 WebSocket 优雅停机处理器"""
+
+    def shutdown_handler(signum=None, frame=None):
+        """优雅停机处理器"""
+        if signum:
+            signal_name = {signal.SIGTERM: "SIGTERM", signal.SIGINT: "SIGINT"}.get(
+                signum, "未知"
+            )
+            logging.warning(f"接收到终止信号 {signal_name}，正在优雅停机...")
+        else:
+            logging.warning("应用正常退出，正在清理资源...")
+
+        # 停止清理服务
+        cleanup.stop()
+
+        # 可选：清理所有 WebSocket 相关数据
+        cleanup.cleanup_all()
+
+        # 确保触发 atexit
+        if signum:
+            sys.exit(0)
+
+    # 覆盖正常退出
+    atexit.register(shutdown_handler)
+
+    # kill <pid> 或 docker stop
+    signal.signal(signal.SIGTERM, shutdown_handler)
+    # Ctrl+C 中断
+    signal.signal(signal.SIGINT, shutdown_handler)
+
+    logging.info("WebSocket 优雅停机处理器已注册")
 
 
 # 封装为注册函数
@@ -45,33 +83,49 @@ def register_ws_events(socketio, app):
     @socketio.on("connect")
     def handle_connect(auth):
         username, user_id = verify_token_in_websocket()
+
+        # 检查是否已有连接，限制单个用户连接数（防止资源滥用）
+        existing_sockets = connection.get_bound_sockets(user_id)
+        MAX_SOCKETS_PER_USER = 10
+        if len(existing_sockets) >= MAX_SOCKETS_PER_USER:
+            logging.warning(f"用户 {username} 连接数超过限制 ({MAX_SOCKETS_PER_USER})")
+            raise ConnectionRefusedError(f"连接数超过限制，当前连接数: {len(existing_sockets)}")
+
         # 内存操作同步执行（无阻塞）
         connection.bind_socket_to_user(user_id, request.sid)
         presence.mark_user_online(user_id)
         join_room(str(user_id))
-        logging.info(f"用户 {username} 已连接，新连接ID：{request.sid}")
+
+        socket_count = len(connection.get_bound_sockets(user_id))
+        logging.info(f"用户 {username} 已连接，新连接ID：{request.sid}，当前总连接数：{socket_count}")
 
     # 断开事件：纯内存操作，同步执行
     @socketio.on("disconnect")
     def handle_disconnect():
-        username, user_id = verify_token_in_websocket()
+        sid = request.sid
+        user_id = connection.unbind_socket(sid)
 
-        user_id = connection.unbind_socket(request.sid)
         if not user_id:
+            logging.warning(f"断开连接: 未找到 socket {sid} 对应的用户")
             return
 
         # 如果该用户已经没有任何 socket → 离线
-        if not connection.get_bound_sockets(user_id):
+        remaining_sockets = connection.get_bound_sockets(user_id)
+        if not remaining_sockets:
             presence.mark_user_offline(user_id)
-
-        logging.info(f"用户 {username} 已断开连接")
+            logging.info(f"用户 ID:{user_id} 已完全离线")
+        else:
+            logging.info(f"用户 ID:{user_id} 断开一个连接，剩余 {len(remaining_sockets)} 个连接")
 
     # 心跳事件：纯内存操作，同步执行
     @socketio.on("heartbeat")
     def handle_heartbeat():
         username, user_id = verify_token_in_websocket()
         presence.update_last_active(user_id)
-        logging.info(f"用户 {username} 发送心跳包")
+
+        # 记录统计信息（可选，用于监控）
+        socket_count = len(connection.get_bound_sockets(user_id))
+        logging.debug(f"用户 {username} 发送心跳包，当前连接数: {socket_count}")
 
     # 进入聊天事件-异步DB操作（标记已读）
     def async_enter_chat(user_id, target_id):
@@ -145,20 +199,22 @@ def register_ws_events(socketio, app):
             db.session.flush()
 
             try:
-                receiver_presence = presence.get_user_presence(receiver_id)
+                # 使用正确的在线检测（会检查心跳超时）
+                is_online = presence.is_user_online(receiver_id)
                 active_chat = conversation.get_active_chat(receiver_id)
+
                 logging.info(
-                    f"接收者 {receiver_id} 状态: {receiver_presence}, 活跃聊天: {active_chat}"
+                    f"接收者 {receiver_id} 在线状态: {is_online}, " f"活跃聊天: {active_chat}"
                 )
 
-                if active_chat == sender_id:
+                if is_online and active_chat == sender_id:
                     logging.info(f"用户 {receiver_id} 当前正在与发送者 {sender_id} 聊天")
                     msg.is_read = True
                     socketio.emit("new_message", msg.to_json(), to=str(receiver_id))
                 else:
                     # 异步生成通知（Celery任务）
                     create_chat_notifications.delay(receiver_id, sender_id, msg.id)
-                    if presence.is_user_online(receiver_id):
+                    if is_online:
                         logging.info(f"用户 {receiver_id} 在线但不在聊天页面，消息已保存")
                     else:
                         logging.info(f"用户 {receiver_id} 离线，消息已保存")
