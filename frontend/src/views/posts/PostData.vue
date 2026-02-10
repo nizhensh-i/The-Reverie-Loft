@@ -194,7 +194,7 @@ export default {
           <div class="posts-infinite-footer">
             <div v-if="loading.more" class="posts-loading">加载中...</div>
             <div v-else-if="noMore && posts.length" class="posts-end">
-              没有更多内容了
+              已经到底了～
             </div>
           </div>
         </el-tab-pane>
@@ -231,7 +231,7 @@ export default {
           <div class="posts-infinite-footer">
             <div v-if="loading.more" class="posts-loading">加载中...</div>
             <div v-else-if="noMore && posts.length" class="posts-end">
-              没有更多内容了
+              已经到底了～
             </div>
           </div>
         </el-tab-pane>
@@ -313,7 +313,7 @@ export default {
   justify-content: center;
   align-items: center;
   min-height: 36px;
-  padding: 8px 0 24px;
+  padding: 0 0 24px;
   color: #909399;
   font-size: 13px;
   letter-spacing: 0.2px;

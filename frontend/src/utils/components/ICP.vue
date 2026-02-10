@@ -84,8 +84,8 @@ onUnmounted(() => {
 <style scoped lang="scss">
 .footer {
   width: 100%;
-  padding: 20px 0 16px;
-  margin-top: 40px;
+  // padding: 20px 0 16px;
+  // margin-top: 40px;
   transition: all 0.3s ease;
 
   &.fixed {
@@ -94,8 +94,8 @@ onUnmounted(() => {
   }
 
   @media (max-width: 768px) {
-    padding: 16px 0 12px;
-    margin-top: 30px;
+    // padding: 16px 0 12px;
+    // margin-top: 30px;
   }
 }
 

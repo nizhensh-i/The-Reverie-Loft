@@ -78,7 +78,7 @@ defineExpose({
 }
 
 .page-container {
-  padding: 20px;
+  padding: 0 20px;
   &.no-padding {
     padding: 0;
   }
