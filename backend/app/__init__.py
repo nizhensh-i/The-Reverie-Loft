@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_caching import Cache
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, current_user
+from flask_jwt_extended import current_user
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_mail import Mail
@@ -16,7 +16,9 @@ from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from .management import setup_migration
 from .mycelery import celery_init_app
+from .utils._jwt import setup_jwt
 from .utils.logger import setup_logging
 from .utils.response import server_error
 
@@ -27,7 +29,6 @@ def my_key_func():
 
 
 db = SQLAlchemy()
-jwt = JWTManager()
 mail = Mail()
 redis = FlaskRedis()
 socketio = SocketIO()
@@ -76,12 +77,14 @@ def create_app(config_name):
     setup_logging(app)
 
     db.init_app(app)
-    jwt.init_app(app)
     mail.init_app(app)
     redis.init_app(app, decode_responses=True)
     celery_init_app(app)
     limiter.init_app(app)
     cache.init_app(app)
+
+    setup_migration(app, db)
+    setup_jwt(app, redis)
 
     from .auth import auth as auth_blueprint
 
@@ -127,7 +130,6 @@ def create_ws_app(config_name):
     setup_logging(app)
 
     db.init_app(app)
-    jwt.init_app(app)
     redis.init_app(app, decode_responses=True)
     celery_init_app(app)
     socketio.init_app(
@@ -137,6 +139,8 @@ def create_ws_app(config_name):
         ping_interval=60,
         message_queue=app.config["SOCKETIO_MESSAGE_QUEUE"],
     )
+
+    setup_jwt(app, redis)
 
     # 注册WS事件和清理服务
     from app.event import cleanup, register_cleanup_handlers, register_ws_events

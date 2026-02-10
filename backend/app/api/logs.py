@@ -68,6 +68,5 @@ class LogApi(DecoratedMethodView):
 
 
 def register_log_api(bp, *, logs_url):
-    logging.info(f"注册日志API: {logs_url}")
     _log = LogApi.as_view("logs")
     bp.add_url_rule(logs_url, view_func=_log)

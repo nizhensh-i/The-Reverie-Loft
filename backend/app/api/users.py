@@ -6,7 +6,7 @@ from flask_jwt_extended import current_user, jwt_required
 from sqlalchemy.orm import joinedload
 
 from .. import db
-from ..decorators import admin_required, sql_profile
+from ..decorators import admin_required
 from ..models import Post, Role, User
 from ..utils.response import error, not_found, success
 from . import api
@@ -36,7 +36,6 @@ def get_user_by_username(username):
 
 
 @api.route("/users/<string:username>/posts")
-@sql_profile
 def get_post_by_user(username):
     """根据用户名获取文章的资料页面路由"""
     logging.info(f"获取用户文章: username={username}")

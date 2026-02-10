@@ -1,20 +1,4 @@
-import os
-import sys
-
 import click
-from app.models import (
-    Comment,
-    Follow,
-    Image,
-    ImageType,
-    Log,
-    Permission,
-    Post,
-    PostType,
-    Praise,
-    Role,
-    User,
-)
 from flask_migrate import Migrate, upgrade
 
 migrate = Migrate()
@@ -25,6 +9,20 @@ def setup_migration(app, db):
 
     @app.shell_context_processor
     def make_shell_context():
+        from app.models import (
+            Comment,
+            Follow,
+            Image,
+            ImageType,
+            Log,
+            Permission,
+            Post,
+            PostType,
+            Praise,
+            Role,
+            User,
+        )
+
         return dict(
             db=db,
             User=User,
@@ -44,6 +42,8 @@ def setup_migration(app, db):
     def deploy():
         """运行部署任务"""
         upgrade()
+        from app.models import Role, User
+
         Role.insert_roles()
         User.add_self_follows()
 

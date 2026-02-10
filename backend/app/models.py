@@ -10,7 +10,7 @@ from sqlalchemy import and_, event, func
 from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from . import db, jwt, redis
+from . import db, redis
 from .exceptions import ValidationError
 from .utils.common import get_avatars_url
 from .utils.time_util import DateUtils
@@ -473,15 +473,15 @@ class AnonymousUser:
         return False
 
 
-@jwt.user_identity_loader
-def user_identify_lookup(user):
-    return user.id
+# @jwt.user_identity_loader
+# def user_identify_lookup(user):
+#     return user.id
 
 
-@jwt.user_lookup_loader
-def user_lookup_callback(_jwt_header, jwt_data):
-    identity = jwt_data["sub"]
-    return User.query.filter_by(id=identity).one_or_none()
+# @jwt.user_lookup_loader
+# def user_lookup_callback(_jwt_header, jwt_data):
+#     identity = jwt_data["sub"]
+#     return User.query.filter_by(id=identity).one_or_none()
 
 
 class PostType(Enum):
