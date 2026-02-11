@@ -5,12 +5,12 @@ from celery import shared_task
 from flask import render_template
 from flask_mail import Message
 
+from ...api.upload import del_qiniu_image
+from ...models import Image, ImageType, Post
 from .. import db, mail
-from ..main.uploads import del_qiniu_image
-from ..models import Image, ImageType, Post
 
 
-@shared_task(ignore_result=False)
+@shared_task(ignore_result=True)
 def send_email(to, subject, template, **kwargs):
     try:
         message = Message(subject=subject, recipients=[to])
@@ -21,7 +21,7 @@ def send_email(to, subject, template, **kwargs):
         print("发送失败")
 
 
-@shared_task(ignore_result=False)
+@shared_task(ignore_result=True)
 def hard_delete_post():
     """定期删除文章
     相关的评论、点赞、通知已通过 数据库级联 删除
@@ -92,7 +92,7 @@ def _handle_delete_error(e):
     db.session.rollback()
 
     try:
-        from ..utils.time_util import DateUtils
+        from ...utils.time_util import DateUtils
 
         send_email.delay(
             "1912592745@qq.com",

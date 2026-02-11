@@ -4,11 +4,9 @@ from flask import current_app, request
 from flask_jwt_extended import current_user, jwt_required
 from werkzeug.exceptions import TooManyRequests
 
-from .. import db, limiter
 from ..decorators import DecoratedMethodView, permission_required
+from ..infrastructure import cache_invalidator, db, limiter
 from ..models import Comment, NotificationType, Permission, Post
-from ..mycelery.notification_task import create_comment_notifications
-from ..utils.cache_helper import cache_invalidator
 from ..utils.common import get_avatars_url
 from ..utils.response import error, success
 from ..utils.text_filter import DFAFilter
@@ -98,6 +96,7 @@ class CommentApi(DecoratedMethodView):
             notifications_data.extend(
                 [(receiver_id, NotificationType.AT) for receiver_id in at_list]
             )
+        from ..infrastructure import create_comment_notifications
 
         create_comment_notifications.delay(
             post_id, comment_id, current_user.id, notifications_data

@@ -1,17 +1,13 @@
-import logging
 import os
 
-from app.utils.common import get_local_ip
-from app.utils.logger import setup_logging
-from dotenv import load_dotenv
+from app.infrastructure import setup_logging
+from app.utils.common import get_local_ip, load_env
 
 # 初始化全局日志系统
 setup_logging()
 
-dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
-logging.info(f"加载环境变量文件: {dotenv_path}")
-if os.path.exists(dotenv_path):
-    load_dotenv(dotenv_path)
+# 加载.env环境变量
+load_env()
 
 # 开发环境自动获取本地地址
 if os.getenv("FLASK_DEBUG"):

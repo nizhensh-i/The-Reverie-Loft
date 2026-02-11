@@ -4,8 +4,10 @@ import os
 from celery import shared_task
 from flask_socketio import SocketIO
 
+from ...models import Notification, NotificationType
+
+# from .. import db
 from .. import db
-from ..models import Notification, NotificationType
 
 # github工作流上redis容器不使用密码
 redis_pass = "" if os.getenv("FLASK_CONFIG") == "testing" else ":1234@"

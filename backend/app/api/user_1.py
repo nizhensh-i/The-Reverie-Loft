@@ -3,8 +3,8 @@ import logging
 from flask import request
 from flask_jwt_extended import current_user, jwt_required
 
-from .. import db
 from ..decorators import DecoratedMethodView
+from ..infrastructure import db
 from ..models import User
 from ..utils.common import get_avatars_url
 from ..utils.response import error, success

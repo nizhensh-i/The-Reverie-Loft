@@ -12,8 +12,10 @@ from flask_jwt_extended import (
 from .. import db
 from ..api.upload import get_random_user_avatars
 from ..decorators import admin_required
+
+# from ..mycelery.tasks import send_email
+from ..infrastructure import send_email
 from ..models import User
-from ..mycelery.tasks import send_email
 from ..schemas import (
     BindEmailRequest,
     ChangeEmailRequest,

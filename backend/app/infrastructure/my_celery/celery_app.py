@@ -37,3 +37,7 @@ def celery_init_app(app) -> Celery:
     celery_app.set_default()
     app.extensions["celery"] = celery_app
     return celery_app
+
+
+def setup_celery(app):
+    celery_init_app(app)

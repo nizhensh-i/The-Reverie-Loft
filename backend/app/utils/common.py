@@ -1,5 +1,8 @@
+import logging
 import os
 import socket
+
+from dotenv import load_dotenv
 
 
 def get_avatars_url(key):
@@ -20,6 +23,31 @@ def get_local_ip():
     finally:
         s.close()
     return ip
+
+
+import os
+
+
+def get_env_file_path():
+    # 获取当前文件所在目录
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # 向上查找直到找到.env文件或到达根目录
+    while True:
+        env_path = os.path.join(current_dir, ".env")
+        if os.path.isfile(env_path):
+            return env_path
+        parent_dir = os.path.dirname(current_dir)
+        if parent_dir == current_dir:
+            # 已到达文件系统根目录
+            return None
+        current_dir = parent_dir
+
+
+def load_env():
+    dotenv_path = get_env_file_path()
+    logging.info(f"加载环境变量文件: {dotenv_path}")
+    if os.path.exists(dotenv_path):
+        load_dotenv(dotenv_path)
 
 
 if __name__ == "__main__":

@@ -9,7 +9,6 @@ from flask_sqlalchemy import record_queries
 from user_agents import parse
 
 from .models import Permission
-from .mycelery.log_task import log_visitor
 from .utils.response import forbidden
 
 
@@ -86,6 +85,9 @@ def log_operate(f):
                 "operate": "访问首页",
             }
         )
+
+        # 延迟导入以避免循环依赖
+        from .infrastructure import log_visitor
 
         # 记录用户
         log_visitor.delay(is_register, client_ip, ua)

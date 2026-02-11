@@ -9,7 +9,7 @@ from flask_jwt_extended import current_user, jwt_required
 from qiniu import Auth, BucketManager, build_batch_delete
 from sqlalchemy import and_
 
-from .. import db
+from ..infrastructure import db
 from ..models import Image, ImageType
 from ..utils.common import get_avatars_url
 from ..utils.response import bad_request, success

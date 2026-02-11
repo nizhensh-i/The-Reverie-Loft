@@ -3,7 +3,7 @@ import logging
 from flask import request
 from flask_jwt_extended import JWTManager
 
-from ..response import error, unauthorized
+from ...utils.response import error, unauthorized
 
 jwt = JWTManager()
 

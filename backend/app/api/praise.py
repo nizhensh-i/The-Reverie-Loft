@@ -4,11 +4,9 @@ import logging
 from flask import request
 from flask_jwt_extended import current_user, jwt_required
 
-from .. import db
 from ..decorators import DecoratedMethodView
+from ..infrastructure import cache_invalidator, db
 from ..models import Comment, Post, Praise
-from ..mycelery.notification_task import create_like_notifications
-from ..utils.cache_helper import cache_invalidator
 from ..utils.response import error, success
 from . import api
 
@@ -62,6 +60,8 @@ class PraisePostApi(DecoratedMethodView):
 
             # 异步创建点赞通知
             if current_user.id != post.author_id:
+                from ..infrastructure import create_like_notifications
+
                 create_like_notifications.delay(
                     post.id, None, current_user.id, post.author_id
                 )

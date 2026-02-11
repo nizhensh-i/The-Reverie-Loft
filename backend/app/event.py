@@ -11,7 +11,6 @@ from flask_socketio import ConnectionRefusedError, join_room
 
 from . import db, redis
 from .models import Message, Notification, NotificationType, User
-from .mycelery.notification_task import create_chat_notifications
 from .websocket import init_ws_services
 
 connection, presence, conversation, cleanup = init_ws_services(redis)
@@ -212,6 +211,9 @@ def register_ws_events(socketio, app):
                     msg.is_read = True
                     socketio.emit("new_message", msg.to_json(), to=str(receiver_id))
                 else:
+                    # 延迟导入以避免循环依赖
+                    from .infrastructure import create_chat_notifications
+
                     # 异步生成通知（Celery任务）
                     create_chat_notifications.delay(receiver_id, sender_id, msg.id)
                     if is_online:

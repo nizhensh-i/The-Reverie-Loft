@@ -1,12 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import logging
 import logging.handlers
 import os
 from datetime import datetime
 
-from .time_util import DateUtils
+from ...utils.time_util import DateUtils
 
 
 class FlaskMailHandler(logging.Handler):
@@ -22,7 +19,7 @@ class FlaskMailHandler(logging.Handler):
 
     def emit(self, record):
         try:
-            from ..mycelery.tasks import send_email
+            from .. import send_email
 
             log_text = self.format(record)
             send_email.delay(
@@ -51,7 +48,7 @@ def setup_logging(app=None):
     root_logger.setLevel(logging.INFO)
 
     # 创建日志目录
-    log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../logs"))
+    log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../logs"))
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 

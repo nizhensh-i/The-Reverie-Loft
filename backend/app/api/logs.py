@@ -3,8 +3,8 @@ import logging
 from flask import current_app, request
 from flask_jwt_extended import jwt_required
 
-from .. import db, redis
 from ..decorators import DecoratedMethodView, admin_required
+from ..infrastructure import db, redis
 from ..models import Log, User
 from ..utils.response import error, success
 from ..websocket import init_ws_services

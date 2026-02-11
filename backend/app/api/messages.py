@@ -3,8 +3,8 @@ import logging
 from flask import current_app, request
 from flask_jwt_extended import current_user, jwt_required
 
-from .. import db
 from ..decorators import DecoratedMethodView
+from ..infrastructure import db
 from ..models import Message
 from ..utils.response import success
 

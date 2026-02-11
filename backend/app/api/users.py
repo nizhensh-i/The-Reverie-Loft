@@ -5,8 +5,8 @@ from flask import current_app, request
 from flask_jwt_extended import current_user, jwt_required
 from sqlalchemy.orm import joinedload
 
-from .. import db
 from ..decorators import admin_required
+from ..infrastructure import db
 from ..models import Post, Role, User
 from ..utils.response import error, not_found, success
 from . import api

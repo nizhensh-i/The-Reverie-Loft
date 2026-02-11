@@ -4,11 +4,9 @@ from flask import current_app, request
 from flask_jwt_extended import current_user, jwt_required
 from sqlalchemy.orm import joinedload
 
-from .. import cache, db, limiter
-from ..decorators import DecoratedMethodView
+from ..decorators import DecoratedMethodView, log_operate
+from ..infrastructure import cache, cache_invalidator, db, limiter
 from ..models import Follow, Image, ImageType, Permission, Post, PostType, User
-from ..mycelery.notification_task import create_new_post_notifications
-from ..utils.cache_helper import cache_invalidator
 from ..utils.markdown_truncate import MarkdownTruncator
 from ..utils.response import error, success
 
@@ -94,7 +92,7 @@ class PostItemApi(DecoratedMethodView):
 
 class PostGroupApi(DecoratedMethodView):
     method_decorators = {
-        # "get": [log_operate],
+        "get": [log_operate],
         # "get": [sql_profile],
         "post": [jwt_required()],
     }
@@ -137,6 +135,8 @@ class PostGroupApi(DecoratedMethodView):
         )
 
         follower_ids = [follow.follower_id for follow in followers]
+        from ..infrastructure import create_new_post_notifications
+
         create_new_post_notifications.delay(post_id, current_user.id, follower_ids)
 
     @staticmethod
