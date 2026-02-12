@@ -1,67 +1,71 @@
 <template>
   <PageHeadBack>
-    <div class="header">
-      <h2>创建账号 ✨</h2>
-      <p>加入我们，开启您的创作之旅</p>
-    </div>
-
-    <el-form
-      :model="ruleForm"
-      status-icon
-      :rules="rules"
-      ref="ruleForm"
-      style="max-width: 600px"
-    >
-      <el-form-item prop="user">
-        <el-input
-          type="text"
-          v-model="ruleForm.user"
-          autocomplete="off"
-          size="large"
-          placeholder="用户名"
-        ></el-input>
-      </el-form-item>
-      <el-form-item prop="password">
-        <el-input
-          type="password"
-          v-model="ruleForm.password"
-          autocomplete="off"
-          show-password
-          size="large"
-          placeholder="密码"
-        ></el-input>
-      </el-form-item>
-      <el-form-item prop="confirmPass">
-        <el-input
-          type="password"
-          v-model="ruleForm.confirmPass"
-          autocomplete="off"
-          show-password
-          size="large"
-          placeholder="确认密码"
-        ></el-input>
-      </el-form-item>
-
-      <div class="security-info">
-        <el-icon><i-ep-Lock /></el-icon>
-        <span>密码通过加密签名(SHA-256)保护</span>
+    <div class="container">
+      <div class="header">
+        <h2>创建账号 ✨</h2>
+        <p>加入我们，开启您的创作之旅</p>
       </div>
 
-      <el-form-item>
-        <el-button
-          type="primary"
-          round
-          :disabled="!isChange"
-          :loading="loading"
-          @click="register"
-          >创建账号</el-button
-        >
-      </el-form-item>
-    </el-form>
+      <el-form
+        :model="ruleForm"
+        status-icon
+        :rules="rules"
+        ref="ruleForm"
+        style="max-width: 600px"
+      >
+        <el-form-item prop="user">
+          <el-input
+            type="text"
+            v-model="ruleForm.user"
+            autocomplete="off"
+            size="large"
+            placeholder="用户名"
+          ></el-input>
+        </el-form-item>
+        <el-form-item prop="password">
+          <el-input
+            type="password"
+            v-model="ruleForm.password"
+            autocomplete="off"
+            show-password
+            size="large"
+            placeholder="密码"
+          ></el-input>
+        </el-form-item>
+        <el-form-item prop="confirmPass">
+          <el-input
+            type="password"
+            v-model="ruleForm.confirmPass"
+            autocomplete="off"
+            show-password
+            size="large"
+            placeholder="确认密码"
+          ></el-input>
+        </el-form-item>
 
-    <div class="login-container">
-      <el-text class="login-account">已有账号?</el-text>
-      <el-link class="login" @click="$router.push('/login')">立即登录</el-link>
+        <div class="security-info">
+          <el-icon><i-ep-Lock /></el-icon>
+          <span>密码通过加密签名(SHA-256)保护</span>
+        </div>
+
+        <el-form-item>
+          <el-button
+            type="primary"
+            round
+            :disabled="!isChange"
+            :loading="loading"
+            @click="register"
+            >创建账号</el-button
+          >
+        </el-form-item>
+      </el-form>
+
+      <div class="login-container">
+        <el-text class="login-account">已有账号?</el-text>
+        <el-link class="login" @click="$router.push('/login')"
+          >立即登录</el-link
+        >
+      </div>
     </div>
   </PageHeadBack>
 </template>
@@ -70,7 +74,6 @@
 import authApi from "@/api/auth/authApi.js";
 import confetti from "canvas-confetti";
 import PageHeadBack from "@/utils/components/PageHeadBack.vue";
-import imageCfg from "@/config/image.js";
 
 export default {
   components: {
@@ -201,6 +204,9 @@ export default {
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   font-size: 14px;
   -webkit-tap-highlight-color: transparent;
+}
+.container {
+  padding: 0 20px;
 }
 
 .header {

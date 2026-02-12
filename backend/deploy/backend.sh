@@ -1,6 +1,31 @@
 #!/bin/bash
 
+function unit_test(){
+    echo "开始运行后端单元测试..."
+    
+    if [[ ! -d "./backend/tests_api" ]]; then
+        echo "错误：测试目录 ./backend/tests_api 不存在"
+        exit 1
+    fi
+    
+    # 运行单元测试
+    cd ./backend
+    pytest tests_api/ -v
+    
+    # 检查测试结果
+    if [[ $? -ne 0 ]]; then
+        echo "错误：单元测试未全部通过，停止部署"
+        cd ..
+        exit 1
+    fi
+    
+    echo "所有单元测试通过，继续部署..."
+    cd ..
+}
+
 function backend_to_remote() {
+    unit_test
+    
     backend_tar="flasky_backend.tar"
     if [[ -e  $backend_tar ]];then
       rm -f $backend_tar

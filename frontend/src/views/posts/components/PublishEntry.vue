@@ -185,11 +185,13 @@ export default {
     canPublish() {
       switch (this.activeType) {
         case "text":
-          return this.textContent.trim() !== "";
+          return this.textContent.trim().length >= 3;
         case "image":
-          return this.imageContent.trim() !== "" && this.imageFiles.length > 0;
+          return (
+            this.imageContent.trim().length >= 3 && this.imageFiles.length > 0
+          );
         case "markdown":
-          return this.markdownContent.content.trim() !== "";
+          return this.markdownContent.content.trim().length >= 3;
         default:
           return false;
       }
@@ -244,12 +246,9 @@ export default {
           this.resetForm();
           this.showPublishPanel = false;
           this.$emit("newPost", result.data);
-        } else {
-          ElMessage.error("发布失败!");
         }
       } catch (error) {
         console.error("发布失败:", error);
-        ElMessage.error("发布失败: " + (error.message || "未知错误"));
       } finally {
         this.publishing = false;
         this.$emit("loadingBegin", false);

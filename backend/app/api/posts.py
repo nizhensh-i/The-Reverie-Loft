@@ -180,8 +180,18 @@ class PostGroupApi(DecoratedMethodView):
             raise f"创建文章失败: {str(e)}"
 
     @staticmethod
+    @limiter.limit("2/day", exempt_when=lambda: current_user.role_id == 3)
+    def publish_image_post(content, images):
+        """发布图文文章（带限流）"""
+        PostGroupApi.submit_to_db(PostType.TEXT, content, images)
+
+    @staticmethod
     def posts_publish(data: dict):
         content = data.get("content", "")
+        # 验证内容长度至少3个字符
+        if len(content.strip()) < 3:
+            return error(400, "内容长度至少需要3个字符")
+
         images = data.get("images", [])
         # 可选text, image, markdown
         post_type = data.get("type", "text")
@@ -189,11 +199,8 @@ class PostGroupApi(DecoratedMethodView):
             case "text":
                 PostGroupApi.submit_to_db(PostType.TEXT, content, images)
             case "image":
-                PostGroupApi.submit_to_db(
-                    PostType.TEXT, content, images
-                )  # 图文使用TEXT类型，通过has_image区分
+                PostGroupApi.publish_image_post(content, images)
             case "markdown":
-                limiter.limit("2/day", exempt_when=lambda: current_user.role_id == 3)
                 PostGroupApi.submit_to_db(PostType.MARKDOWN, content, images)
 
     def get(self):
@@ -210,12 +217,9 @@ class PostGroupApi(DecoratedMethodView):
     def post(self):
         """发布文章"""
         if current_user.can(Permission.WRITE):
-            try:
-                PostGroupApi.posts_publish(request.json)
-                # 清除缓存
-                cache.delete_memoized(PostGroupApi.query_post)
-            except Exception as e:
-                return error(500, f"{str(e)}")
+            PostGroupApi.posts_publish(request.json)
+            # 清除缓存
+            cache.delete_memoized(PostGroupApi.query_post)
             posts, total = PostGroupApi.query_post(
                 1, current_app.config["FLASKY_POSTS_PER_PAGE"]
             )

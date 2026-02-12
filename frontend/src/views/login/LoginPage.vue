@@ -88,6 +88,9 @@ export default {
             return;
           }
 
+          // 清除旧的 token 数据，避免携带已撤销的 token
+          this.currentUser.clearLocalData();
+
           this.loading = true;
           authApi
             .login(this.ruleForm.user, this.ruleForm.pass)

@@ -102,6 +102,9 @@ onMounted(() => {
     return;
   }
 
+  // 清除旧的 token 数据，避免残留
+  store.clearLocalData();
+
   store.access_token = access_token;
   store.refresh_token = refresh_token;
   store.setUserInfo(parsedUser);

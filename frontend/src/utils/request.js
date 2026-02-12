@@ -39,6 +39,15 @@ const $http = axios.create({
   timeout: 10000,
 });
 
+// ============ store实例（模块级别单例） ============
+let userStore = null;
+function getUserStore() {
+  if (!userStore) {
+    userStore = useCurrentUserStore();
+  }
+  return userStore;
+}
+
 // ============ token管理 ============
 let isRefreshing = false;
 let pendingQueue = [];
@@ -53,7 +62,7 @@ function getToken(type = "access_token") {
 }
 
 export function handleUnauthorized() {
-  const store = useCurrentUserStore();
+  const store = getUserStore();
   if (store.access_token) {
     store.logOut();
     router.push("/login");
@@ -136,7 +145,6 @@ function navigateToErrorPage(code) {
 }
 
 function showErrorMessage(code, message) {
-  if (code === ResponseCode.TOO_MANY_REQUESTS) return;
   const msg = message || ErrorMessageMap[code];
   const method = code >= 400 && code < 500 ? "warning" : "error";
   msg && errorManager[method](msg);
@@ -209,10 +217,17 @@ function setInterceptors(...instances) {
   instances.forEach((instance) => {
     instance.interceptors.request.use(
       (config) => {
-        const token = getToken(
-          config.useRefreshToken ? "refresh_token" : "access_token"
-        );
-        if (token) config.headers.Authorization = token;
+        const store = getUserStore();
+
+        // 只有用户已登录时才携带 token
+        // 游客访问不携带 token，避免过期 token 导致请求失败
+        if (store.isLogin) {
+          const token = getToken(
+            config.useRefreshToken ? "refresh_token" : "access_token"
+          );
+          if (token) config.headers.Authorization = token;
+        }
+
         logRequest(config);
         return config;
       },

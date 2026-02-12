@@ -95,7 +95,7 @@ class TestNotificationCase:
         r_post = client.post(
             self.pre_fix + "/posts",
             headers=auth_c1.get_headers(),
-            json={"content": "内容", "type": "text", "images": []},
+            json={"content": "测试内容", "type": "text", "images": []},
         )
         post_id = r_post.get_json().get("data")[0].get("id")
 
@@ -134,7 +134,7 @@ class TestNotificationCase:
         r_post = client.post(
             self.pre_fix + "/posts",
             headers=auth_a.get_headers(),
-            json={"content": "内容", "type": "text", "images": []},
+            json={"content": "测试内容", "type": "text", "images": []},
         )
         post_id = r_post.get_json().get("data")[0].get("id")
 

@@ -59,6 +59,11 @@ def not_found(message="资源不存在", data=None):
     return api_response(404, message, data)
 
 
+def too_many_req(message="操作过于频繁", data=None):
+    """429错误"""
+    return api_response(429, message, data)
+
+
 def server_error(message="服务器内部错误", data=None):
     """500错误"""
     return api_response(500, message, data)

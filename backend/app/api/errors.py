@@ -1,12 +1,19 @@
 import logging
 
 from app.exceptions import ValidationError
-from flask import request
+from flask import jsonify, request
 from sqlalchemy.exc import OperationalError
+from werkzeug.exceptions import TooManyRequests
 
 from .. import jwt
 from .. import redis as jwt_redis_blocklist
-from ..utils.response import bad_request, error, server_error, unauthorized
+from ..utils.response import (
+    bad_request,
+    error,
+    server_error,
+    too_many_req,
+    unauthorized,
+)
 from . import api
 
 
@@ -20,6 +27,12 @@ def validation_error(e):
 def mysql_error(e):
     logging.info(f"数据库错误:{e}")
     return server_error(message="数据库错误")
+
+
+@api.errorhandler(TooManyRequests)
+def handle_429(e):
+    logging.warning(f"请求频率超限: {request.path}, 错误: {str(e.description)}")
+    return too_many_req("操作过于频繁")
 
 
 # jwt无效的自定义回调
