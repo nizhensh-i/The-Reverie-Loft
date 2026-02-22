@@ -70,8 +70,14 @@ const query = reactive({
   real_time_receive: false,
 });
 
-onMounted(() => {
-  currentUser.enterChat(otherUser.userInfo.id);
+onMounted(async () => {
+  await currentUser.connectSocket();
+  await currentUser.enterChat(otherUser.userInfo.id);
+
+  if (!currentUser.socket) {
+    console.warn("⚠️ WebSocket未就绪，聊天实时功能不可用");
+    return;
+  }
 
   currentUser.socket.on("new_message", (msg) => {
     if (currentUser.activeChat === msg.sender_id) {
@@ -120,9 +126,11 @@ function onInput() {
   if (typingTimer) return;
 
   // 发送typing事件
-  currentUser.socket.emit("chat:typing", {
-    target_id: otherUser.userInfo.id,
-  });
+  if (!currentUser.socket?.connected) {
+    currentUser.connectSocket();
+    return;
+  }
+  currentUser.socket.emit("chat:typing", { target_id: otherUser.userInfo.id });
 
   typingTimer = setTimeout(() => {
     typingTimer = null;

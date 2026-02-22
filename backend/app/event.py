@@ -8,6 +8,7 @@ import eventlet
 from flask import request
 from flask_jwt_extended import decode_token
 from flask_socketio import ConnectionRefusedError, join_room
+from jwt.exceptions import ExpiredSignatureError
 
 from . import db, redis
 from .models import Message, Notification, NotificationType, User
@@ -67,9 +68,12 @@ def register_ws_events(socketio, app):
             decoded_token = decode_token(raw_token)
             user_id = decoded_token["sub"]
             logging.info(f"WebSocket连接token验证成功，用户ID: {user_id}")
+        except ExpiredSignatureError as e:
+            logging.info(f"WebSocket token已过期: {e}")
+            raise ConnectionRefusedError("token已过期，请重新登录")
         except Exception as e:
             logging.error(f"WebSocket身份验证失败: {str(e)}", exc_info=True)
-            raise ConnectionRefusedError("WebSocket身份验证失败，token解析错误")
+            raise ConnectionRefusedError("WebSocket身份验证失败，token无效或解析错误")
 
         # 检查用户是否存在（DB操作，后续异步场景需绑定上下文）
         user = User.query.get(user_id)

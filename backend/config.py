@@ -14,6 +14,11 @@ class Config:
     # 令牌新鲜度
     JWT_FRESH_TOKEN_EXPIRES = timedelta(hours=12)
 
+    # JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=1)
+    # JWT_REFRESH_TOKEN_EXPIRES = timedelta(minutes=2)
+    # # 令牌新鲜度
+    # JWT_FRESH_TOKEN_EXPIRES = timedelta(minutes=2)
+
     # 邮件配置
     MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.qq.com")
     MAIL_PORT = int(os.environ.get("MAIL_PORT", "587"))
