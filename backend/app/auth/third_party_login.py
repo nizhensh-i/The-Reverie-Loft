@@ -22,7 +22,7 @@ from senweaver_oauth import AuthConfig
 from senweaver_oauth.builder import AuthRequestBuilder
 from senweaver_oauth.cache import DefaultCacheStore, RedisCacheStore
 
-from .. import db, redis
+from ..infrastructure import db, redis
 from ..models import ThirdPartyAccount, User
 from ..utils.response import error, success
 from . import auth

@@ -1,7 +1,7 @@
 from flask import current_app
 from flask_jwt_extended import create_access_token, current_user, get_jwt, jwt_required
 
-from .. import redis as jwt_redis_blocklist
+from ..infrastructure import redis as jwt_redis_blocklist
 from ..utils.response import success, unauthorized
 from . import auth
 

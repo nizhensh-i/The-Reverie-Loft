@@ -5,8 +5,6 @@ from celery import shared_task
 from flask import render_template
 from flask_mail import Message
 
-from ...api.upload import del_qiniu_image
-from ...models import Image, ImageType, Post
 from .. import db, mail
 
 
@@ -27,6 +25,8 @@ def hard_delete_post():
     相关的评论、点赞、通知已通过 数据库级联 删除
     """
     try:
+        from ...models import Post
+
         posts_query = Post.query.filter_by(deleted=True)
         post_count = posts_query.count()
 
@@ -52,6 +52,8 @@ def hard_delete_post():
 
 def _delete_post_images(post_ids):
     """删除文章相关图片"""
+    from ...models import Image, ImageType
+
     images = (
         Image.query.with_entities(Image.id, Image.url)
         .filter(Image.type == ImageType.POST, Image.related_id.in_(post_ids))
@@ -81,6 +83,8 @@ def _delete_qiniu_images(image_urls):
         "bucket_name": os.getenv("QINIU_BUCKET_NAME", ""),
         "keys": image_urls,
     }
+    from ..storage.qiniu import del_qiniu_image
+
     del_qiniu_image(**data)
     logging.info(f"七牛云批量删除图片成功，共 {len(image_urls)} 张")
 

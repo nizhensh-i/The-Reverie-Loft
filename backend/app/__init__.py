@@ -3,7 +3,6 @@ import logging
 
 from config import config
 from flask import Flask
-from flask_socketio import SocketIO
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .api import setup_api_bp
@@ -19,12 +18,12 @@ from .infrastructure import (
     setup_limiter,
     setup_logging,
     setup_mail,
+    setup_migration,
     setup_redis,
+    setup_socketio,
     setup_sqlalchemy,
+    socketio,
 )
-from .management import setup_migration
-
-socketio = SocketIO()
 
 
 def setup_proxyfix_middleware(app):
@@ -81,13 +80,7 @@ def create_ws_app(config_name):
     # 配置日志系统
     setup_logging(app)
 
-    socketio.init_app(
-        app,
-        cors_allowed_origins="*",
-        ping_timeout=30,
-        ping_interval=60,
-        message_queue=app.config["SOCKETIO_MESSAGE_QUEUE"],
-    )
+    setup_socketio(app)
 
     setup_sqlalchemy(app)
     setup_redis(app)

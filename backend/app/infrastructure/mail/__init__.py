@@ -1,3 +1,5 @@
+import os
+
 from flask_mail import Mail
 
 mail = Mail()
@@ -5,7 +7,7 @@ mail = Mail()
 
 class MailAdapter:
     def __init__(self, app):
-        if app.config["MAIL_USERNAME"] and app.config["MAIL_PASSWORD"]:
+        if os.getenv("MAIL_USERNAME") and os.getenv("MAIL_PASSWORD"):
             mail.init_app(app)
         elif not app.config["TESTING"]:
             raise "未设置Email代理凭证"

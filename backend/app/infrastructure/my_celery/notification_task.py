@@ -1,19 +1,11 @@
 import logging
-import os
 
 from celery import shared_task
-from flask_socketio import SocketIO
 
-from ...models import Notification, NotificationType
+from ..database.sqlalchemy import db
+from ..socketio import get_socketio_client
 
-# from .. import db
-from .. import db
-
-# github工作流上redis容器不使用密码
-redis_pass = "" if os.getenv("FLASK_CONFIG") == "testing" else ":1234@"
-socketio = SocketIO(
-    message_queue=f"redis://{redis_pass}{os.getenv('REDIS_HOST') or '127.0.0.1'}:6379/4"
-)
+socketio = get_socketio_client()
 
 
 def _create_and_emit_notifications(notifications):
@@ -45,6 +37,8 @@ def create_new_post_notifications(post_id, author_id, follower_ids):
         author_id: 作者ID
         follower_ids: 粉丝ID列表
     """
+    from ...models import Notification, NotificationType
+
     try:
         notifications = [
             Notification(
@@ -74,6 +68,8 @@ def create_comment_notifications(post_id, comment_id, author_id, notifications_d
         author_id: 评论作者ID
         notifications_data: 通知数据列表，格式为 [(receiver_id, notification_type), ...]
     """
+    from ...models import Notification
+
     try:
         notifications = [
             Notification(
@@ -106,6 +102,8 @@ def create_like_notifications(post_id, comment_id, liker_id, receiver_id):
         liker_id: 点赞者ID
         receiver_id: 接收者ID (文章作者或评论作者)
     """
+    from ...models import Notification, NotificationType
+
     try:
         if receiver_id is None:
             return
@@ -129,6 +127,8 @@ def create_like_notifications(post_id, comment_id, liker_id, receiver_id):
 @shared_task(ignore_result=True)
 def create_chat_notifications(receiver_id, sender_id, message_id):
     """创建私信通知"""
+    from ...models import Notification, NotificationType
+
     try:
         notification = Notification(
             receiver_id=receiver_id,

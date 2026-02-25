@@ -1,27 +1,22 @@
-import json
 import logging
 import os
-import random
 import time
 
 from flask import request
 from flask_jwt_extended import current_user, jwt_required
-from qiniu import Auth, BucketManager, build_batch_delete
 from sqlalchemy import and_
 
-from ..infrastructure import db
+from ..infrastructure import (
+    db,
+    del_qiniu_image,
+    dir_file_name,
+    generate_upload_token,
+    get_signed_image_urls,
+)
 from ..models import Image, ImageType
 from ..utils.common import get_avatars_url
 from ..utils.response import bad_request, success
 from . import api
-
-# 初始化Auth状态
-q = Auth(
-    os.getenv("QINIU_ACCESS_KEY", "fdfddgfg"),
-    os.getenv("QINIU_SECRET_KEY", "dfdffgfgfg"),
-)
-# 初始化BucketManager
-bucket = BucketManager(q)
 
 
 # --------------------------- 文件上传 ---------------------------
@@ -41,7 +36,7 @@ def get_upload_token():
         # 'callbackBodyType':'application/json'
     }
     # 生成上传凭证，传入上传策略
-    token = q.upload_token(os.getenv("QINIU_BUCKET_NAME"), policy=policy)
+    token = generate_upload_token(policy=policy)
     return success(data={"upload_token": token})
 
 
@@ -53,16 +48,12 @@ def get_signed_image_urls():
     keys = data.get("keys", [])
     if not keys:
         return bad_request("Missing keys parameter")
-    signed_urls = []
-    for key in keys:
-        # 添加图片瘦身参数，这里以调整图片质量为 80 为例
-        fops = "imageMogr2/quality/80"
-        base_url = f"{os.getenv('QINIU_DOapi')}/{key}"
-        # 拼接处理参数到基础 URL
-        processed_url = base_url + "?" + fops
-        # 生成带处理参数的签名 URL
-        private_url = q.private_download_url(processed_url, expires=3600)
-        signed_urls.append(private_url)
+    signed_urls = get_signed_image_urls(
+        keys,
+        domain=os.getenv("QINIU_DOapi"),
+        fops="imageMogr2/quality/80",
+        expires=3600,
+    )
     return success(data={"signed_urls": signed_urls})
 
 
@@ -83,48 +74,6 @@ def delete_image():
     return success(message="图片删除成功")
 
 
-def del_qiniu_image(keys, bucket_name=os.getenv("QINIU_BUCKET_NAME")):
-    """删除七牛云图片的工具函数"""
-    ops = build_batch_delete(bucket_name, keys)
-    bucket.batch(ops)
-
-
-def dir_file_name(
-    prefix="userBackground/static",
-    current_page=1,
-    page_size=6,
-    complete_url=True,
-    bucket_name=os.getenv("QINIU_BUCKET_NAME"),
-):
-    # 列举条目
-    limit = 50
-
-    # 列举出除'/'的所有文件以及以'/'为分隔的所有前缀
-    delimiter = None
-    # 标记
-    marker = None
-    ret, eof, info = bucket.list(bucket_name, prefix, marker, limit, delimiter)
-    j = json.loads(info.text_body)
-    item_list = j.get("items")
-
-    start = (current_page - 1) * page_size
-    end = start + page_size
-    return [
-        get_avatars_url(item.get("key")) if complete_url else item.get("key")
-        for item in item_list[start + 1 : end + 1]
-    ], len(item_list) - 1
-
-
-def get_random_user_avatars():
-    """获取随机图像"""
-    try:
-        avatars, total = dir_file_name("userAvatars/", 1, 10, False)
-        return avatars[random.randint(0, total - 1)]
-    except Exception as e:
-        logging.warning(f"注册时从七牛云随机指定图像失败，原因：{e}")
-        return ""
-
-
 @api.route("/dir_name")
 def query_qiniu_key():
     """查询七牛云某个bucket指定目录的所有文件名"""
@@ -137,7 +86,12 @@ def query_qiniu_key():
     # bucket名字
     bucket_name = request.args.get("bucket", os.getenv("QINIU_BUCKET_NAME"))
     data, total = dir_file_name(
-        prefix, current_page, page_size, complete_url, bucket_name
+        prefix,
+        current_page,
+        page_size,
+        complete_url,
+        bucket_name,
+        url_builder=get_avatars_url if complete_url else None,
     )
     return success(data=data, total=total)
 

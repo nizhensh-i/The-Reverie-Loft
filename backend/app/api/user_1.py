@@ -4,11 +4,10 @@ from flask import request
 from flask_jwt_extended import current_user, jwt_required
 
 from ..decorators import DecoratedMethodView
-from ..infrastructure import db
+from ..infrastructure import db, get_random_user_avatars
 from ..models import User
 from ..utils.common import get_avatars_url
 from ..utils.response import error, success
-from .upload import get_random_user_avatars
 
 
 # --------------------------- 编辑资料 ---------------------------
