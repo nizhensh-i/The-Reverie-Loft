@@ -41,10 +41,7 @@ def setup_logging(app=None):
     Args:
         app: Flask应用实例，可选
     """
-    # 获取根记录器
     root_logger = logging.getLogger()
-
-    # 设置日志级别
     root_logger.setLevel(logging.INFO)
 
     # 创建日志目录
@@ -55,7 +52,10 @@ def setup_logging(app=None):
     # 日志文件路径
     log_file = os.path.join(log_dir, f'app_{datetime.now().strftime("%Y%m%d")}.log')
 
-    # 创建文件处理器
+    # 统一 root handler，避免重复初始化导致日志重复/格式不一致。
+    for handler in list(root_logger.handlers):
+        root_logger.removeHandler(handler)
+
     file_handler = logging.handlers.TimedRotatingFileHandler(
         log_file, when="midnight", interval=1, backupCount=30, encoding="utf-8"
     )
@@ -72,14 +72,12 @@ def setup_logging(app=None):
     file_handler.setFormatter(formatter)
     console_handler.setFormatter(formatter)
 
-    # 如果提供了Flask应用，则配置Flask日志
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+
     if app:
-        # 移除原有处理器
         for handler in list(app.logger.handlers):
             app.logger.removeHandler(handler)
-        # 添加新的处理器
-        app.logger.addHandler(file_handler)
-        app.logger.addHandler(console_handler)
         app.logger.setLevel(logging.INFO)
         app.logger.propagate = True
 
@@ -87,11 +85,10 @@ def setup_logging(app=None):
         if not app.debug:
             mail_handler = FlaskMailHandler()
             mail_handler.setLevel(logging.ERROR)
-            root_logger.addHandler(mail_handler)
+            if not any(isinstance(h, FlaskMailHandler) for h in root_logger.handlers):
+                root_logger.addHandler(mail_handler)
 
             logging.info("已配置邮件处理器")
-        logging.info("flask应用日志系统初始化完成")
+        logging.info("Flask应用日志系统初始化完成")
     else:
-        root_logger.addHandler(file_handler)
-        root_logger.addHandler(console_handler)
         logging.info("基本日志系统初始化完成")

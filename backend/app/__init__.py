@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import logging
+import os
 
 from config import config
 from flask import Flask
@@ -32,6 +31,13 @@ redis = get_redis()
 socketio = get_socketio()
 
 
+def _is_effective_process(app) -> bool:
+    """debug reloader 模式下仅在子进程执行副作用初始化。"""
+    if not app.debug:
+        return True
+    return os.getenv("WERKZEUG_RUN_MAIN") == "true"
+
+
 def create_app(config_name):
     app = Flask(__name__)
     # 设置代理配置
@@ -43,7 +49,8 @@ def create_app(config_name):
 
     # 跨域
     setup_cors(app)
-    setup_logging(app)
+    if _is_effective_process(app):
+        setup_logging(app)
     setup_sqlalchemy(app)
     setup_redis(app)
     setup_migration(app, db)
@@ -75,7 +82,8 @@ def create_ws_app(config_name):
 
     # 跨域
     setup_cors(app)
-    setup_logging(app)
+    if _is_effective_process(app):
+        setup_logging(app)
     setup_sqlalchemy(app)
     setup_redis(app)
     setup_socketio(app)
@@ -84,10 +92,9 @@ def create_ws_app(config_name):
 
     # 注册WS事件和优雅停机处理器
     register_ws_events(socketio, app)
-    # 启动WebSocket清理服务
-    cleanup.start()
-    logging.info("WebSocket 应用初始化完成，清理服务已启动")
-    # 注册优雅停机处理器（只在WebSocket应用中注册）
-    register_cleanup_handlers(app)
+    # 启动副作用服务（仅在 reloader 子进程）
+    if _is_effective_process(app):
+        cleanup.start()
+        register_cleanup_handlers(app)
 
     return app
