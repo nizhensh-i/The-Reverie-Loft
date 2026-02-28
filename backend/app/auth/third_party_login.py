@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
 import secrets
 from datetime import timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
@@ -18,126 +17,20 @@ from flask_jwt_extended import (
     decode_token,
     jwt_required,
 )
-from senweaver_oauth import AuthConfig
-from senweaver_oauth.builder import AuthRequestBuilder
-from senweaver_oauth.cache import DefaultCacheStore, RedisCacheStore
 
-from ..infrastructure import db, redis
+from ..infrastructure.database.redis import redis
+from ..infrastructure.database.sqlalchemy import db
+from ..infrastructure.oauth import (
+    OAuthInfraService,
+    get_frontend_oauth_redirect,
+    has_oauth_network_error_message,
+)
 from ..models import ThirdPartyAccount, User
 from ..utils.response import error, success
 from . import auth
 
-# 第三方授权平台
-APP_NAMES = ["qq", "weibo", "github", "google"]
-
-
-# 平台配置：仅在存在 client_id & client_secret 时才会启用
-def _read_config(app_names: list[str]) -> Dict[str, Dict]:
-    result = {}
-    for name in app_names:
-        pre_fix = name.upper()
-        result[name] = {
-            "display_name": name,
-            "client_id": os.getenv(f"{pre_fix}_CLIENT_ID", ""),
-            "client_secret": os.getenv(f"{pre_fix}_CLIENT_SECRET", ""),
-            # 可为空，后端自动生成
-            "redirect_uri": os.getenv(f"{pre_fix}_REDIRECT_URI"),
-        }
-    return result
-
-
-OAUTH_CONFIGS = _read_config(APP_NAMES)
-
-
-# 回跳到前端的页面（例如 https://your-frontend.com/oauth/callback）
-_host = os.getenv("FLASK_RUN_HOST")
-_port = "5172"
-FRONTEND_OAUTH_REDIRECT = f"http://{_host}:{_port}/oauth/callback"
-
-if os.getenv("FLASK_CONFIG") == "docker":
-    FRONTEND_OAUTH_REDIRECT = f"https://191718.com/oauth/callback"
-
-
-# 初始化 Redis 缓存存储（用于 OAuth state，解决多进程共享问题）
-# 使用现有的 flask_redis 实例
-_oauth_redis_cache = None
-
-
-def _get_oauth_cache_store() -> RedisCacheStore:
-    """
-    获取 OAuth Redis 缓存存储实例（单例模式）
-
-    Returns:
-        RedisCacheStore: Redis 缓存存储实例
-    """
-    global _oauth_redis_cache
-    if _oauth_redis_cache is None:
-        # 使用现有的 flask_redis 客户端
-        # flask_redis 的 redis 对象本身就是 Redis 客户端
-        redis_client = redis
-        if redis_client is None:
-            raise RuntimeError("Redis 客户端未初始化，请确保 flask_redis 已正确配置")
-
-        _oauth_redis_cache = RedisCacheStore(
-            redis_client=redis_client,
-            prefix="oauth:state:",
-            ttl=300,  # state 有效期 5 分钟
-        )
-        # # 设置为默认缓存实例
-        DefaultCacheStore.set_instance(_oauth_redis_cache)
-    return _oauth_redis_cache
-
-
-def _enabled_providers() -> List[str]:
-    """过滤掉未配置的平台"""
-    return [
-        name
-        for name, cfg in OAUTH_CONFIGS.items()
-        if cfg.get("client_id") and cfg.get("client_secret")
-    ]
-
-
-def _get_auth_request(provider: str) -> Tuple[AuthRequestBuilder, Dict]:
-    """
-    构建 senweaver-oauth 的统一授权请求实例。
-    """
-    config = OAUTH_CONFIGS.get(provider)
-    if not config:
-        raise ValueError(f"未支持的平台: {provider}")
-    if not config.get("client_id") or not config.get("client_secret"):
-        raise ValueError(f"平台 {provider} 未正确配置")
-
-    # 若未显式配置 redirect_uri，则自动使用当前域名生成
-    redirect_uri = config.get("redirect_uri") or url_for(
-        "auth.oauth_callback", provider=provider, _external=True
-    )
-
-    # nginx只转发/api 开头的请求到后端
-    if os.getenv("FLASK_CONFIG") == "docker":
-        redirect_uri = redirect_uri.replace("auth", "api/auth", 1)
-
-    auth_config = AuthConfig(
-        client_id=config["client_id"],
-        client_secret=config["client_secret"],
-        redirect_uri=redirect_uri,
-        extras=config.get("extras", {}),
-    )
-
-    # senweaver-oauth 在内部会对传入的字符串执行 upper()
-    # 因此这里统一传字符串，避免直接传 AuthSource 对象导致缺少 upper 方法
-    source_name = config.get("source") or provider
-
-    # 获取 Redis 缓存存储（用于 OAuth state，解决多进程共享问题）
-    _get_oauth_cache_store()
-
-    auth_request = (
-        AuthRequestBuilder.builder()
-        .source(source_name)
-        .auth_config(auth_config)
-        .build()
-    )
-
-    return auth_request, {"redirect_uri": redirect_uri}
+oauth_infra_service = OAuthInfraService(redis_client=redis)
+FRONTEND_OAUTH_REDIRECT = get_frontend_oauth_redirect()
 
 
 def _safe_profile(raw_profile) -> Optional[Dict]:
@@ -311,11 +204,13 @@ def list_oauth_providers():
     返回已启用的平台列表，前端据此动态渲染按钮。
     """
     providers = []
-    for provider in _enabled_providers():
+    for provider in oauth_infra_service.enabled_providers():
         providers.append(
             {
                 "provider": provider,
-                "name": OAUTH_CONFIGS[provider].get("display_name", provider.title()),
+                "name": oauth_infra_service.oauth_configs[provider].get(
+                    "display_name", provider.title()
+                ),
                 "authorize_endpoint": url_for(
                     "auth.oauth_authorize", provider=provider, _external=False
                 ),
@@ -330,7 +225,7 @@ def oauth_authorize(provider: str):
     返回第三方授权地址（由前端跳转）。
     """
     try:
-        auth_request, _ = _get_auth_request(provider)
+        auth_request, _ = oauth_infra_service.get_auth_request(provider)
         auth_url = auth_request.authorize()
 
         # 查询参数进行ENCODE编码
@@ -338,7 +233,6 @@ def oauth_authorize(provider: str):
         query_params = parse_qs(parsed.query, keep_blank_values=True)
         encoded_query = urlencode(query_params, doseq=True)
         encoded_url = parsed._replace(query=encoded_query).geturl()
-        logging.info(f"zmc_11:{encoded_url}")
 
         return success(data={"authorize_url": encoded_url, "provider": provider})
     except Exception as exc:  # noqa: BLE001
@@ -386,8 +280,9 @@ def oauth_callback(provider: str):
     - 签发 JWT，并跳转到前端处理页面
     """
     params = dict(request.args)
+    is_bind_mode = False
     try:
-        auth_request, meta = _get_auth_request(provider)
+        auth_request, meta = oauth_infra_service.get_auth_request(provider)
         logging.info(
             "处理第三方回调 provider=%s redirect_uri=%s params=%s",
             provider,
@@ -420,12 +315,7 @@ def oauth_callback(provider: str):
             raise
 
         # 检查响应是否包含网络错误（即使 code=200，message 中也可能包含错误）
-        if auth_user_response.message and (
-            "timed out" in auth_user_response.message.lower()
-            or "connection to" in auth_user_response.message.lower()
-            or "max retries exceeded" in auth_user_response.message.lower()
-            or "network unreachable" in auth_user_response.message.lower()
-        ):
+        if has_oauth_network_error_message(auth_user_response.message):
             # 网络错误
             logging.error(f"OAuth 网络错误从响应中检测到: {auth_user_response.message}")
             return _handle_oauth_error(
@@ -476,7 +366,6 @@ def oauth_callback(provider: str):
                             "message": "绑定成功",
                         }
                     )
-                    logging.info(f"zmc_query:{query}")
                     return redirect(f"{FRONTEND_OAUTH_REDIRECT}?{query}")
 
                 return success(message="绑定成功")
@@ -570,10 +459,10 @@ def oauth_bind(provider: str):
     """
     try:
         # 检查平台是否支持
-        if provider not in _enabled_providers():
+        if provider not in oauth_infra_service.enabled_providers():
             return error(code=400, message=f"不支持的平台: {provider}")
 
-        auth_request, _ = _get_auth_request(provider)
+        auth_request, _ = oauth_infra_service.get_auth_request(provider)
 
         # 生成包含用户token的state参数，用于绑定模式
         # 格式: bind:<user_jwt_token>

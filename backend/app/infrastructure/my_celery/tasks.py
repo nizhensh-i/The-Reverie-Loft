@@ -5,18 +5,39 @@ from celery import shared_task
 from flask import render_template
 from flask_mail import Message
 
-from .. import db, mail
+from ..capabilities import capability_enabled, get_capability
+from ..database.sqlalchemy import db
+from ..mail import mail
 
 
 @shared_task(ignore_result=True)
 def send_email(to, subject, template, **kwargs):
+    if not capability_enabled("mail", default=False):
+        reason = (get_capability("mail") or {}).get("reason", "mail unavailable")
+        code = kwargs.get("code")
+        if code:
+            logging.warning(
+                "邮件服务未启用，验证码降级日志输出: to=%s code=%s subject=%s reason=%s",
+                to,
+                code,
+                subject,
+                reason,
+            )
+        else:
+            logging.warning(
+                "邮件服务未启用，跳过发送: to=%s subject=%s reason=%s",
+                to,
+                subject,
+                reason,
+            )
+        return
+
     try:
         message = Message(subject=subject, recipients=[to])
         message.html = render_template(template, **kwargs)
         mail.send(message)
     except Exception as e:
-        print(e)
-        print("发送失败")
+        logging.error("发送邮件失败: to=%s subject=%s err=%s", to, subject, e, exc_info=True)
 
 
 @shared_task(ignore_result=True)
@@ -83,7 +104,7 @@ def _delete_qiniu_images(image_urls):
         "bucket_name": os.getenv("QINIU_BUCKET_NAME", ""),
         "keys": image_urls,
     }
-    from ..storage.qiniu import del_qiniu_image
+    from ..storage.service import del_qiniu_image
 
     del_qiniu_image(**data)
     logging.info(f"七牛云批量删除图片成功，共 {len(image_urls)} 张")

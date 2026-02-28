@@ -1,7 +1,7 @@
 import os
 
 from app.infrastructure import setup_logging
-from app.utils.common import get_local_ip, load_env
+from app.infrastructure.config.runtime_env import get_local_ip, load_env
 
 # 初始化全局日志系统
 setup_logging()

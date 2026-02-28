@@ -4,7 +4,7 @@ from flask import current_app, request
 from flask_jwt_extended import current_user, jwt_required
 
 from ..decorators import DecoratedMethodView, permission_required
-from ..infrastructure import db
+from ..infrastructure.database.sqlalchemy import db
 from ..models import Follow, Permission, User
 from ..utils.common import get_avatars_url
 from ..utils.response import error, not_found, success

@@ -16,19 +16,14 @@ class WSConnectionManager:
         self.redis = redis
 
     def bind_socket_to_user(self, user_id: int, sid: str):
-        """
-        建立 socket 与用户的绑定关系
-        """
+        """建立 socket 与用户的绑定关系"""
         pipe = self.redis.pipeline()
         pipe.sadd(f"user:{user_id}:sockets", sid)
         pipe.set(f"socket:{sid}", user_id)
         pipe.execute()
 
     def unbind_socket(self, sid: str) -> int | None:
-        """
-        解除 socket 与用户的绑定关系
-        返回 user_id（如果存在）
-        """
+        """解除 socket 与用户的绑定关系并返回 user_id"""
         user_id = self.redis.get(f"socket:{sid}")
         if not user_id:
             return None
@@ -41,7 +36,5 @@ class WSConnectionManager:
         return user_id
 
     def get_bound_sockets(self, user_id: int) -> set[str]:
-        """
-        查询用户当前绑定的所有 socket
-        """
+        """查询用户当前绑定的所有 socket"""
         return self.redis.smembers(f"user:{user_id}:sockets") or set()

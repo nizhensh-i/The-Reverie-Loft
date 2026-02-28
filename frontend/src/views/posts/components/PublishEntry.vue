@@ -247,9 +247,6 @@ export default {
         } else {
           ElMessage.error("发布失败!");
         }
-      } catch (error) {
-        console.error("发布失败:", error);
-        ElMessage.error("发布失败: " + (error.message || "未知错误"));
       } finally {
         this.publishing = false;
         this.$emit("loadingBegin", false);

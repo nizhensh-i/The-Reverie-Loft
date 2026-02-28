@@ -1,63 +1,48 @@
-from .cache import cache, cache_invalidator, setup_cache
+from .cache import setup_cache
+from .capabilities import (
+    capability_enabled,
+    get_all_capabilities,
+    get_capability,
+    set_capability,
+)
 from .cors import setup_cors
-from .database.redis import redis, setup_redis
-from .database.sqlalchemy import db, setup_sqlalchemy
+from .database.redis import setup_redis
+from .database.sqlalchemy import setup_sqlalchemy
 from .jwt import setup_jwt
-from .jwt.my_jwt import JwtUtils
 from .logger import setup_logging
-from .mail import mail, setup_mail
+from .mail import setup_mail
 from .migration import setup_migration
-from .my_celery import (
-    create_chat_notifications,
-    create_comment_notifications,
-    create_like_notifications,
-    create_new_post_notifications,
-    hard_delete_post,
-    log_visitor,
-    send_email,
-    setup_celery,
-)
-from .my_limiter import limiter, setup_limiter
-from .socketio import get_socketio_client, setup_socketio, socketio
-from .storage import (
-    del_qiniu_image,
-    dir_file_name,
-    generate_upload_token,
-    get_random_user_avatars,
-    get_signed_image_urls,
-)
+from .my_celery import setup_celery
+from .my_limiter import setup_limiter
+from .oauth import setup_oauth
+from .observability import setup_slow_query_monitor
+from .providers import get_cache, get_db, get_limiter, get_mail, get_redis, get_socketio
+from .socketio import setup_socketio
+from .storage import setup_storage
 
 __all__ = [
-    "db",
-    "redis",
-    "cache",
-    "mail",
-    "limiter",
     "setup_sqlalchemy",
     "setup_redis",
     "setup_cache",
     "setup_mail",
     "setup_limiter",
     "setup_celery",
+    "setup_oauth",
     "setup_cors",
     "setup_jwt",
     "setup_socketio",
+    "setup_storage",
     "setup_migration",
-    "cache_invalidator",
-    "log_visitor",
-    "create_new_post_notifications",
-    "create_comment_notifications",
-    "create_chat_notifications",
-    "create_like_notifications",
-    "send_email",
-    "hard_delete_post",
-    "JwtUtils",
     "setup_logging",
-    "socketio",
-    "get_socketio_client",
-    "del_qiniu_image",
-    "dir_file_name",
-    "generate_upload_token",
-    "get_random_user_avatars",
-    "get_signed_image_urls",
+    "setup_slow_query_monitor",
+    "set_capability",
+    "get_capability",
+    "get_all_capabilities",
+    "capability_enabled",
+    "get_db",
+    "get_redis",
+    "get_cache",
+    "get_mail",
+    "get_limiter",
+    "get_socketio",
 ]

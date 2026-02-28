@@ -1,7 +1,7 @@
 import os
 
 from app import create_app
-from app.utils.common import load_env
+from app.infrastructure.config.runtime_env import load_env
 
 # 加载.env环境变量
 load_env()

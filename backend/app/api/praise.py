@@ -4,8 +4,10 @@ import logging
 from flask import request
 from flask_jwt_extended import current_user, jwt_required
 
+from ..api.posts import PostGroupApi
 from ..decorators import DecoratedMethodView
-from ..infrastructure import cache_invalidator, db
+from ..infrastructure.cache import cache_invalidator
+from ..infrastructure.database.sqlalchemy import db
 from ..models import Comment, Post, Praise
 from ..utils.response import error, success
 from . import api
@@ -35,7 +37,10 @@ def has_praised_comment_id(post_id):
 
 class PraisePostApi(DecoratedMethodView):
     method_decorators = {
-        "post": [jwt_required(), cache_invalidator],  # 自动清除缓存
+        "post": [
+            jwt_required(),
+            cache_invalidator(target_func=PostGroupApi.query_post),
+        ],  # 自动清除缓存
         "share": [jwt_required()],
     }
 
@@ -60,7 +65,7 @@ class PraisePostApi(DecoratedMethodView):
 
             # 异步创建点赞通知
             if current_user.id != post.author_id:
-                from ..infrastructure import create_like_notifications
+                from ..infrastructure.my_celery import create_like_notifications
 
                 create_like_notifications.delay(
                     post.id, None, current_user.id, post.author_id

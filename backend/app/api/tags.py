@@ -5,7 +5,7 @@ from flask import request
 from flask_jwt_extended import current_user, jwt_required
 
 from ..decorators import DecoratedMethodView, admin_required
-from ..infrastructure import db
+from ..infrastructure.database.sqlalchemy import db
 from ..models import Tag
 from ..utils.response import error, success
 

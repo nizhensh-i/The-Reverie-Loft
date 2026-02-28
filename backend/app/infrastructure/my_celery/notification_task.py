@@ -5,8 +5,6 @@ from celery import shared_task
 from ..database.sqlalchemy import db
 from ..socketio import get_socketio_client
 
-socketio = get_socketio_client()
-
 
 def _create_and_emit_notifications(notifications):
     """创建通知并推送给用户"""
@@ -17,6 +15,7 @@ def _create_and_emit_notifications(notifications):
     db.session.flush()
 
     # 批量推送通知
+    socketio = get_socketio_client()
     notification_data = [notification.to_json() for notification in notifications]
     for i, notification in enumerate(notifications):
         socketio.emit(

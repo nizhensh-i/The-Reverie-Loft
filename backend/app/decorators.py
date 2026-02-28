@@ -87,7 +87,7 @@ def log_operate(f):
         )
 
         # 延迟导入以避免循环依赖
-        from .infrastructure import log_visitor
+        from .infrastructure.my_celery import log_visitor
 
         # 记录用户
         log_visitor.delay(is_register, client_ip, ua)

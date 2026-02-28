@@ -4,7 +4,7 @@ from flask import request
 from flask_jwt_extended import jwt_required
 
 from ..decorators import permission_required
-from ..infrastructure import db
+from ..infrastructure.database.sqlalchemy import db
 from ..models import Image, ImageType, Permission, Post, PostType
 from ..utils.markdown_truncate import MarkdownTruncator
 from ..utils.response import error, success

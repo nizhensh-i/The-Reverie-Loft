@@ -4,8 +4,11 @@ from flask import current_app, request
 from flask_jwt_extended import current_user, jwt_required
 from werkzeug.exceptions import TooManyRequests
 
+from ..api.posts import PostGroupApi
 from ..decorators import DecoratedMethodView, permission_required
-from ..infrastructure import cache_invalidator, db, limiter
+from ..infrastructure.cache import cache_invalidator
+from ..infrastructure.database.sqlalchemy import db
+from ..infrastructure.my_limiter import limiter
 from ..models import Comment, NotificationType, Permission, Post
 from ..utils.common import get_avatars_url
 from ..utils.response import error, success
@@ -43,7 +46,7 @@ class CommentApi(DecoratedMethodView):
         "get": [],
         "post": [
             jwt_required(),
-            cache_invalidator,
+            cache_invalidator(target_func=PostGroupApi.query_post),
             limiter.limit(
                 "1/second;3/minute", exempt_when=lambda: current_user.role_id == 3
             ),
@@ -96,7 +99,7 @@ class CommentApi(DecoratedMethodView):
             notifications_data.extend(
                 [(receiver_id, NotificationType.AT) for receiver_id in at_list]
             )
-        from ..infrastructure import create_comment_notifications
+        from ..infrastructure.my_celery import create_comment_notifications
 
         create_comment_notifications.delay(
             post_id, comment_id, current_user.id, notifications_data

@@ -9,9 +9,10 @@ from flask import request
 from flask_jwt_extended import decode_token
 from flask_socketio import ConnectionRefusedError, join_room
 
-from . import db, redis
+from .infrastructure.database.redis import redis
+from .infrastructure.database.sqlalchemy import db
+from .infrastructure.socketio.services import init_ws_services
 from .models import Message, Notification, NotificationType, User
-from .websocket import init_ws_services
 
 connection, presence, conversation, cleanup = init_ws_services(redis)
 
@@ -212,7 +213,7 @@ def register_ws_events(socketio, app):
                     socketio.emit("new_message", msg.to_json(), to=str(receiver_id))
                 else:
                     # 延迟导入以避免循环依赖
-                    from .infrastructure import create_chat_notifications
+                    from .infrastructure.my_celery import create_chat_notifications
 
                     # 异步生成通知（Celery任务）
                     create_chat_notifications.delay(receiver_id, sender_id, msg.id)

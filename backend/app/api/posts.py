@@ -5,16 +5,157 @@ from flask_jwt_extended import current_user, jwt_required
 from sqlalchemy.orm import joinedload
 
 from ..decorators import DecoratedMethodView, log_operate
-from ..infrastructure import cache, cache_invalidator, db, limiter
+from ..infrastructure.cache import cache, cache_invalidator
+from ..infrastructure.database.sqlalchemy import db
+from ..infrastructure.my_limiter import limiter
 from ..models import Follow, Image, ImageType, Permission, Post, PostType, User
 from ..utils.markdown_truncate import MarkdownTruncator
 from ..utils.response import error, success
 
 
+class PostGroupApi(DecoratedMethodView):
+    method_decorators = {
+        "get": [log_operate],
+        # "get": [sql_profile],
+        "post": [jwt_required()],
+    }
+
+    @staticmethod
+    @cache.memoize(timeout=60)
+    def query_post(page, per_page, tab_name=None):
+        if tab_name and tab_name == "showFollowed":
+            base_query = current_user.followed_posts
+        else:
+            base_query = Post.query.filter_by(deleted=False)
+
+        # 主查询：预加载作者信息
+        # joinedload() 的行为是自动创建 join
+        query = base_query.options(
+            joinedload(Post.author).load_only(
+                User.id, User.username, User.nickname, User.image
+            )
+        ).order_by(Post.timestamp.desc())
+
+        # 分页查询
+        paginate = query.paginate(page=page, per_page=per_page, error_out=False)
+        posts = paginate.items
+
+        if not posts:
+            return [], paginate.total
+
+        result = Post.batch_query_with_data(posts, is_list=True)
+
+        return result, paginate.total
+
+    @staticmethod
+    def new_post_notification(post_id):
+        """异步创建新文章通知并推送给粉丝"""
+        # 批量查询当前用户的所有粉丝（排除自己）
+        followers = (
+            Follow.query.filter_by(followed_id=current_user.id)
+            .filter(Follow.follower_id != current_user.id)
+            .all()
+        )
+
+        follower_ids = [follow.follower_id for follow in followers]
+        from ..infrastructure.my_celery import create_new_post_notifications
+
+        create_new_post_notifications.delay(post_id, current_user.id, follower_ids)
+
+    @staticmethod
+    def submit_to_db(post_type, content, images=None):
+        try:
+            post = Post(
+                content=content,
+                summary=MarkdownTruncator.get_smart_preview(content),
+                type=post_type,
+                has_image=bool(images),  # 如果有图片则设置has_image为True
+                author=current_user,
+            )
+            db.session.add(post)
+            db.session.flush()
+            # images：  [ '', '' ] or [ {'url':'', 'pos':''},{} ]
+            # markdown
+            if images and isinstance(images[0], dict):
+                images = [
+                    Image(
+                        url=image.get("url", ""),
+                        type=ImageType.POST,
+                        describe=image.get("pos", ""),
+                        related_id=post.id,
+                    )
+                    for image in images
+                ]
+                db.session.add_all(images)
+            # 图文
+            elif images and isinstance(images[0], str):
+                images = [
+                    Image(url=image, type=ImageType.POST, related_id=post.id)
+                    for image in images
+                ]
+                db.session.add_all(images)
+            db.session.commit()
+            PostGroupApi.new_post_notification(post.id)
+            logging.info(f"创建新文章: user_id={current_user.id}, post_id={post.id}")
+        except Exception as e:
+            logging.error(f"创建文章失败: {str(e)}", exc_info=True)
+            db.session.rollback()
+            raise f"创建文章失败: {str(e)}"
+
+    @staticmethod
+    @limiter.limit("2/day", exempt_when=lambda: current_user.role_id == 3)
+    def publish_image_post(content, images):
+        """发布图文文章（带限流）"""
+        PostGroupApi.submit_to_db(PostType.TEXT, content, images)
+
+    @staticmethod
+    def posts_publish(data: dict):
+        content = data.get("content", "")
+        # 验证内容长度至少3个字符
+        if len(content.strip()) < 3:
+            return error(400, "内容长度至少需要3个字符")
+        images = data.get("images", [])
+        # 可选text, image, markdown
+        post_type = data.get("type", "text")
+        match post_type:
+            case "text":
+                # PostGroupApi.publish_image_post(content, images)
+                PostGroupApi.submit_to_db(PostType.TEXT, content, images)
+            case "image":
+                PostGroupApi.publish_image_post(content, images)
+            case "markdown":
+                PostGroupApi.submit_to_db(PostType.MARKDOWN, content, images)
+
+    def get(self):
+        """获取所有文章"""
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get(
+            "per_page", current_app.config["FLASKY_POSTS_PER_PAGE"], type=int
+        )
+        posts, total = PostGroupApi.query_post(
+            page, per_page, request.args.get("tabName")
+        )
+        return success(data=posts, total=total)
+
+    def post(self):
+        """发布文章"""
+        if current_user.can(Permission.WRITE):
+            PostGroupApi.posts_publish(request.json)
+            # 清除缓存
+            cache.delete_memoized(PostGroupApi.query_post)
+            posts, total = PostGroupApi.query_post(
+                1, current_app.config["FLASKY_POSTS_PER_PAGE"]
+            )
+            return success(data=posts, total=total)
+
+
 class PostItemApi(DecoratedMethodView):
     method_decorators = {
         "get": [],
-        "delete": [jwt_required(), cache_invalidator],
+        "delete": [
+            jwt_required(),
+            cache_invalidator(target_func=PostGroupApi.query_post),
+        ],
         "patch": [jwt_required()],
     }
 
@@ -88,138 +229,6 @@ class PostItemApi(DecoratedMethodView):
         posts_json = Post.batch_query_with_data([post], is_list=False)
 
         return success(data=posts_json[0])
-
-
-class PostGroupApi(DecoratedMethodView):
-    method_decorators = {
-        "get": [log_operate],
-        # "get": [sql_profile],
-        "post": [jwt_required()],
-    }
-
-    @staticmethod
-    @cache.memoize(timeout=60)
-    def query_post(page, per_page, tab_name=None):
-        if tab_name and tab_name == "showFollowed":
-            base_query = current_user.followed_posts
-        else:
-            base_query = Post.query.filter_by(deleted=False)
-
-        # 主查询：预加载作者信息
-        # joinedload() 的行为是自动创建 join
-        query = base_query.options(
-            joinedload(Post.author).load_only(
-                User.id, User.username, User.nickname, User.image
-            )
-        ).order_by(Post.timestamp.desc())
-
-        # 分页查询
-        paginate = query.paginate(page=page, per_page=per_page, error_out=False)
-        posts = paginate.items
-
-        if not posts:
-            return [], paginate.total
-
-        result = Post.batch_query_with_data(posts, is_list=True)
-
-        return result, paginate.total
-
-    @staticmethod
-    def new_post_notification(post_id):
-        """异步创建新文章通知并推送给粉丝"""
-        # 批量查询当前用户的所有粉丝（排除自己）
-        followers = (
-            Follow.query.filter_by(followed_id=current_user.id)
-            .filter(Follow.follower_id != current_user.id)
-            .all()
-        )
-
-        follower_ids = [follow.follower_id for follow in followers]
-        from ..infrastructure import create_new_post_notifications
-
-        create_new_post_notifications.delay(post_id, current_user.id, follower_ids)
-
-    @staticmethod
-    def submit_to_db(post_type, content, images=None):
-        try:
-            post = Post(
-                content=content,
-                summary=MarkdownTruncator.get_smart_preview(content),
-                type=post_type,
-                has_image=bool(images),  # 如果有图片则设置has_image为True
-                author=current_user,
-            )
-            db.session.add(post)
-            db.session.flush()
-            # images：  [ '', '' ] or [ {'url':'', 'pos':''},{} ]
-            # markdown
-            if images and isinstance(images[0], dict):
-                images = [
-                    Image(
-                        url=image.get("url", ""),
-                        type=ImageType.POST,
-                        describe=image.get("pos", ""),
-                        related_id=post.id,
-                    )
-                    for image in images
-                ]
-                db.session.add_all(images)
-            # 图文
-            elif images and isinstance(images[0], str):
-                images = [
-                    Image(url=image, type=ImageType.POST, related_id=post.id)
-                    for image in images
-                ]
-                db.session.add_all(images)
-            db.session.commit()
-            PostGroupApi.new_post_notification(post.id)
-            logging.info(f"创建新文章: user_id={current_user.id}, post_id={post.id}")
-        except Exception as e:
-            logging.error(f"创建文章失败: {str(e)}", exc_info=True)
-            db.session.rollback()
-            raise f"创建文章失败: {str(e)}"
-
-    @staticmethod
-    def posts_publish(data: dict):
-        content = data.get("content", "")
-        images = data.get("images", [])
-        # 可选text, image, markdown
-        post_type = data.get("type", "text")
-        match post_type:
-            case "text":
-                PostGroupApi.submit_to_db(PostType.TEXT, content, images)
-            case "image":
-                PostGroupApi.submit_to_db(
-                    PostType.TEXT, content, images
-                )  # 图文使用TEXT类型，通过has_image区分
-            case "markdown":
-                limiter.limit("2/day", exempt_when=lambda: current_user.role_id == 3)
-                PostGroupApi.submit_to_db(PostType.MARKDOWN, content, images)
-
-    def get(self):
-        """获取所有文章"""
-        page = request.args.get("page", 1, type=int)
-        per_page = request.args.get(
-            "per_page", current_app.config["FLASKY_POSTS_PER_PAGE"], type=int
-        )
-        posts, total = PostGroupApi.query_post(
-            page, per_page, request.args.get("tabName")
-        )
-        return success(data=posts, total=total)
-
-    def post(self):
-        """发布文章"""
-        if current_user.can(Permission.WRITE):
-            try:
-                PostGroupApi.posts_publish(request.json)
-                # 清除缓存
-                cache.delete_memoized(PostGroupApi.query_post)
-            except Exception as e:
-                return error(500, f"{str(e)}")
-            posts, total = PostGroupApi.query_post(
-                1, current_app.config["FLASKY_POSTS_PER_PAGE"]
-            )
-            return success(data=posts, total=total)
 
 
 def register_post_api(bp, *, post_item_url, post_group_url):

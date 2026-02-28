@@ -5,7 +5,7 @@ from flask_jwt_extended import current_user, jwt_required
 from sqlalchemy.orm import joinedload
 
 from ..decorators import DecoratedMethodView
-from ..infrastructure import db
+from ..infrastructure.database.sqlalchemy import db
 from ..models import Notification, User
 from ..utils.response import success
 

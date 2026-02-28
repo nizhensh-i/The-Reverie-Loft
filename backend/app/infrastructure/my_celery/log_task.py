@@ -5,9 +5,7 @@ import requests
 from celery import shared_task
 
 from ...utils.time_util import DateUtils
-
-# from .. import db
-from .. import db
+from ..database.sqlalchemy import db
 
 
 @shared_task(ignore_result=False)

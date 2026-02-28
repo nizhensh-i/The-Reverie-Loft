@@ -1,17 +1,14 @@
 import logging
-import random
 import re
-from datetime import timedelta
 from enum import Enum
 
 from flask import current_app
-from flask_jwt_extended import create_access_token, current_user
+from flask_jwt_extended import current_user
 from sqlalchemy import and_, event, func
-from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .exceptions import ValidationError
-from .infrastructure import db, redis
+from .infrastructure.database.sqlalchemy import db
 from .utils.common import get_avatars_url
 from .utils.time_util import DateUtils
 
@@ -289,69 +286,6 @@ class User(db.Model):
 
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
-
-    def generate_confirmation_token(self, expiration=3600):
-        additional_claims = {"confirm": self.id}
-        confirm_token = create_access_token(
-            identity=current_user,
-            additional_claims=additional_claims,
-            expires_delta=timedelta(seconds=expiration),
-        )
-        return confirm_token
-
-    @staticmethod
-    def generate_code(email, expiration=60 * 3):
-        code = random.randint(100000, 999999)
-        redis.setex(email, expiration, code)
-        return code
-
-    @staticmethod
-    def compare_code(email, code):
-        try:
-            result = User.get_value(email)
-            print("result", result)
-        except Exception as e:
-            print("redis 取值失败", e)
-            return False
-        if not result:
-            print("无对应键")
-            return False
-        if code != result:
-            print("验证码不匹配")
-            return False
-        return True
-
-    def confirm(self, email, code):
-        if User.compare_code(email, code):
-            self.confirmed = True
-            # 角色设置管理员
-            if self.email == current_app.config["FLASKY_ADMIN"]:
-                self.role = Role.query.filter_by(name="Administrator").first()
-                logging.info(f"设置用户 {self.username} 为管理员")
-            db.session.add(self)
-            redis.delete(email)
-            return True
-        else:
-            return False
-
-    def change_email(self, new_email, code):
-        if User.compare_code(new_email, code):
-            self.email = new_email
-            self.social_account["email"] = new_email
-            # 标记 social_account 已修改
-            flag_modified(self, "social_account")
-            db.session.add(self)
-            return True
-        else:
-            return False
-
-    @staticmethod
-    def get_value(key):
-        # 获取键值
-        value = redis.get(key)
-        # if value:
-        #     return value.decode()
-        return value
 
     def follow(self, user):
         if not self.is_following(user):

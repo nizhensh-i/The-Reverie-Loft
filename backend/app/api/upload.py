@@ -6,13 +6,13 @@ from flask import request
 from flask_jwt_extended import current_user, jwt_required
 from sqlalchemy import and_
 
-from ..infrastructure import (
-    db,
+from ..infrastructure.database.sqlalchemy import db
+from ..infrastructure.storage import (
     del_qiniu_image,
     dir_file_name,
     generate_upload_token,
-    get_signed_image_urls,
 )
+from ..infrastructure.storage import get_signed_image_urls as build_signed_image_urls
 from ..models import Image, ImageType
 from ..utils.common import get_avatars_url
 from ..utils.response import bad_request, success
@@ -37,6 +37,8 @@ def get_upload_token():
     }
     # 生成上传凭证，传入上传策略
     token = generate_upload_token(policy=policy)
+    if not token:
+        return bad_request("存储服务暂不可用，请稍后重试")
     return success(data={"upload_token": token})
 
 
@@ -48,9 +50,9 @@ def get_signed_image_urls():
     keys = data.get("keys", [])
     if not keys:
         return bad_request("Missing keys parameter")
-    signed_urls = get_signed_image_urls(
+    signed_urls = build_signed_image_urls(
         keys,
-        domain=os.getenv("QINIU_DOapi"),
+        domain=os.getenv("QINIU_DOMAIN"),
         fops="imageMogr2/quality/80",
         expires=3600,
     )

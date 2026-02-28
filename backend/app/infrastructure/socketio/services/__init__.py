@@ -10,3 +10,12 @@ def init_ws_services(redis):
     conversation = ConversationStateService(redis)
     cleanup = WebSocketCleanupService(redis, presence, connection)
     return connection, presence, conversation, cleanup
+
+
+__all__ = [
+    "WSConnectionManager",
+    "UserPresenceService",
+    "ConversationStateService",
+    "WebSocketCleanupService",
+    "init_ws_services",
+]

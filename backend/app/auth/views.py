@@ -1,19 +1,22 @@
 import logging
 import os
 
-from flask import request
+from flask import current_app, request
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
     current_user,
     jwt_required,
 )
+from sqlalchemy.orm.attributes import flag_modified
 
 from ..decorators import admin_required
-
-# from ..mycelery.tasks import send_email
-from ..infrastructure import db, get_random_user_avatars, send_email
-from ..models import User
+from ..infrastructure.auth import AuthCodeTokenService
+from ..infrastructure.database.redis import redis
+from ..infrastructure.database.sqlalchemy import db
+from ..infrastructure.my_celery import send_email
+from ..infrastructure.storage import get_random_user_avatars
+from ..models import Role, User
 from ..schemas import (
     BindEmailRequest,
     ChangeEmailRequest,
@@ -25,6 +28,8 @@ from ..utils.response import error, success
 from ..utils.time_util import DateUtils
 from ..utils.validation import validate_json
 from . import auth
+
+code_token_service = AuthCodeTokenService(redis)
 
 
 @auth.before_app_request
@@ -89,7 +94,7 @@ def register(validated_data):
 @DateUtils.record_time
 def apply_code():
     email = request.get_json().get("email")
-    code = User.generate_code(email)
+    code = code_token_service.generate_email_code(email)
     if current_user:
         username = (
             current_user.nickname if current_user.nickname else current_user.username
@@ -121,12 +126,19 @@ def confirm(validated_data):
 
     if current_user.email and email != current_user.email:
         return error(message="输入的邮件与用户的邮件不一致")
-    if current_user.confirm(email, code):
-        db.session.commit()
-        return success(
-            data={"isConfirmed": current_user.confirmed, "roleId": current_user.role_id}
-        )
-    return error(message="绑定失败")
+    if not code_token_service.compare_email_code(email, code):
+        return error(message="绑定失败")
+
+    current_user.confirmed = True
+    if current_user.email == current_app.config["FLASKY_ADMIN"]:
+        current_user.role = Role.query.filter_by(name="Administrator").first()
+        logging.info(f"设置用户 {current_user.username} 为管理员")
+    db.session.add(current_user)
+    code_token_service.clear_email_code(email)
+    db.session.commit()
+    return success(
+        data={"isConfirmed": current_user.confirmed, "roleId": current_user.role_id}
+    )
 
 
 @auth.route("/changeEmail", methods=["POST"])
@@ -146,11 +158,16 @@ def change_email(validated_data):
     # 密码
     if not current_user.verify_password(password):
         return error(message="密码错误")
-    # 验证码
-    if current_user.change_email(email, code):
-        db.session.commit()
-        return success()
-    return error(message="验证码错误")
+    if not code_token_service.compare_email_code(email, code):
+        return error(message="验证码错误")
+
+    current_user.email = email
+    current_user.social_account["email"] = email
+    flag_modified(current_user, "social_account")
+    db.session.add(current_user)
+    code_token_service.clear_email_code(email)
+    db.session.commit()
+    return success()
 
 
 @auth.route("/changePassword", methods=["POST"])
@@ -178,15 +195,17 @@ def reset_password(validated_data):
     password = validated_data.new_password
 
     # 验证码
-    if User.compare_code(email, code):
-        user = User.query.filter_by(email=email).first()
-        if not user:
-            return error(message="此邮箱尚未绑定")
-        user.password = password
-        user.has_password = True
-        db.session.commit()
-        return success()
-    return error(message="验证码错误")
+    if not code_token_service.compare_email_code(email, code):
+        return error(message="验证码错误")
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return error(message="此邮箱尚未绑定")
+    user.password = password
+    user.has_password = True
+    code_token_service.clear_email_code(email)
+    db.session.commit()
+    return success()
 
 
 @auth.route("/helpChangePassword", methods=["POST"])
