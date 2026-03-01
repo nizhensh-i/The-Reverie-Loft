@@ -1,7 +1,7 @@
 """
 用户数据校验模型
 """
-from .user_schemas import (
+from .auth_schemas import (
     BindEmailRequest,
     ChangeEmailRequest,
     ChangePasswordRequest,

@@ -5,8 +5,9 @@ from flask import Flask
 
 from .api import setup_api_bp
 from .auth import setup_auth_bp
+from .composition import get_container, setup_container
 from .error_handler import setup_error_handler
-from .event import cleanup, register_cleanup_handlers, register_ws_events
+from .event import register_cleanup_handlers, register_ws_events
 from .infrastructure import (
     setup_cache,
     setup_celery,
@@ -22,13 +23,11 @@ from .infrastructure import (
     setup_sqlalchemy,
     setup_storage,
 )
+from .infrastructure.database.redis import redis
+from .infrastructure.database.sqlalchemy import db
 from .infrastructure.observability import setup_slow_query_monitor
-from .infrastructure.providers import get_db, get_redis, get_socketio
+from .infrastructure.socketio import socketio
 from .middleware import setup_proxyfix_middleware
-
-db = get_db()
-redis = get_redis()
-socketio = get_socketio()
 
 
 def _is_effective_process(app) -> bool:
@@ -61,6 +60,7 @@ def create_app(config_name):
     setup_limiter(app)
     setup_oauth()
     setup_celery(app)
+    setup_container(app)
 
     setup_api_bp(app)
     setup_auth_bp(app)
@@ -89,12 +89,14 @@ def create_ws_app(config_name):
     setup_socketio(app)
     setup_jwt(app, redis)
     setup_celery(app)
+    setup_container(app)
+    container = get_container(app)
 
     # 注册WS事件和优雅停机处理器
     register_ws_events(socketio, app)
     # 启动副作用服务（仅在 reloader 子进程）
     if _is_effective_process(app):
-        cleanup.start()
+        container.ws_cleanup.start()
         register_cleanup_handlers(app)
 
     return app

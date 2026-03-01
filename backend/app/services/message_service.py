@@ -1,51 +1,61 @@
-from flask import current_app
-
-from ..infrastructure.database.sqlalchemy import db
-from ..models import Message
-from .common.dto import ActionResult, PageResult
-from .common.unit_of_work import SqlAlchemyUnitOfWork
+from ..application.dto import ActionResult, PageResult
+from ..domain.common.unit_of_work import UnitOfWork
+from ..domain.message.policies import (
+    build_conversation_message_items,
+    normalize_message_ids,
+)
+from ..domain.ports.assemblers import ResponseAssemblerPort
+from ..domain.ports.settings import PaginationSettingsPort
 
 
 class MessageService:
-    def __init__(self, session=None):
-        self.session = session or db.session
-        self.uow = SqlAlchemyUnitOfWork(self.session)
+    def __init__(
+        self,
+        *,
+        uow: UnitOfWork,
+        assembler: ResponseAssemblerPort,
+        settings: PaginationSettingsPort,
+    ):
+        self.uow = uow
+        self.assembler = assembler
+        self.settings = settings
 
     def list_conversation_messages(
         self, *, current_user_id: int, other_user_id: int, page: int
     ):
-        query = Message.query.filter(
-            (
-                (Message.sender_id == current_user_id)
-                & (Message.receiver_id == other_user_id)
-            )
-            | (
-                (Message.sender_id == other_user_id)
-                & (Message.receiver_id == current_user_id)
-            )
-        ).order_by(Message.timestamp.desc())
-        pagination = query.paginate(
+        page_entities = self.uow.messages.list_conversation_messages(
+            current_user_id=current_user_id,
+            other_user_id=other_user_id,
             page=page,
-            per_page=current_app.config["FLASKY_CHAT_PER_PAGE"],
-            error_out=False,
+            per_page=self.settings.chat_per_page(),
         )
-        messages = pagination.items
-        result = []
-        index = len(messages)
-        for message in messages:
-            item = message.to_json()
-            item.update({"id": index})
-            result.append(item)
-            index -= 1
-        return PageResult(data=result, total=pagination.total)
+        return PageResult(
+            data=build_conversation_message_items(
+                page_entities.items,
+                serializer=self.assembler.map_message,
+            ),
+            total=page_entities.total,
+        )
+
+    def update_conversation_messages_read(
+        self, *, current_user_id: int, sender_user_id: int, message_ids: list[int]
+    ):
+        normalized_ids = normalize_message_ids(message_ids)
+        if not normalized_ids:
+            return ActionResult(message="消息已标记为已读")
+        self.uow.messages.mark_conversation_read(
+            current_user_id=current_user_id,
+            sender_user_id=sender_user_id,
+            message_ids=normalized_ids,
+        )
+        self.uow.commit()
+        return ActionResult(message="消息已标记为已读")
 
     def mark_conversation_messages_read(
         self, *, current_user_id: int, sender_user_id: int, message_ids: list[int]
     ):
-        Message.query.filter(
-            Message.id.in_(message_ids),
-            Message.receiver_id == current_user_id,
-            Message.sender_id == sender_user_id,
-        ).update({"is_read": True}, synchronize_session=False)
-        self.uow.commit()
-        return ActionResult(message="消息已标记为已读")
+        return self.update_conversation_messages_read(
+            current_user_id=current_user_id,
+            sender_user_id=sender_user_id,
+            message_ids=message_ids,
+        )

@@ -29,7 +29,7 @@ def setup_jwt(app, jwt_redis_blocklist):
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
         identity = jwt_data["sub"]
-        from ...models import User
+        from ...infrastructure.persistence.models import User
 
         return User.query.filter_by(id=identity).one_or_none()
 

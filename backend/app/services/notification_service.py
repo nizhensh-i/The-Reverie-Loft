@@ -1,35 +1,24 @@
-from sqlalchemy.orm import joinedload
-
-from ..domain.common.exceptions import ValidationError
-from ..infrastructure.database.sqlalchemy import db
-from ..models import Notification, User
-from .common.dto import ActionResult, ListResult
-from .common.unit_of_work import SqlAlchemyUnitOfWork
+from ..application.dto import ActionResult, ListResult
+from ..domain.common.unit_of_work import UnitOfWork
+from ..domain.notification.policies import normalize_notification_ids
+from ..domain.ports.assemblers import ResponseAssemblerPort
 
 
 class NotificationService:
-    def __init__(self, session=None):
-        self.session = session or db.session
-        self.uow = SqlAlchemyUnitOfWork(self.session)
+    def __init__(self, *, uow: UnitOfWork, assembler: ResponseAssemblerPort):
+        self.uow = uow
+        self.assembler = assembler
 
     def list_user_notifications(self, *, user_id: int):
-        notifications = (
-            Notification.query.options(
-                joinedload(Notification.trigger_user).load_only(
-                    User.id, User.username, User.nickname, User.image
-                )
-            )
-            .filter_by(receiver_id=user_id)
-            .order_by(Notification.created_at.desc())
-            .all()
+        notifications = self.uow.notifications.list_by_receiver(user_id=user_id)
+        return ListResult(
+            data=[self.assembler.map_notification(item) for item in notifications]
         )
-        return ListResult(data=[item.to_json() for item in notifications])
 
     def update_notifications_read(self, *, user_id: int, ids):
-        if ids is None:
-            raise ValidationError("参数错误: ids 不能为空")
-        Notification.query.filter(
-            Notification.id.in_(ids), Notification.receiver_id == user_id
-        ).update({"is_read": True}, synchronize_session=False)
+        normalized_ids = normalize_notification_ids(ids)
+        if not normalized_ids:
+            return ActionResult(message="通知已标记为已读")
+        self.uow.notifications.mark_read(user_id=user_id, ids=normalized_ids)
         self.uow.commit()
         return ActionResult(message="通知已标记为已读")

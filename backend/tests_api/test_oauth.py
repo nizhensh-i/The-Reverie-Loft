@@ -16,11 +16,30 @@ from unittest.mock import MagicMock
 
 import pytest
 from app import db
-from app.auth.third_party_login import _bind_third_party_account, _get_or_create_user
-from app.models import ThirdPartyAccount, User
+from app.composition import get_container
+from app.infrastructure.persistence.models import ThirdPartyAccount, User
+from app.infrastructure.repositories.sqlalchemy.unit_of_work import (
+    SqlAlchemyRepositoryUnitOfWork,
+)
+from app.services.oauth_service import OAuthAccountService
 from flask_jwt_extended import create_access_token
 from senweaver_oauth import AuthConfig
 from senweaver_oauth.builder import AuthRequestBuilder
+
+
+def _oauth_account_service() -> OAuthAccountService:
+    return OAuthAccountService(uow=SqlAlchemyRepositoryUnitOfWork(db.session))
+
+
+def _get_or_create_user(provider, auth_user):
+    return _oauth_account_service().get_or_create_user(provider, auth_user)
+
+
+def _bind_third_party_account(provider, auth_user, user=None):
+    if user is None:
+        raise ValueError("用户未登录")
+    return _oauth_account_service().bind_third_party_account(provider, auth_user, user)
+
 
 # ============================================================================
 # Mock AuthUser 模型（模拟 senweaver_oauth.AuthUser）
@@ -360,7 +379,9 @@ class TestOAuthCallbackAPI:
             return auth_request, {"redirect_uri": "http://localhost/callback"}
 
         monkeypatch.setattr(
-            "app.auth.third_party_login._get_auth_request", mock_get_auth_request
+            get_container().oauth_infra_service,
+            "get_auth_request",
+            mock_get_auth_request,
         )
 
         # Act
@@ -426,10 +447,12 @@ class TestOAuthCallbackAPI:
             auth_request.login = MagicMock(return_value=response_mock)
             return auth_request, {"redirect_uri": "http://localhost/callback"}
 
-        # Mock FRONTEND_OAUTH_REDIRECT 为 None，避免重定向
-        monkeypatch.setattr("app.auth.third_party_login.FRONTEND_OAUTH_REDIRECT", None)
+        # 测试环境禁用前端重定向，走 JSON 响应分支
+        monkeypatch.setattr(get_container(), "frontend_oauth_redirect", None)
         monkeypatch.setattr(
-            "app.auth.third_party_login._get_auth_request", mock_get_auth_request
+            get_container().oauth_infra_service,
+            "get_auth_request",
+            mock_get_auth_request,
         )
 
         # Act
@@ -511,10 +534,12 @@ class TestOAuthCallbackAPI:
             auth_request.login = MagicMock(return_value=response_mock)
             return auth_request, {"redirect_uri": "http://localhost/callback"}
 
-        # Mock FRONTEND_OAUTH_REDIRECT 为 None
-        monkeypatch.setattr("app.auth.third_party_login.FRONTEND_OAUTH_REDIRECT", None)
+        # 测试环境禁用前端重定向，走 JSON 响应分支
+        monkeypatch.setattr(get_container(), "frontend_oauth_redirect", None)
         monkeypatch.setattr(
-            "app.auth.third_party_login._get_auth_request", mock_get_auth_request
+            get_container().oauth_infra_service,
+            "get_auth_request",
+            mock_get_auth_request,
         )
 
         # Act - 绑定模式回调（state 格式: bind:<token>）

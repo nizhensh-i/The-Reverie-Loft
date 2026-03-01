@@ -1,91 +1,112 @@
 import logging
 
-from sqlalchemy.orm import joinedload
-
-from ..domain.common.exceptions import NotFoundError, ValidationError
-from ..domain.post.policies import ensure_can_edit_post
-from ..infrastructure.database.sqlalchemy import db
-from ..models import Follow, Image, ImageType, Post, PostType, User
-from ..utils.markdown_truncate import MarkdownTruncator
-from .common.dto import ActionResult, ItemResult, PageResult
-from .common.unit_of_work import SqlAlchemyUnitOfWork
+from ..application.dto import ActionResult, ItemResult, PageResult
+from ..domain.common.constants import PermissionCode
+from ..domain.common.exceptions import NotFoundError
+from ..domain.common.unit_of_work import UnitOfWork
+from ..domain.ports.assemblers import ResponseAssemblerPort
+from ..domain.ports.notifications import NotificationDispatcherPort
+from ..domain.post.policies import (
+    build_post_image_entities,
+    build_post_summary,
+    ensure_can_edit_post,
+    normalize_post_type,
+    validate_post_content,
+)
 
 
 class PostService:
-    def __init__(self, session=None):
-        self.session = session or db.session
-        self.uow = SqlAlchemyUnitOfWork(self.session)
+    def __init__(
+        self,
+        *,
+        uow: UnitOfWork,
+        assembler: ResponseAssemblerPort,
+        notifier: NotificationDispatcherPort,
+    ):
+        self.uow = uow
+        self.assembler = assembler
+        self.notifier = notifier
+
+    @staticmethod
+    def can_publish(*, user) -> bool:
+        return bool(user and user.can(PermissionCode.WRITE))
 
     def list_posts(
         self, *, page: int, per_page: int, viewer=None, tab_name: str | None = None
     ):
-        if tab_name == "showFollowed" and viewer is not None:
-            base_query = viewer.followed_posts
-        else:
-            base_query = Post.query.filter_by(deleted=False)
-
-        query = base_query.options(
-            joinedload(Post.author).load_only(
-                User.id, User.username, User.nickname, User.image
-            )
-        ).order_by(Post.timestamp.desc())
-
-        paginate = query.paginate(page=page, per_page=per_page, error_out=False)
-        posts = paginate.items
+        page_entities = self.uow.posts.list_posts(
+            page=page,
+            per_page=per_page,
+            viewer=viewer,
+            tab_name=tab_name,
+        )
+        posts = page_entities.items
         if not posts:
-            return PageResult(data=[], total=paginate.total)
+            return PageResult(data=[], total=page_entities.total)
 
+        extra_data_map = self.uow.posts.build_post_extra_data_map(
+            posts,
+            viewer_id=(viewer.id if viewer else None),
+        )
         return PageResult(
-            data=Post.batch_query_with_data(posts, is_list=True),
-            total=paginate.total,
+            data=self.assembler.batch_map_posts(
+                posts,
+                extra_data_map=extra_data_map,
+                is_list=True,
+            ),
+            total=page_entities.total,
         )
 
-    def get_post_detail(self, post_id: int):
-        post = (
-            Post.query.options(
-                joinedload(Post.author).load_only(
-                    User.id, User.username, User.nickname, User.image
-                )
-            )
-            .filter_by(id=post_id, deleted=False)
-            .first()
-        )
+    def get_post(self, post_id: int):
+        post = self.uow.posts.get_post_detail(post_id)
         if not post:
             raise NotFoundError("文章不存在")
 
-        return ItemResult(data=Post.batch_query_with_data([post], is_list=False)[0])
+        extra_data_map = self.uow.posts.build_post_extra_data_map(
+            [post], viewer_id=None
+        )
+        return ItemResult(
+            data=self.assembler.batch_map_posts(
+                [post],
+                extra_data_map=extra_data_map,
+                is_list=False,
+            )[0]
+        )
 
     def create_post(
         self, *, author, content: str, post_type: str = "text", images=None
     ):
         images = images or []
-        if len((content or "").strip()) < 3:
-            raise ValidationError("内容长度至少需要3个字符")
+        validate_post_content(content)
 
         try:
-            mapped_type = self._map_post_type(post_type)
-            post = Post(
-                content=content,
-                summary=MarkdownTruncator.get_smart_preview(content),
-                type=mapped_type,
-                has_image=bool(images),
+            mapped_type = normalize_post_type(post_type)
+            post = self.uow.posts.create_post(
                 author=author,
+                content=content,
+                summary=build_post_summary(content),
+                post_type_value=mapped_type.value,
+                has_image=bool(images),
             )
-            self.session.add(post)
-            self.session.flush()
+            self.uow.posts.add(post)
+            self.uow.flush()
 
-            self._append_images(post_id=post.id, images=images)
+            image_payloads = build_post_image_entities(post_id=post.id, images=images)
+            image_entities = self.uow.posts.create_post_images(image_payloads)
+            self.uow.posts.add_images(image_entities)
             self.uow.commit()
 
-            self._dispatch_new_post_notification(post_id=post.id, author_id=author.id)
+            self._dispatch_new_post_notification(
+                post_id=post.id, author_id=author.id, repo=self.uow.posts
+            )
             logging.info("创建新文章: user_id=%s, post_id=%s", author.id, post.id)
             return ActionResult(message="发布文章成功", data={"post_id": post.id})
         except Exception:
             self.uow.rollback()
             raise
 
-    def soft_delete_post(self, *, post_id: int):
-        post = Post.query.filter_by(id=post_id, deleted=False).first()
+    def delete_post(self, *, post_id: int):
+        post = self.uow.posts.get_active_post(post_id)
         if not post:
             raise NotFoundError("文章不存在")
 
@@ -95,11 +116,7 @@ class PostService:
         return ActionResult(message="文章删除成功")
 
     def edit_post(self, *, post_id: int, operator, payload: dict):
-        post = Post.query.options(
-            joinedload(Post.author).load_only(
-                User.id, User.username, User.nickname, User.image
-            )
-        ).get(post_id)
+        post = self.uow.posts.get_post_for_update(post_id)
         if not post:
             raise NotFoundError("文章不存在")
 
@@ -108,54 +125,28 @@ class PostService:
         content = payload.get("content")
         if content is not None:
             post.content = content
-            post.summary = MarkdownTruncator.get_smart_preview(post.content)
+            post.summary = build_post_summary(post.content)
 
         images = payload.get("images")
         if images:
-            self._append_images(post_id=post.id, images=images)
+            image_payloads = build_post_image_entities(post_id=post.id, images=images)
+            image_entities = self.uow.posts.create_post_images(image_payloads)
+            self.uow.posts.add_images(image_entities)
 
         self.uow.commit()
-        return ItemResult(data=Post.batch_query_with_data([post], is_list=False)[0])
-
-    def _append_images(self, *, post_id: int, images):
-        if not images:
-            return
-
-        if isinstance(images[0], dict):
-            image_entities = [
-                Image(
-                    url=image.get("url", ""),
-                    type=ImageType.POST,
-                    describe=image.get("pos", ""),
-                    related_id=post_id,
-                )
-                for image in images
-            ]
-            self.session.add_all(image_entities)
-            return
-
-        if isinstance(images[0], str):
-            image_entities = [
-                Image(url=image, type=ImageType.POST, related_id=post_id)
-                for image in images
-            ]
-            self.session.add_all(image_entities)
-
-    @staticmethod
-    def _map_post_type(post_type: str):
-        if post_type == "markdown":
-            return PostType.MARKDOWN
-        # 兼容原逻辑: text/image 都存为 TEXT
-        return PostType.TEXT
-
-    @staticmethod
-    def _dispatch_new_post_notification(*, post_id: int, author_id: int):
-        followers = (
-            Follow.query.filter_by(followed_id=author_id)
-            .filter(Follow.follower_id != author_id)
-            .all()
+        extra_data_map = self.uow.posts.build_post_extra_data_map(
+            [post], viewer_id=operator.id
         )
-        follower_ids = [follow.follower_id for follow in followers]
-        from ..infrastructure.my_celery import create_new_post_notifications
+        return ItemResult(
+            data=self.assembler.batch_map_posts(
+                [post],
+                extra_data_map=extra_data_map,
+                is_list=False,
+            )[0]
+        )
 
-        create_new_post_notifications.delay(post_id, author_id, follower_ids)
+    def _dispatch_new_post_notification(self, *, post_id: int, author_id: int, repo):
+        follower_ids = repo.list_follower_ids(author_id=author_id)
+        self.notifier.dispatch_new_post(
+            post_id=post_id, author_id=author_id, follower_ids=follower_ids
+        )

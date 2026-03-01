@@ -4,7 +4,7 @@ from faker import Faker
 from flask import current_app
 
 from . import db
-from .models import Post, User
+from .infrastructure.persistence.models import Follow, Post, Role, User
 
 fake = Faker("zh-cn")
 
@@ -16,17 +16,21 @@ class Fake:
     def users(count=10):
         fake = Faker(Fake.locales)
         db.create_all()
+        default_role = Role.query.filter_by(default=True).first()
         i = 0
         while i < count:
             u = User(
                 email=fake.email(),
                 username=fake.user_name(),
                 password="123",
-                name=fake.name(),
+                nickname=fake.name(),
+                role=default_role,
                 location=fake.city(),
                 about_me="about me 个性说说",
             )
             db.session.add(u)
+            db.session.flush()
+            db.session.add(Follow(follower_id=u.id, followed_id=u.id))
             i += 1
             try:
                 db.session.commit()
@@ -53,12 +57,14 @@ class Fake:
                 email=current_app.config["FLASKY_ADMIN"],
                 username="zmc",
                 password="zmc",
-                name="追梦少年",
+                nickname="追梦少年",
+                role=Role.query.filter_by(default=True).first(),
                 location="上海",
                 about_me="随便说点啥...",
             )
             db.session.add(u)
             db.session.flush()
+            db.session.add(Follow(follower_id=u.id, followed_id=u.id))
 
             # 添加管理员的文章到post表
             u1 = User.query.filter_by(username="zmc").first()

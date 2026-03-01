@@ -3,76 +3,108 @@ import os
 from flask_jwt_extended import create_access_token, create_refresh_token
 from sqlalchemy.orm.attributes import flag_modified
 
-from ..infrastructure.auth import AuthCodeTokenService
-from ..infrastructure.database.sqlalchemy import db
-from ..infrastructure.my_celery import send_email
-from ..infrastructure.storage import get_random_user_avatars
-from ..models import Role, User
+from ..application.dto import ActionResult, ItemResult
+from ..domain.auth.policies import (
+    resolve_email_code_username,
+    should_grant_admin_role,
+    validate_confirm_email_request,
+    validate_new_email_change,
+    validate_social_password,
+)
+from ..domain.common.exceptions import ValidationError
+from ..domain.common.unit_of_work import UnitOfWork
+from ..domain.ports.assemblers import ResponseAssemblerPort
+from ..domain.ports.auth import EmailCodePort, MailSenderPort
+from ..domain.ports.storage import AvatarProviderPort
 from ..utils.time_util import DateUtils
-from .common.dto import ActionResult, ItemResult
-from .common.unit_of_work import SqlAlchemyUnitOfWork
 
 
 class AuthService:
-    def __init__(self, code_token_service: AuthCodeTokenService, session=None):
+    def __init__(
+        self,
+        *,
+        uow: UnitOfWork,
+        code_token_service: EmailCodePort,
+        assembler: ResponseAssemblerPort,
+        mail_sender: MailSenderPort,
+        avatar_provider: AvatarProviderPort,
+    ):
         self.code_token_service = code_token_service
-        self.session = session or db.session
-        self.uow = SqlAlchemyUnitOfWork(self.session)
+        self.assembler = assembler
+        self.mail_sender = mail_sender
+        self.avatar_provider = avatar_provider
+        self.uow = uow
 
     def rollback(self):
         self.uow.rollback()
 
     def create_login_session(self, *, username: str, password: str):
-        user = User.query.filter_by(username=username).one_or_none()
+        user = self.uow.auth.get_user_by_username(username)
         if not user or not user.verify_password(password):
             return None
 
         fresh_access_token = "Bearer " + create_access_token(identity=user, fresh=True)
         refresh_token = "Bearer " + create_refresh_token(identity=user)
-        user.ping()
+        self.uow.users.touch_last_seen(user_id=user.id)
+        user_extra_data = self.uow.users.build_user_extra_data(
+            user_id=user.id, viewer_id=None
+        )
+        self.uow.commit()
         return ItemResult(
             data={
-                "user": user,
+                "user": self.assembler.map_user(user, extra_data=user_extra_data),
                 "access_token": fresh_access_token,
                 "refresh_token": refresh_token,
             }
         )
 
     def create_user_account(self, *, username: str, password: str, email: str | None):
-        existed_username = User.query.filter_by(username=username).first()
+        existed_username = self.uow.auth.get_user_by_username(username)
         if existed_username:
             return ActionResult(ok=False, message="该用户名已被注册，请换一个")
 
         if email:
-            existed_email = User.query.filter_by(email=email).first()
+            existed_email = self.uow.auth.get_user_by_email(email)
             if existed_email:
                 return ActionResult(ok=False, message="该邮箱已被注册，请换一个")
 
         random_image = (
-            "" if os.getenv("FLASK_CONFIG") == "testing" else get_random_user_avatars()
+            ""
+            if os.getenv("FLASK_CONFIG") == "testing"
+            else self.avatar_provider.get_random_avatar()
         )
-        user = User(
-            email=email, username=username, password=password, image=random_image
+        user = self.uow.auth.create_user(
+            email=email,
+            username=username,
+            password=password,
+            image=random_image,
         )
-        self.session.add(user)
+        self.uow.auth.add_user(user)
+        self.uow.flush()
+        self.uow.follows.add(
+            self.uow.follows.create_follow_relation(
+                follower_id=user.id,
+                followed_id=user.id,
+            )
+        )
         self.uow.commit()
         return ActionResult()
+
+    def touch_user_last_seen(self, *, user_id: int) -> None:
+        self.uow.users.touch_last_seen(user_id=user_id)
+        self.uow.commit()
 
     def create_email_code(self, *, email: str, current_user):
         code = self.code_token_service.generate_email_code(email)
         if current_user:
-            username = (
-                current_user.nickname
-                if current_user.nickname
-                else current_user.username
-            )
+            username = resolve_email_code_username(current_user=current_user)
         else:
-            user = User.query.filter_by(email=email).first()
+            user = self.uow.auth.get_user_by_email(email)
             if not user:
                 return ActionResult(ok=False, message="您输入的邮箱未绑定过账号")
-            username = user.nickname if user.nickname else user.username
+            username = resolve_email_code_username(target_user=user)
 
-        send_email.delay(
+        self.mail_sender.send_template_email(
             email,
             "Confirm Your Account",
             "code_email.html",
@@ -85,25 +117,30 @@ class AuthService:
     def update_email_confirmation(
         self, *, user, email: str, code: str, admin_email: str
     ):
-        if user.email and email != user.email:
-            return ActionResult(ok=False, message="输入的邮件与用户的邮件不一致")
+        try:
+            validate_confirm_email_request(user_email=user.email, input_email=email)
+        except ValidationError as exc:
+            return ActionResult(ok=False, message=exc.message)
+
         if not self.code_token_service.compare_email_code(email, code):
             return ActionResult(ok=False, message="绑定失败")
 
         user.confirmed = True
-        if user.email == admin_email:
-            user.role = Role.query.filter_by(name="Administrator").first()
+        if should_grant_admin_role(user_email=user.email, admin_email=admin_email):
+            user.role = self.uow.auth.get_role_by_name("Administrator")
 
-        self.session.add(user)
+        self.uow.auth.add_user(user)
         self.code_token_service.clear_email_code(email)
         self.uow.commit()
         return ActionResult()
 
     def update_user_email(self, *, user, new_email: str, code: str, password: str):
-        if User.query.filter_by(email=new_email).first():
+        if self.uow.auth.get_user_by_email(new_email):
             return ActionResult(ok=False, message="填写的邮箱已经存在")
-        if user.email == new_email:
-            return ActionResult(ok=False, message="请更换新的邮箱地址")
+        try:
+            validate_new_email_change(current_email=user.email, new_email=new_email)
+        except ValidationError as exc:
+            return ActionResult(ok=False, message=exc.message)
         if not user.verify_password(password):
             return ActionResult(ok=False, message="密码错误")
         if not self.code_token_service.compare_email_code(new_email, code):
@@ -112,7 +149,7 @@ class AuthService:
         user.email = new_email
         user.social_account["email"] = new_email
         flag_modified(user, "social_account")
-        self.session.add(user)
+        self.uow.auth.add_user(user)
         self.code_token_service.clear_email_code(new_email)
         self.uow.commit()
         return ActionResult()
@@ -131,7 +168,7 @@ class AuthService:
         if not self.code_token_service.compare_email_code(email, code):
             return ActionResult(ok=False, message="验证码错误")
 
-        user = User.query.filter_by(email=email).first()
+        user = self.uow.auth.get_user_by_email(email)
         if not user:
             return ActionResult(ok=False, message="此邮箱尚未绑定")
 
@@ -142,7 +179,7 @@ class AuthService:
         return ActionResult()
 
     def update_password_by_admin(self, *, username: str, new_password: str):
-        user = User.query.filter_by(username=username).first()
+        user = self.uow.auth.get_user_by_username(username)
         if not user:
             return ActionResult(ok=False, message="用户不存在")
         user.password = new_password
@@ -150,10 +187,10 @@ class AuthService:
         return ActionResult()
 
     def update_password_for_social_user(self, *, user, new_password: str):
-        if not new_password:
-            return ActionResult(ok=False, message="新密码不能为空")
-        if len(new_password) < 3:
-            return ActionResult(ok=False, message="密码长度不能少于3个字符")
+        try:
+            validate_social_password(new_password)
+        except ValidationError as exc:
+            return ActionResult(ok=False, message=exc.message)
         user.password = new_password
         user.has_password = True
         self.uow.commit()

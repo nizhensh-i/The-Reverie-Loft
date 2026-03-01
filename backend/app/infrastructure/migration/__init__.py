@@ -9,7 +9,7 @@ def setup_migration(app, db):
 
     @app.shell_context_processor
     def make_shell_context():
-        from app.models import (
+        from app.infrastructure.persistence.models import (
             Comment,
             Follow,
             Image,
@@ -42,10 +42,14 @@ def setup_migration(app, db):
     def deploy():
         """运行部署任务"""
         upgrade()
-        from app.models import Role, User
+        from app.infrastructure.repositories.sqlalchemy.unit_of_work import (
+            SqlAlchemyRepositoryUnitOfWork,
+        )
 
-        Role.insert_roles()
-        User.add_self_follows()
+        uow = SqlAlchemyRepositoryUnitOfWork(db.session)
+        uow.users.init_roles()
+        uow.follows.ensure_self_follows()
+        uow.commit()
 
     @app.cli.command("add")
     @click.argument("some")

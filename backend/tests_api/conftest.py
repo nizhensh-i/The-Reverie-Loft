@@ -1,7 +1,7 @@
 import pytest
 from app import create_app
 from app.infrastructure.database.sqlalchemy import db
-from app.models import Role
+from app.infrastructure.persistence.models import Role
 
 
 @pytest.fixture
@@ -15,7 +15,8 @@ def app():
     # 创建应用上下文
     with app.app_context():
         db.create_all()
-        Role.insert_roles()
+        Role.insert_roles(session=db.session)
+        db.session.commit()
         yield app
         db.session.remove()
         db.drop_all()

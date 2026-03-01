@@ -3,14 +3,44 @@ import logging
 from flask import current_app, request
 from flask_jwt_extended import current_user, jwt_required
 
+from ..application.cache import PostListCache
+from ..composition import get_container
 from ..decorators import DecoratedMethodView, log_operate
-from ..infrastructure.cache import cache, cache_invalidator
 from ..infrastructure.my_limiter import limiter
-from ..models import Permission
-from ..services.post_service import PostService
 from ..utils.response import forbidden, success
 
-post_service = PostService()
+
+def _post_service():
+    return get_container().post_service()
+
+
+def _query_post(page: int, per_page: int, tab_name: str | None = None):
+    viewer = current_user if tab_name == "showFollowed" else None
+    viewer_id = viewer.id if viewer else None
+
+    cached = PostListCache.get(
+        page=page,
+        per_page=per_page,
+        tab_name=tab_name,
+        viewer_id=viewer_id,
+    )
+    if cached is not None:
+        return cached
+
+    result = _post_service().list_posts(
+        page=page,
+        per_page=per_page,
+        viewer=viewer,
+        tab_name=tab_name,
+    )
+    PostListCache.set(
+        page=page,
+        per_page=per_page,
+        tab_name=tab_name,
+        viewer_id=viewer_id,
+        payload=result,
+    )
+    return result
 
 
 class PostGroupApi(DecoratedMethodView):
@@ -20,23 +50,14 @@ class PostGroupApi(DecoratedMethodView):
     }
 
     @staticmethod
-    @cache.memoize(timeout=60)
-    def query_post(page, per_page, tab_name=None):
-        viewer = current_user if tab_name == "showFollowed" else None
-        return post_service.list_posts(
-            page=page, per_page=per_page, viewer=viewer, tab_name=tab_name
-        )
-
-    @staticmethod
     def submit_to_db(post_type, content, images=None):
-        return post_service.create_post(
+        return _post_service().create_post(
             author=current_user, content=content, post_type=post_type, images=images
         )
 
     @staticmethod
     @limiter.limit("2/day", exempt_when=lambda: current_user.role_id == 3)
     def publish_image_post(content, images):
-        """发布图文文章（带限流）"""
         return PostGroupApi.submit_to_db("image", content, images)
 
     @staticmethod
@@ -49,21 +70,19 @@ class PostGroupApi(DecoratedMethodView):
         return PostGroupApi.submit_to_db(post_type, content, images)
 
     def get(self):
-        """获取所有文章"""
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get(
             "per_page", current_app.config["FLASKY_POSTS_PER_PAGE"], type=int
         )
-        result = PostGroupApi.query_post(page, per_page, request.args.get("tabName"))
+        result = _query_post(page, per_page, request.args.get("tabName"))
         return success(data=result.data, total=result.total)
 
     def post(self):
-        """发布文章"""
-        if not current_user.can(Permission.WRITE):
+        if not _post_service().can_publish(user=current_user):
             return forbidden("没有权限发布文章")
         create_result = PostGroupApi.posts_publish(request.json or {})
-        cache.delete_memoized(PostGroupApi.query_post)
-        result = PostGroupApi.query_post(1, current_app.config["FLASKY_POSTS_PER_PAGE"])
+        PostListCache.invalidate_all()
+        result = _query_post(1, current_app.config["FLASKY_POSTS_PER_PAGE"])
         return success(
             message=create_result.message,
             data=result.data,
@@ -74,28 +93,26 @@ class PostGroupApi(DecoratedMethodView):
 class PostItemApi(DecoratedMethodView):
     method_decorators = {
         "get": [],
-        "delete": [
-            jwt_required(),
-            cache_invalidator(target_func=PostGroupApi.query_post),
-        ],
+        "delete": [jwt_required()],
         "patch": [jwt_required()],
     }
 
     def get(self, id):
-        """获取单篇文章"""
         logging.info(f"获取文章: id={id}")
-        result = post_service.get_post_detail(id)
+        result = _post_service().get_post(id)
         return success(data=result.data)
 
     def delete(self, id):
-        result = post_service.soft_delete_post(post_id=id)
+        result = _post_service().delete_post(post_id=id)
+        PostListCache.invalidate_all()
         return success(message=result.message)
 
     def patch(self, id):
         logging.info(f"编辑文章: id={id}")
-        result = post_service.edit_post(
+        result = _post_service().edit_post(
             post_id=id, operator=current_user, payload=request.get_json() or {}
         )
+        PostListCache.invalidate_all()
         return success(data=result.data)
 
 

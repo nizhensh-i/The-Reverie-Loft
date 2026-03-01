@@ -4,15 +4,14 @@ import re
 import secrets
 from typing import Dict, Optional
 
-from ..infrastructure.database.sqlalchemy import db
-from ..models import ThirdPartyAccount, User
-from .common.unit_of_work import SqlAlchemyUnitOfWork
+from ..domain.common.exceptions import NotFoundError, ValidationError
+from ..domain.common.unit_of_work import UnitOfWork
+from ..domain.oauth.policies import ensure_oauth_user_uuid
 
 
 class OAuthAccountService:
-    def __init__(self, session=None):
-        self.session = session or db.session
-        self.uow = SqlAlchemyUnitOfWork(self.session)
+    def __init__(self, *, uow: UnitOfWork):
+        self.uow = uow
 
     def rollback(self):
         self.uow.rollback()
@@ -51,13 +50,13 @@ class OAuthAccountService:
         slug = re.sub(r"[^a-zA-Z0-9_]+", "", base_name or "").lower() or "user"
         candidate = slug
         index = 1
-        while User.query.filter_by(username=candidate).first():
+        while self.uow.oauth.username_exists(candidate):
             candidate = f"{slug}{index}"
             index += 1
         return candidate
 
     @staticmethod
-    def update_account_snapshot(account: ThirdPartyAccount, profile: Dict) -> None:
+    def update_account_snapshot(account, profile: Dict) -> None:
         account.nickname = profile["nickname"]
         account.avatar = profile["avatar"]
         account.email = profile["email"]
@@ -69,80 +68,82 @@ class OAuthAccountService:
         account.remark = profile["remark"]
         account.raw_user_info = profile["raw_user_info"]
 
-    def get_or_create_user(self, provider: str, auth_user) -> User:
+    def get_or_create_user(self, provider: str, auth_user):
         profile = self.extract_auth_user_profile(auth_user)
         uuid = profile.get("uuid")
-        if not uuid:
-            raise ValueError("第三方登录缺少 uuid")
+        ensure_oauth_user_uuid(uuid)
 
-        account = ThirdPartyAccount.query.filter_by(
+        account = self.uow.oauth.get_account_by_provider_uuid(
             provider=provider, uuid=uuid
-        ).one_or_none()
+        )
 
         if account:
             self.update_account_snapshot(account, profile)
-            self.session.add(account)
-            user = User.query.get(account.user_id)
+            self.uow.oauth.add(account)
+            user = self.uow.oauth.get_user_by_id(account.user_id)
             if user and (not user.image and profile["avatar"]):
                 user.image = profile["avatar"]
-                self.session.add(user)
+                self.uow.oauth.add(user)
             return user
 
         username = self.generate_username(profile["username"])
-        user = User(
+        user = self.uow.oauth.create_user(
             username=username,
             nickname=profile["nickname"],
             image=profile["avatar"],
             password=secrets.token_urlsafe(32),
             has_password=False,
         )
-        self.session.add(user)
-        self.session.flush()
+        self.uow.oauth.add(user)
+        self.uow.flush()
+        self.uow.follows.add(
+            self.uow.follows.create_follow_relation(
+                follower_id=user.id,
+                followed_id=user.id,
+            )
+        )
 
-        account = ThirdPartyAccount(
+        account = self.uow.oauth.create_account(
             provider=provider,
             user_id=user.id,
-            **profile,
+            profile=profile,
         )
-        self.session.add(account)
+        self.uow.oauth.add(account)
         return user
 
-    def bind_third_party_account(
-        self, provider: str, auth_user, user: User
-    ) -> ThirdPartyAccount:
+    def bind_third_party_account(self, provider: str, auth_user, user):
         profile = self.extract_auth_user_profile(auth_user)
         uuid = profile.get("uuid")
-        if not uuid:
-            raise ValueError("第三方登录缺少 uuid")
+        ensure_oauth_user_uuid(uuid)
 
-        existing_account = ThirdPartyAccount.query.filter_by(
+        existing_account = self.uow.oauth.get_account_by_provider_uuid(
             provider=provider, uuid=uuid
-        ).one_or_none()
+        )
 
         if existing_account:
             if existing_account.user_id != user.id:
-                raise ValueError(f"该 {provider.title()} 账号已绑定其他用户")
+                raise ValidationError(f"该 {provider.title()} 账号已绑定其他用户")
             account = existing_account
         else:
-            account = ThirdPartyAccount(
+            account = self.uow.oauth.create_account(
                 provider=provider,
                 user_id=user.id,
-                **profile,
+                profile=profile,
             )
 
         self.update_account_snapshot(account, profile)
-        self.session.add(account)
+        self.uow.oauth.add(account)
         return account
 
-    def unbind_third_party_account(self, provider: str, user: User):
-        account = ThirdPartyAccount.query.filter_by(
+    def unbind_third_party_account(self, provider: str, user):
+        account = self.uow.oauth.get_account_by_provider_user(
             provider=provider, user_id=user.id
-        ).one_or_none()
+        )
         if not account:
-            raise ValueError(f"未找到已绑定的 {provider} 账号")
+            raise NotFoundError(f"未找到已绑定的 {provider} 账号")
 
-        bind_count = ThirdPartyAccount.query.filter_by(user_id=user.id).count()
+        bind_count = self.uow.oauth.count_user_accounts(user_id=user.id)
         if not user.has_password and bind_count <= 1:
-            raise ValueError("解绑失败：您未设置密码，且这是您唯一的登录方式。请先设置密码或绑定其他登录方式。")
+            raise ValidationError("解绑失败：您未设置密码，且这是您唯一的登录方式。请先设置密码或绑定其他登录方式。")
 
-        self.session.delete(account)
+        self.uow.oauth.delete(account)

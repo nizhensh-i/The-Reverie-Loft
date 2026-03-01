@@ -14,7 +14,7 @@ def log_visitor(is_register, client_ip, user_agent):
     log_filter = {"username": user_agent.get("username")}
     if not is_register:
         log_filter = {"ip": client_ip}
-    from ...models import Log
+    from ...infrastructure.persistence.models import Log
 
     # 获取最近访问记录
     last_visit = (

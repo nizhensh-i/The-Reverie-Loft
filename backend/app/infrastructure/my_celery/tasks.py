@@ -46,7 +46,7 @@ def hard_delete_post():
     相关的评论、点赞、通知已通过 数据库级联 删除
     """
     try:
-        from ...models import Post
+        from ...infrastructure.persistence.models import Post
 
         posts_query = Post.query.filter_by(deleted=True)
         post_count = posts_query.count()
@@ -73,7 +73,7 @@ def hard_delete_post():
 
 def _delete_post_images(post_ids):
     """删除文章相关图片"""
-    from ...models import Image, ImageType
+    from ...infrastructure.persistence.models import Image, ImageType
 
     images = (
         Image.query.with_entities(Image.id, Image.url)

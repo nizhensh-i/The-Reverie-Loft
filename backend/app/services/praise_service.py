@@ -1,55 +1,54 @@
 import logging
 
-from ..domain.common.exceptions import NotFoundError, ValidationError
-from ..infrastructure.database.sqlalchemy import db
-from ..models import Comment, Post, Praise
-from .common.dto import ItemResult, ListResult
-from .common.unit_of_work import SqlAlchemyUnitOfWork
+from ..application.dto import ItemResult, ListResult
+from ..domain.common.exceptions import NotFoundError
+from ..domain.common.unit_of_work import UnitOfWork
+from ..domain.ports.notifications import NotificationDispatcherPort
+from ..domain.praise.policies import (
+    ensure_praise_not_exists,
+    resolve_like_notification_receiver,
+)
 
 
 class PraiseService:
-    def __init__(self, session=None):
-        self.session = session or db.session
-        self.uow = SqlAlchemyUnitOfWork(self.session)
+    def __init__(self, *, uow: UnitOfWork, notifier: NotificationDispatcherPort):
+        self.uow = uow
+        self.notifier = notifier
 
     def list_praised_comment_ids_for_post(self, *, user_id: int, post_id: int):
-        comment_ids = (
-            self.session.query(Praise.comment_id)
-            .join(Comment)
-            .filter(
-                Praise.author_id == user_id,
-                Comment.post_id == post_id,
-                Praise.comment_id.isnot(None),
-            )
-            .distinct()
-            .all()
+        comment_ids = self.uow.praises.list_praised_comment_ids_for_post(
+            user_id=user_id, post_id=post_id
         )
-        return ListResult(data=[item[0] for item in comment_ids])
+        return ListResult(data=comment_ids)
 
     def get_post_praise_stats(self, *, post_id: int):
-        post = Post.query.get(post_id)
+        post = self.uow.praises.get_post(post_id)
         if not post:
             raise NotFoundError("文章不存在")
         return ItemResult(data={"praise_total": post.praise.count()})
 
     def create_post_praise(self, *, post_id: int, user):
-        post = Post.query.get(post_id)
+        post = self.uow.praises.get_post(post_id)
         if not post:
             raise NotFoundError("文章不存在")
 
-        existed = Praise.query.filter_by(author_id=user.id, post_id=post_id).first()
-        if existed:
-            raise ValidationError("您已经点赞过了~")
+        existed = self.uow.praises.exists_post_praise(user_id=user.id, post_id=post_id)
+        ensure_praise_not_exists(existed)
 
         try:
-            praise = Praise(post=post, author=user)
-            self.session.add(praise)
+            praise = self.uow.praises.create_post_praise(post=post, author=user)
+            self.uow.praises.add(praise)
             self.uow.commit()
 
-            if user.id != post.author_id:
-                from ..infrastructure.my_celery import create_like_notifications
-
-                create_like_notifications.delay(post.id, None, user.id, post.author_id)
+            receiver_id = resolve_like_notification_receiver(
+                actor_id=user.id, target_author_id=post.author_id
+            )
+            self.notifier.dispatch_like(
+                post_id=post.id,
+                comment_id=None,
+                liker_id=user.id,
+                receiver_id=receiver_id,
+            )
 
             return ItemResult(
                 data={"praise_total": post.praise.count(), "has_praised": True}
@@ -60,33 +59,37 @@ class PraiseService:
             raise
 
     def get_comment_praise_stats(self, *, comment_id: int):
-        comment = Comment.query.get(comment_id)
+        comment = self.uow.praises.get_comment(comment_id)
         if not comment:
             raise NotFoundError("评论不存在")
         return ItemResult(data={"praise_total": comment.praise.count()})
 
     def create_comment_praise(self, *, comment_id: int, user):
-        comment = Comment.query.get(comment_id)
+        comment = self.uow.praises.get_comment(comment_id)
         if not comment:
             raise NotFoundError("评论不存在")
 
-        existed = Praise.query.filter_by(
-            author_id=user.id, comment_id=comment_id
-        ).first()
-        if existed:
-            raise ValidationError("您已经点赞过了~")
+        existed = self.uow.praises.exists_comment_praise(
+            user_id=user.id, comment_id=comment_id
+        )
+        ensure_praise_not_exists(existed)
 
         try:
-            praise = Praise(comment=comment, author=user)
-            self.session.add(praise)
+            praise = self.uow.praises.create_comment_praise(
+                comment=comment, author=user
+            )
+            self.uow.praises.add(praise)
             self.uow.commit()
 
-            if user.id != comment.author_id:
-                from ..infrastructure.my_celery import create_like_notifications
-
-                create_like_notifications.delay(
-                    comment.post_id, comment.id, user.id, comment.author_id
-                )
+            receiver_id = resolve_like_notification_receiver(
+                actor_id=user.id, target_author_id=comment.author_id
+            )
+            self.notifier.dispatch_like(
+                post_id=comment.post_id,
+                comment_id=comment.id,
+                liker_id=user.id,
+                receiver_id=receiver_id,
+            )
 
             return ItemResult(data={"praise_total": comment.praise.count()})
         except Exception:

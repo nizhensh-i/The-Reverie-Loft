@@ -2,7 +2,7 @@ import json
 import logging
 from dataclasses import dataclass
 from datetime import timedelta
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import urlencode
 
 import requests
 from flask_jwt_extended import (
@@ -12,10 +12,14 @@ from flask_jwt_extended import (
     decode_token,
 )
 
-from ..infrastructure.database.sqlalchemy import db
-from ..infrastructure.oauth import has_oauth_network_error_message
-from ..models import User
-from .common.unit_of_work import SqlAlchemyUnitOfWork
+from ..domain.common.unit_of_work import UnitOfWork
+from ..domain.oauth.policies import (
+    ensure_provider_enabled,
+    parse_bind_state_token,
+    sanitize_oauth_authorize_url,
+)
+from ..domain.ports.assemblers import ResponseAssemblerPort
+from ..domain.ports.oauth import OAuthNetworkPort
 from .oauth_service import OAuthAccountService
 
 
@@ -57,12 +61,21 @@ class OAuthErrorResult:
 
 
 class OAuthFlowService:
-    def __init__(self, oauth_infra_service, frontend_oauth_redirect: str, session=None):
+    def __init__(
+        self,
+        *,
+        oauth_infra_service,
+        frontend_oauth_redirect: str,
+        uow: UnitOfWork,
+        assembler: ResponseAssemblerPort,
+        oauth_network: OAuthNetworkPort,
+    ):
         self.oauth_infra_service = oauth_infra_service
         self.frontend_oauth_redirect = frontend_oauth_redirect
-        self.session = session or db.session
-        self.uow = SqlAlchemyUnitOfWork(self.session)
-        self.oauth_account_service = OAuthAccountService(session=self.session)
+        self.uow = uow
+        self.assembler = assembler
+        self.oauth_network = oauth_network
+        self.oauth_account_service = OAuthAccountService(uow=self.uow)
 
     def rollback(self):
         self.uow.rollback()
@@ -73,16 +86,12 @@ class OAuthFlowService:
     def create_authorize_url(self, provider: str):
         auth_request, _ = self.oauth_infra_service.get_auth_request(provider)
         auth_url = auth_request.authorize()
-
-        parsed = urlparse(auth_url)
-        query_params = parse_qs(parsed.query, keep_blank_values=True)
-        encoded_query = urlencode(query_params, doseq=True)
-        encoded_url = parsed._replace(query=encoded_query).geturl()
-        return encoded_url
+        return sanitize_oauth_authorize_url(auth_url)
 
     def create_bind_authorize_url(self, provider: str):
-        if provider not in self.enabled_providers():
-            raise ValueError(f"不支持的平台: {provider}")
+        ensure_provider_enabled(
+            provider=provider, enabled_providers=self.enabled_providers()
+        )
 
         auth_request, _ = self.oauth_infra_service.get_auth_request(provider)
         user_token = create_access_token(
@@ -104,7 +113,7 @@ class OAuthFlowService:
 
             auth_user_response = auth_request.login(params)
 
-            if has_oauth_network_error_message(auth_user_response.message):
+            if self.oauth_network.has_network_error_message(auth_user_response.message):
                 return OAuthErrorResult(
                     code=503,
                     message=f"{provider.title()} 服务连接失败，请稍后重试或检查网络配置",
@@ -122,13 +131,13 @@ class OAuthFlowService:
                 return OAuthRedirectResult(url=auth_user.service_url)
 
             state = params.get("state", "")
-            is_bind_mode = state.startswith("bind:")
+            bind_token = parse_bind_state_token(state)
+            is_bind_mode = bind_token is not None
 
             if is_bind_mode:
-                token = state[5:]
-                decoded_token = decode_token(token, allow_expired=False)
+                decoded_token = decode_token(bind_token, allow_expired=False)
                 user_id = decoded_token.get("sub")
-                user = User.query.get(user_id)
+                user = self.uow.users.get_by_id(user_id)
                 if not user:
                     raise ValueError("用户不存在")
 
@@ -141,10 +150,15 @@ class OAuthFlowService:
             user = self.oauth_account_service.get_or_create_user(provider, auth_user)
             self.uow.commit()
 
-            user_payload = user.to_json()
+            user_extra_data = self.uow.users.build_user_extra_data(
+                user_id=user.id,
+                viewer_id=None,
+            )
+            user_payload = self.assembler.map_user(user, extra_data=user_extra_data)
             access_token = "Bearer " + create_access_token(identity=user, fresh=True)
             refresh_token = "Bearer " + create_refresh_token(identity=user)
-            user.ping()
+            self.uow.users.touch_last_seen(user_id=user.id)
+            self.uow.commit()
 
             return OAuthLoginSuccessResult(
                 provider=provider,

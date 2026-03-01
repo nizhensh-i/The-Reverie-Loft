@@ -1,49 +1,54 @@
 import logging
 
+from ..application.dto import ActionResult, ItemResult, PageResult
 from ..domain.comment.policies import (
+    apply_comment_status,
     build_comment_notification_targets,
     can_delete_comment,
+    resolve_root_comment,
+    sanitize_comment_body,
+    validate_comment_body,
 )
-from ..domain.common.exceptions import ForbiddenError, NotFoundError, ValidationError
-from ..infrastructure.database.sqlalchemy import db
-from ..models import Comment, Post
-from ..utils.common import get_avatars_url
-from ..utils.text_filter import DFAFilter
-from ..utils.time_util import DateUtils
-from .common.dto import ActionResult, ItemResult, PageResult
-from .common.unit_of_work import SqlAlchemyUnitOfWork
+from ..domain.common.exceptions import ForbiddenError, NotFoundError
+from ..domain.common.unit_of_work import UnitOfWork
+from ..domain.ports.assemblers import ResponseAssemblerPort
+from ..domain.ports.notifications import NotificationDispatcherPort
 
 
 class CommentService:
-    def __init__(self, session=None):
-        self.session = session or db.session
-        self.uow = SqlAlchemyUnitOfWork(self.session)
+    def __init__(
+        self,
+        *,
+        uow: UnitOfWork,
+        assembler: ResponseAssemblerPort,
+        notifier: NotificationDispatcherPort,
+    ):
+        self.uow = uow
+        self.assembler = assembler
+        self.notifier = notifier
 
-    def get_replies_by_parent(self, *, root_comment_id: int, page: int, per_page: int):
-        query = Comment.query.filter_by(root_comment_id=root_comment_id).order_by(
-            Comment.timestamp.desc()
+    def list_comment_replies(self, *, root_comment_id: int, page: int, per_page: int):
+        page_entities = self.uow.comments.list_replies(
+            root_comment_id=root_comment_id, page=page, per_page=per_page
         )
-        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-        replies = [reply.to_json() for reply in pagination.items]
-        return PageResult(data=replies, total=query.count())
+        replies = [self.assembler.map_comment(reply) for reply in page_entities.items]
+        return PageResult(data=replies, total=page_entities.total)
 
     def list_post_comments(
         self, *, post_id: int, page: int, per_page: int, reply_per_page: int
     ):
-        post = Post.query.get(post_id)
+        post = self.uow.comments.get_post(post_id)
         if not post:
             raise NotFoundError("文章不存在")
 
-        root_comments_pagination = (
-            post.comments.filter(Comment.root_comment_id.is_(None))
-            .order_by(Comment.timestamp.desc())
-            .paginate(page=page, per_page=per_page, error_out=False)
+        root_comments = self.uow.comments.list_post_root_comments(
+            post_id=post_id, page=page, per_page=per_page
         )
 
         comments = []
-        for root_comment in root_comments_pagination.items:
-            comment_data = root_comment.to_json()
-            replies_result = self.get_replies_by_parent(
+        for root_comment in root_comments.items:
+            comment_data = self.assembler.map_comment(root_comment)
+            replies_result = self.list_comment_replies(
                 root_comment_id=root_comment.id, page=1, per_page=reply_per_page
             )
             comment_data.update(
@@ -51,7 +56,7 @@ class CommentService:
             )
             comments.append(comment_data)
 
-        return PageResult(data=comments, total=root_comments_pagination.total)
+        return PageResult(data=comments, total=root_comments.total)
 
     def create_comment(
         self,
@@ -62,35 +67,30 @@ class CommentService:
         direct_parent_id: int | None,
         at_list: list[int] | None,
     ):
-        post = Post.query.get(post_id)
+        post = self.uow.comments.get_post(post_id)
         if not post:
             raise NotFoundError("文章不存在")
 
-        if not (body or "").strip():
-            raise ValidationError("评论内容不能为空")
+        validate_comment_body(body)
 
         direct_parent = None
         root_comment = None
 
         if direct_parent_id:
-            direct_parent = self.session.get(Comment, direct_parent_id)
+            direct_parent = self.uow.comments.get_comment(direct_parent_id)
             if not direct_parent:
                 raise NotFoundError("回复的评论不存在")
-            root_comment = (
-                direct_parent.root_comment
-                if direct_parent.root_comment_id
-                else direct_parent
-            )
+            root_comment = resolve_root_comment(direct_parent)
 
         try:
-            comment = Comment(
-                body=DFAFilter().filter(body, "*"),
+            comment = self.uow.comments.create_comment(
+                body=sanitize_comment_body(body),
                 post=post,
                 author=author,
                 direct_parent=direct_parent,
                 root_comment=root_comment,
             )
-            self.session.add(comment)
+            self.uow.comments.add(comment)
             self.uow.commit()
 
             targets = build_comment_notification_targets(
@@ -101,75 +101,51 @@ class CommentService:
                 ),
                 at_list=at_list,
             )
+            mapped_targets = [
+                (
+                    receiver_id,
+                    self.uow.comments.resolve_notification_type(
+                        notification_type_code=notification_type.value
+                    ),
+                )
+                for receiver_id, notification_type in targets
+            ]
             self._dispatch_comment_notification(
                 post_id=post.id,
                 comment_id=comment.id,
                 trigger_user_id=author.id,
-                notifications_data=targets,
+                notifications_data=mapped_targets,
             )
-
-            return ItemResult(
-                data={
-                    "id": comment.id,
-                    "parentId": comment.root_comment_id,
-                    "uid": author.id,
-                    "content": comment.body,
-                    "createTime": DateUtils.datetime_to_str(comment.timestamp),
-                    "user": {
-                        "username": author.nickname
-                        if author.nickname
-                        else author.username,
-                        "avatar": get_avatars_url(author.image),
-                    },
-                    "reply": "",
-                }
-            )
+            return ItemResult(data=self.assembler.map_created_comment(comment))
         except Exception:
             self.uow.rollback()
             raise
 
     def list_all_comments(self, *, page: int, per_page: int):
-        query = Comment.query
-        pagination = query.order_by(Comment.timestamp.desc()).paginate(
-            page=page,
-            per_page=per_page,
-            error_out=False,
+        page_entities = self.uow.comments.list_all_comments(
+            page=page, per_page=per_page
         )
         comments = [
-            {
-                "content": item.body,
-                "timestamp": DateUtils.datetime_to_str(item.timestamp),
-                "author": item.author.username,
-                "user_id": item.author.id,
-                "image": get_avatars_url(item.author.image),
-                "id": item.id,
-                "disabled": item.disabled,
-            }
-            for item in pagination.items
+            self.assembler.map_admin_comment(item) for item in page_entities.items
         ]
-        return PageResult(data=comments, total=query.count())
+        return PageResult(data=comments, total=page_entities.total)
 
-    def toggle_comment_status(self, *, comment_id: int, action: str):
-        comment = Comment.query.get(comment_id)
+    def update_comment_status(self, *, comment_id: int, action: str):
+        comment = self.uow.comments.get_comment(comment_id)
         if not comment:
             raise NotFoundError("评论不存在")
 
-        if action == "enable":
-            comment.disabled = False
-        elif action == "disable":
-            comment.disabled = True
-        else:
-            raise ValidationError(f"传递参数错误, status{action}")
+        apply_comment_status(comment, action=action)
 
         self.uow.commit()
         return ActionResult(message="操作成功")
 
     def delete_comment(self, *, comment_id: int, operator):
-        comment = Comment.query.get(comment_id)
+        comment = self.uow.comments.get_comment(comment_id)
         if not comment:
             raise NotFoundError("评论不存在")
 
-        post = Post.query.get(comment.post_id)
+        post = self.uow.comments.get_post(comment.post_id)
         if not post:
             raise NotFoundError("文章不存在")
 
@@ -177,7 +153,7 @@ class CommentService:
             raise ForbiddenError("没有权限删除此评论")
 
         try:
-            self.session.delete(comment)
+            self.uow.comments.delete(comment)
             self.uow.commit()
             logging.info("评论删除成功: id=%s", comment_id)
             return ActionResult(message="删除成功")
@@ -185,19 +161,17 @@ class CommentService:
             self.uow.rollback()
             raise
 
-    @staticmethod
     def _dispatch_comment_notification(
+        self,
         *,
         post_id: int,
         comment_id: int,
         trigger_user_id: int,
         notifications_data,
     ):
-        from ..infrastructure.my_celery import create_comment_notifications
-
-        create_comment_notifications.delay(
-            post_id,
-            comment_id,
-            trigger_user_id,
-            notifications_data,
+        self.notifier.dispatch_comment(
+            post_id=post_id,
+            comment_id=comment_id,
+            trigger_user_id=trigger_user_id,
+            notifications_data=notifications_data,
         )
