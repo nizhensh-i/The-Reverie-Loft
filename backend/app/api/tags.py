@@ -1,13 +1,13 @@
-# 日志
 import logging
 
 from flask import request
 from flask_jwt_extended import current_user, jwt_required
 
 from ..decorators import DecoratedMethodView, admin_required
-from ..infrastructure.database.sqlalchemy import db
-from ..models import Tag
+from ..services.tag_service import TagService
 from ..utils.response import error, success
+
+tag_service = TagService()
 
 
 # --------------------------- 标签管理 ---------------------------
@@ -24,21 +24,10 @@ class TagUserApi(DecoratedMethodView):
         d = request.get_json()
         tag_add = set(d.get("tagAdd", []))
         tag_remove = set(d.get("tagRemove", []))
-        # 添加新的标签
-        for tag_name in tag_add:
-            tag = Tag.query.filter_by(name=tag_name).first()
-            if not tag:
-                tag = Tag(name=tag_name)
-                db.session.add(tag)
-            current_user.tags.append(tag)
-
-        # 删除被移除的标签
-        for tag_name in tag_remove:
-            tag = Tag.query.filter_by(name=tag_name).first()
-            if tag:
-                current_user.tags.remove(tag)
-        db.session.commit()
-        return success(message="用户标签更新成功")
+        result = tag_service.update_user_tags(
+            user=current_user, tag_add=tag_add, tag_remove=tag_remove
+        )
+        return success(message=result.message)
 
 
 class TagApi(DecoratedMethodView):
@@ -51,8 +40,8 @@ class TagApi(DecoratedMethodView):
     def get(self):
         """获取所有标签"""
         logging.info("获取所有标签")
-        tags = Tag.query.all()
-        return success(data=[tag.name for tag in tags])
+        result = tag_service.list_tags()
+        return success(data=result.data)
 
     def post(self):
         """应该加上 管理员权限
@@ -62,21 +51,8 @@ class TagApi(DecoratedMethodView):
         d = request.json
         tag_add = set(d.get("tagAdd", []))
         tag_remove = set(d.get("tagRemove", []))
-
-        # 添加新的标签
-        t = [Tag(name=tag) for tag in tag_add if tag]
-        if t:
-            db.session.add_all(t)
-
-        # 删除Tag表
-        if tag_remove:
-            tags_to_delete = Tag.query.filter(Tag.name.in_(tag_remove)).all()
-            # 逐个删除，触发before_delete事件
-            for tag in tags_to_delete:
-                db.session.delete(tag)
-
-        db.session.commit()
-        return success(message="公共标签库更新成功")
+        result = tag_service.update_public_tags(tag_add=tag_add, tag_remove=tag_remove)
+        return success(message=result.message)
 
 
 def register_tag_api(bp, *, tag_user_url, tag_url):
