@@ -5,17 +5,16 @@ import sys
 
 import eventlet
 from flask import request
-from flask_jwt_extended import decode_token
 from flask_socketio import ConnectionRefusedError, join_room
+from jwt.exceptions import ExpiredSignatureError
 
-from .composition import get_container
 from .domain.common.exceptions import NotFoundError
 from .presenters.event_serializers import serialize_message_event
 
 
 def register_cleanup_handlers(app):
     """注册 WebSocket 优雅停机处理器"""
-    cleanup = get_container(app).ws_cleanup
+    cleanup = app.container.ws_cleanup()
 
     def shutdown_handler(signum=None, frame=None):
         """优雅停机处理器"""
@@ -51,13 +50,14 @@ def register_cleanup_handlers(app):
 # 封装为注册函数
 def register_ws_events(socketio, app):
     """注册WS事件，绑定传入的socketio实例和app上下文"""
-    container = get_container(app)
-    connection = container.ws_connection
-    presence = container.ws_presence
-    conversation = container.ws_conversation
+    container = app.container
+    connection = container.ws_connection()
+    presence = container.ws_presence()
+    conversation = container.ws_conversation()
+    jwt_port = container.jwt_port()
 
-    def _chat_use_cases():
-        return container.chat_ws_use_cases()
+    def _chat_service():
+        return container.chat_ws_service()
 
     def verify_token_in_websocket():
         """连接websocket时验证用户身份"""
@@ -68,15 +68,18 @@ def register_ws_events(socketio, app):
                 raise ConnectionRefusedError("未授权：缺少token")
 
             raw_token = access_token.replace("Bearer ", "", 1)
-            decoded_token = decode_token(raw_token)
+            decoded_token = jwt_port.decode_token(raw_token)
             user_id = decoded_token["sub"]
             logging.info(f"WebSocket连接token验证成功，用户ID: {user_id}")
+        except ExpiredSignatureError as e:
+            logging.info(f"WebSocket token已过期: {e}")
+            raise ConnectionRefusedError("token已过期，请重新登录")
         except Exception as e:
             logging.error(f"WebSocket身份验证失败: {str(e)}", exc_info=True)
-            raise ConnectionRefusedError("WebSocket身份验证失败，token解析错误")
+            raise ConnectionRefusedError("WebSocket身份验证失败，token无效或解析错误")
 
         try:
-            username, resolved_user_id = _chat_use_cases().get_user_identity(
+            username, resolved_user_id = _chat_service().get_user_identity(
                 user_id=int(user_id)
             )
         except (NotFoundError, ValueError):
@@ -138,7 +141,7 @@ def register_ws_events(socketio, app):
         """异步处理进入聊天的DB操作（标记已读）"""
         with app.app_context():  # 绑定WS应用上下文
             try:
-                result = _chat_use_cases().mark_enter_chat_read(
+                result = _chat_service().mark_enter_chat_read(
                     user_id=user_id,
                     target_id=target_id,
                 )
@@ -200,7 +203,7 @@ def register_ws_events(socketio, app):
                     f"接收者 {receiver_id} 在线状态: {is_online}, " f"活跃聊天: {active_chat}"
                 )
 
-                msg = _chat_use_cases().create_message(
+                msg = _chat_service().create_message(
                     sender_id=sender_id,
                     receiver_id=receiver_id,
                     content=content,
@@ -215,7 +218,7 @@ def register_ws_events(socketio, app):
                         to=str(receiver_id),
                     )
                 else:
-                    _chat_use_cases().dispatch_chat_notification(
+                    _chat_service().dispatch_chat_notification(
                         receiver_id=receiver_id,
                         sender_id=sender_id,
                         message_id=msg.id,

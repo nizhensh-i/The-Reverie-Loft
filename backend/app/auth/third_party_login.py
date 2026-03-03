@@ -1,25 +1,48 @@
 from urllib.parse import urlencode
 
+from dependency_injector.wiring import Provide, inject
 from flask import redirect, request, url_for
 from flask_jwt_extended import current_user, jwt_required
 
-from ..composition import get_container
+from ..container import AppContainer
+from ..services.oauth_flow_service import (
+    OAuthApiErrorResult,
+    OAuthBindErrorResult,
+    OAuthBindSuccessResult,
+    OAuthErrorResult,
+    OAuthFlowService,
+    OAuthLoginSuccessResult,
+    OAuthRedirectResult,
+)
 from ..utils.response import error, success
 from . import auth
 
 
-def _flow_service():
-    return get_container().oauth_flow_service()
+@inject
+def _flow_service(
+    flow_service: OAuthFlowService = Provide[AppContainer.oauth_flow_service],
+) -> OAuthFlowService:
+    return flow_service
 
 
-def _oauth_infra_service():
-    return get_container().oauth_infra_service
+@inject
+def _oauth_infra_service(
+    oauth_infra_service=Provide[AppContainer.oauth_infra_service],
+):
+    return oauth_infra_service
+
+
+@inject
+def _frontend_oauth_redirect(
+    frontend_oauth_redirect: str = Provide[AppContainer.frontend_oauth_redirect],
+) -> str:
+    return frontend_oauth_redirect
 
 
 def _handle_oauth_error(
     provider: str, error_code: int, error_message: str, is_bind: bool = False
 ):
-    frontend_redirect = get_container().frontend_oauth_redirect
+    frontend_redirect = _frontend_oauth_redirect()
     if frontend_redirect:
         query = urlencode(
             {
@@ -66,15 +89,6 @@ def oauth_callback(provider: str):
         provider=provider, params=dict(request.args)
     )
 
-    from ..services.oauth_flow_service import (
-        OAuthApiErrorResult,
-        OAuthBindErrorResult,
-        OAuthBindSuccessResult,
-        OAuthErrorResult,
-        OAuthLoginSuccessResult,
-        OAuthRedirectResult,
-    )
-
     if isinstance(result, OAuthRedirectResult):
         return redirect(result.url)
 
@@ -82,13 +96,13 @@ def oauth_callback(provider: str):
         return error(code=result.code, message=result.message)
 
     if isinstance(result, OAuthBindSuccessResult):
-        frontend_redirect = get_container().frontend_oauth_redirect
+        frontend_redirect = _frontend_oauth_redirect()
         if frontend_redirect:
             return redirect(_flow_service().redirect_for_bind_success(provider))
         return success(message="绑定成功")
 
     if isinstance(result, OAuthBindErrorResult):
-        frontend_redirect = get_container().frontend_oauth_redirect
+        frontend_redirect = _frontend_oauth_redirect()
         if frontend_redirect:
             return redirect(
                 _flow_service().redirect_for_bind_error(provider, result.message)
@@ -96,7 +110,7 @@ def oauth_callback(provider: str):
         return error(code=400, message=result.message)
 
     if isinstance(result, OAuthLoginSuccessResult):
-        frontend_redirect = get_container().frontend_oauth_redirect
+        frontend_redirect = _frontend_oauth_redirect()
         if frontend_redirect:
             return redirect(
                 _flow_service().redirect_for_login_success(
@@ -132,7 +146,10 @@ def oauth_callback(provider: str):
 @auth.route("/oauth/bind/<provider>", methods=["POST"])
 @jwt_required()
 def oauth_bind(provider: str):
-    authorize_url = _flow_service().create_bind_authorize_url(provider)
+    authorize_url = _flow_service().create_bind_authorize_url(
+        provider=provider,
+        bind_user=current_user,
+    )
     return success(data={"authorize_url": authorize_url, "provider": provider})
 
 

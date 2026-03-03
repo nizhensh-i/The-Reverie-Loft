@@ -1,21 +1,26 @@
 import logging
 import os
 
+from dependency_injector.wiring import Provide, inject
 from flask import request
 from flask_jwt_extended import current_user, jwt_required
 
-from ..composition import get_container
+from ..container import AppContainer
 from ..domain.upload.policies import (
     can_access_storage_prefix,
     can_manage_storage_keys,
     normalize_storage_keys,
 )
+from ..services.upload_service import UploadService
 from ..utils.response import bad_request, forbidden, success
 from . import api
 
 
-def _upload_service():
-    return get_container().upload_service()
+@inject
+def _upload_service(
+    upload_service: UploadService = Provide[AppContainer.upload_service],
+) -> UploadService:
+    return upload_service
 
 
 def _is_admin(user) -> bool:

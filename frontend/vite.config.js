@@ -8,8 +8,8 @@ import { getLocalIP } from "./src/utils/ipUtil.js";
 export default ({ mode }) => {
   const { VITE_COMPRESSION, VITE_PORT } = wrapperEnv(loadEnv(mode, root));
 
-  const backendAddr = `http://${getLocalIP()}:8082`;
-  const sokcetIOAddr = `http://${getLocalIP()}:8083`;
+  const backendAddr = `http://${getLocalIP()}:4289`;
+  const sokcetIOAddr = `http://${getLocalIP()}:4290`;
   return {
     plugins: getPluginsList(VITE_COMPRESSION, mode),
     resolve: {

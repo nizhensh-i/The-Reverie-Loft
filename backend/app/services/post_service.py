@@ -57,13 +57,13 @@ class PostService:
             total=page_entities.total,
         )
 
-    def get_post(self, post_id: int):
+    def get_post(self, post_id: int, *, viewer=None):
         post = self.uow.posts.get_post_detail(post_id)
         if not post:
             raise NotFoundError("文章不存在")
 
         extra_data_map = self.uow.posts.build_post_extra_data_map(
-            [post], viewer_id=None
+            [post], viewer_id=(viewer.id if viewer else None)
         )
         return ItemResult(
             data=self.assembler.batch_map_posts(
@@ -123,7 +123,7 @@ class PostService:
         ensure_can_edit_post(operator, post)
 
         content = payload.get("content")
-        if content is not None:
+        if content:
             post.content = content
             post.summary = build_post_summary(post.content)
 

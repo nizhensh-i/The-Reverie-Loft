@@ -1,17 +1,22 @@
 import logging
 
+from dependency_injector.wiring import Provide, inject
 from flask import request
 from flask_jwt_extended import jwt_required
 
-from ..composition import get_container
+from ..container import AppContainer
 from ..decorators import permission_required
 from ..domain.common.constants import PermissionCode
+from ..services.admin_post_service import AdminPostService
 from ..utils.response import error, success
 from . import api
 
 
-def _admin_post_service():
-    return get_container().admin_post_service()
+@inject
+def _admin_post_service(
+    admin_post_service: AdminPostService = Provide[AppContainer.admin_post_service],
+) -> AdminPostService:
+    return admin_post_service
 
 
 @api.route("/admin/init-summaries", methods=["POST"])

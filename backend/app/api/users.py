@@ -1,16 +1,29 @@
 import logging
 
+from dependency_injector.wiring import Provide, inject
 from flask import request
 from flask_jwt_extended import current_user, jwt_required
 
-from ..composition import get_container
+from ..container import AppContainer
 from ..decorators import admin_required
+from ..services.seed_service import SeedService
+from ..services.user_service import UserService
 from ..utils.response import error, success
 from . import api
 
 
-def _user_service():
-    return get_container().user_service()
+@inject
+def _user_service(
+    user_service: UserService = Provide[AppContainer.user_service],
+) -> UserService:
+    return user_service
+
+
+@inject
+def _seed_service(
+    seed_service: SeedService = Provide[AppContainer.seed_service],
+) -> SeedService:
+    return seed_service
 
 
 @api.route("/users/<username>")
@@ -38,7 +51,7 @@ def get_post_by_user(username):
 def generate_user_posts():
     logging.info("批量生成用户和文章")
     try:
-        result = get_container().seed_use_cases().generate_users_and_posts()
+        result = _seed_service().generate_users_and_posts()
         return success(message=result["message"])
     except Exception as e:
         logging.error(f"生成用户和文章失败: {str(e)}", exc_info=True)

@@ -14,5 +14,5 @@ if __name__ == "__main__":
     socketio.run(
         app,
         host=os.getenv("FLASK_RUN_HOST", "0.0.0.0"),
-        port=os.getenv("SOCKETIO_RUN_PORT", 8083),
+        port=os.getenv("SOCKETIO_RUN_PORT", 4290),
     )

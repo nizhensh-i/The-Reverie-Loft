@@ -1,17 +1,22 @@
 import logging
 
+from dependency_injector.wiring import Provide, inject
 from flask import request
 from flask_jwt_extended import current_user, jwt_required
 
-from ..composition import get_container
+from ..container import AppContainer
 from ..decorators import DecoratedMethodView, permission_required
 from ..domain.common.constants import PermissionCode
+from ..services.follow_service import FollowService
 from ..utils.response import error, success
 from . import api
 
 
-def _follow_service():
-    return get_container().follow_service()
+@inject
+def _follow_service(
+    follow_service: FollowService = Provide[AppContainer.follow_service],
+) -> FollowService:
+    return follow_service
 
 
 @api.route("/users/<username>/followers")

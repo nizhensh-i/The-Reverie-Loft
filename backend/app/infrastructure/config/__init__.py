@@ -6,6 +6,8 @@
 import os
 from typing import Optional
 
+from .runtime_env import get_env_file_path, get_local_ip, load_env
+
 
 class InfraConfig:
     """
@@ -46,10 +48,8 @@ class InfraConfig:
         Returns:
             Redis 连接 URL
         """
-        redis_pass = (
-            password if password is not None else InfraConfig.get_redis_password()
-        )
-        redis_host = host if host is not None else InfraConfig.get_redis_host()
+        redis_pass = password if password else InfraConfig.get_redis_password()
+        redis_host = host if host else InfraConfig.get_redis_host()
         return f"redis://{redis_pass}{redis_host}:6379/{db}"
 
     @staticmethod
@@ -109,7 +109,5 @@ class InfraConfig:
             "message_queue": message_queue or InfraConfig.build_redis_url(db=4),
         }
 
-
-from .runtime_env import get_env_file_path, get_local_ip, load_env
 
 __all__ = ["InfraConfig", "get_local_ip", "get_env_file_path", "load_env"]

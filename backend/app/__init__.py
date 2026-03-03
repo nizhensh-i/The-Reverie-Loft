@@ -5,10 +5,11 @@ from flask import Flask
 
 from .api import setup_api_bp
 from .auth import setup_auth_bp
-from .composition import get_container, setup_container
+from .container import setup_container
 from .error_handler import setup_error_handler
 from .event import register_cleanup_handlers, register_ws_events
 from .infrastructure import (
+    print_startup_report,
     setup_cache,
     setup_celery,
     setup_cors,
@@ -61,6 +62,21 @@ def create_app(config_name):
     setup_oauth()
     setup_celery(app)
     setup_container(app)
+    if _is_effective_process(app) and not app.config.get("TESTING", False):
+        print_startup_report(
+            profile="HTTP",
+            capabilities=(
+                "database",
+                "redis",
+                "mail",
+                "storage_qiniu",
+                "cache",
+                "limiter",
+                "jwt_blocklist",
+                "oauth",
+                "celery",
+            ),
+        )
 
     setup_api_bp(app)
     setup_auth_bp(app)
@@ -89,14 +105,18 @@ def create_ws_app(config_name):
     setup_socketio(app)
     setup_jwt(app, redis)
     setup_celery(app)
-    setup_container(app)
-    container = get_container(app)
+    container = setup_container(app)
+    if _is_effective_process(app) and not app.config.get("TESTING", False):
+        print_startup_report(
+            profile="SocketIO",
+            capabilities=("database", "redis", "socketio", "jwt_blocklist", "celery"),
+        )
 
     # 注册WS事件和优雅停机处理器
     register_ws_events(socketio, app)
     # 启动副作用服务（仅在 reloader 子进程）
     if _is_effective_process(app):
-        container.ws_cleanup.start()
+        container.ws_cleanup().start()
         register_cleanup_handlers(app)
 
     return app

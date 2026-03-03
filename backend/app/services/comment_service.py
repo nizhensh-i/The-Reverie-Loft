@@ -97,7 +97,7 @@ class CommentService:
                 actor_id=author.id,
                 post_author_id=post.author_id,
                 direct_parent_author_id=(
-                    direct_parent.author_id if direct_parent is not None else None
+                    direct_parent.author_id if direct_parent else None
                 ),
                 at_list=at_list,
             )

@@ -1,15 +1,22 @@
 import logging
 
+from dependency_injector.wiring import Provide, inject
 from flask import request
 from flask_jwt_extended import current_user, jwt_required
 
-from ..composition import get_container
+from ..container import AppContainer
 from ..decorators import DecoratedMethodView
+from ..services.notification_service import NotificationService
 from ..utils.response import success
 
 
-def _notification_service():
-    return get_container().notification_service()
+@inject
+def _notification_service(
+    notification_service: NotificationService = Provide[
+        AppContainer.notification_service
+    ],
+) -> NotificationService:
+    return notification_service
 
 
 class NotificationApi(DecoratedMethodView):

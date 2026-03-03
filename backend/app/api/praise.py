@@ -1,17 +1,29 @@
 import logging
 
+from dependency_injector.wiring import Provide, inject
 from flask import request
 from flask_jwt_extended import current_user, jwt_required
 
 from ..application.cache import PostListCache
-from ..composition import get_container
+from ..container import AppContainer
 from ..decorators import DecoratedMethodView
+from ..services.praise_service import PraiseService
 from ..utils.response import error, success
 from . import api
 
 
-def _praise_service():
-    return get_container().praise_service()
+@inject
+def _praise_service(
+    praise_service: PraiseService = Provide[AppContainer.praise_service],
+) -> PraiseService:
+    return praise_service
+
+
+@inject
+def _post_cache(
+    post_cache: PostListCache = Provide[AppContainer.post_list_cache],
+) -> PostListCache:
+    return post_cache
 
 
 @api.route("/posts/<post_id>/comments/praised")
@@ -43,7 +55,7 @@ class PraisePostApi(DecoratedMethodView):
         result = _praise_service().create_post_praise(
             post_id=post_id, user=current_user
         )
-        PostListCache.invalidate_all()
+        _post_cache().invalidate_all()
         return success(data=result.data)
 
     def delete(self, post_id):
@@ -67,7 +79,7 @@ class PraiseCommentApi(DecoratedMethodView):
         result = _praise_service().create_comment_praise(
             comment_id=comment_id, user=current_user
         )
-        PostListCache.invalidate_all()
+        _post_cache().invalidate_all()
         return success(data=result.data)
 
     def delete(self, comment_id):

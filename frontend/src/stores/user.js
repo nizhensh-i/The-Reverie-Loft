@@ -3,6 +3,13 @@ import { io } from "socket.io-client";
 import imageCfg from "@/config/image.js";
 import cityUtil from "@/utils/cityUtil.js";
 import { areaList } from "@vant/area-data";
+import router from "@/router/index.js";
+import {
+  getToken,
+  isJwtLike,
+  isTokenExpired,
+  refreshAccessToken,
+} from "@/utils/tokenService.js";
 
 export const useCurrentUserStore = defineStore("currentUser", {
   state: () => ({
@@ -154,11 +161,55 @@ export const useCurrentUserStore = defineStore("currentUser", {
       this.clearLocalData();
       this.$reset();
     },
-    connectSocket() {
+    async ensureSocketAuth() {
+      const token = this.access_token;
+      if (!token) return "";
+      if (!isTokenExpired(token, 30)) return token;
+      console.log("⚠️ access_token即将过期，正在刷新...");
+
+      try {
+        const refreshToken = getToken("refresh_token");
+        if (!refreshToken) {
+          console.warn("⚠️ 缺少refresh_token，无法刷新");
+          this.logOut();
+          router.push("/login");
+          return "";
+        }
+        if (isJwtLike(refreshToken) && isTokenExpired(refreshToken, 0)) {
+          console.warn("⚠️ refresh_token已过期，需要重新登录");
+          this.logOut();
+          router.push("/login");
+          return "";
+        }
+
+        const newToken = await refreshAccessToken();
+        this.access_token = newToken;
+        if (this.socket) {
+          this.socket.io.opts.query = {
+            ...(this.socket.io.opts.query || {}),
+            access_token: newToken,
+          };
+          if (this.socket.connected) this.socket.disconnect();
+          this.socket.connect();
+        }
+        return newToken;
+      } catch (err) {
+        console.error("❌ token刷新失败，需要重新登录", err);
+        this.logOut();
+        router.push("/login");
+        return "";
+      }
+    },
+    async connectSocket() {
       if (this.socket) return;
+      const token = await this.ensureSocketAuth();
+      if (!token) {
+        console.warn("⚠️ 缺少有效token，跳过WebSocket连接");
+        return;
+      }
       this.socket = io(import.meta.env.DEV ? "" : import.meta.env.VITE_DOMAIN, {
         path: "/socket.io",
-        query: { access_token: this.access_token },
+        query: { access_token: token },
         transports: ["websocket"],
         withCredentials: true,
         reconnectionAttempts: 5,
@@ -173,11 +224,34 @@ export const useCurrentUserStore = defineStore("currentUser", {
         console.log("已连接到WebSocket服务器", this.socket.id);
       });
       this.socket.on("connect_error", (err) => {
+        const msg = String(
+          err?.data?.message || err?.data || err?.message || ""
+        );
+        const isTokenExpired =
+          msg.includes("token已过期") || msg.toLowerCase().includes("expired");
+
+        if (isTokenExpired) {
+          console.warn("⚠️ WebSocket token过期，尝试刷新并重连");
+          this.ensureSocketAuth();
+          return;
+        }
+
         console.error("❌ WebSocket连接失败：", {
           message: err.message,
           code: err.code,
           data: err.data,
         });
+      });
+
+      this.socket.on("error", (err) => {
+        const msg = String(err?.message || err || "");
+        if (
+          msg.includes("token已过期") ||
+          msg.toLowerCase().includes("expired")
+        ) {
+          console.warn("⚠️ WebSocket鉴权失效，尝试刷新并重连");
+          this.ensureSocketAuth();
+        }
       });
 
       this.socket.on("disconnect", (reason) => {
@@ -195,9 +269,12 @@ export const useCurrentUserStore = defineStore("currentUser", {
 
       // 初始化心跳定时器
       this.heartbeatInterval = setInterval(() => {
-        if (this.socket?.connected) {
-          this.socket.emit("heartbeat");
-        }
+        if (!this.socket) return;
+        this.ensureSocketAuth().then(() => {
+          if (this.socket?.connected) {
+            this.socket.emit("heartbeat");
+          }
+        });
       }, 60000);
     },
     disconnectSocket() {
@@ -232,23 +309,27 @@ export const useCurrentUserStore = defineStore("currentUser", {
         this.socket = null;
       }
     },
-    enterChat(targetId) {
+    async enterChat(targetId) {
       this.activeChat = targetId;
+      const token = await this.ensureSocketAuth();
+      if (!token) return;
+
       // 确保socket已连接再发送事件
       if (this.socket?.connected) {
         this.socket.emit("enter_chat", { targetId: targetId });
         console.log("🗨️ 进入聊天:", targetId);
-      } else {
-        console.error("❌ 未连接WebSocket，无法进入聊天。正在重试");
-        // 重连后重试（可选）
-        this.connectSocket();
-        setTimeout(() => this.enterChat(targetId), 1000);
+        return;
       }
+      console.error("❌ 未连接WebSocket，无法进入聊天。正在重试");
+      this.connectSocket();
+      setTimeout(() => this.enterChat(targetId), 1000);
     },
 
-    sendMessage(chat, func) {
+    async sendMessage(chat, func) {
       let content = chat.content;
       if (this.activeChat && content.trim()) {
+        const token = await this.ensureSocketAuth();
+        if (!token) return;
         if (this.socket?.connected) {
           this.socket.emit("send_message", {
             receiver_id: this.activeChat,

@@ -1,19 +1,31 @@
 import logging
 
+from dependency_injector.wiring import Provide, inject
 from flask import current_app, request
 from flask_jwt_extended import current_user, jwt_required
 
 from ..application.cache import PostListCache
-from ..composition import get_container
+from ..container import AppContainer
 from ..decorators import DecoratedMethodView, permission_required
 from ..domain.common.constants import PermissionCode
 from ..infrastructure.my_limiter import limiter
+from ..services.comment_service import CommentService
 from ..utils.response import error, success
 from . import api
 
 
-def _comment_service():
-    return get_container().comment_service()
+@inject
+def _comment_service(
+    comment_service: CommentService = Provide[AppContainer.comment_service],
+) -> CommentService:
+    return comment_service
+
+
+@inject
+def _post_cache(
+    post_cache: PostListCache = Provide[AppContainer.post_list_cache],
+) -> PostListCache:
+    return post_cache
 
 
 @api.route("/comments")
@@ -76,7 +88,7 @@ class CommentApi(DecoratedMethodView):
             direct_parent_id=data.get("directParentId"),
             at_list=data.get("at"),
         )
-        PostListCache.invalidate_all()
+        _post_cache().invalidate_all()
         return success(data=result.data)
 
 
@@ -115,7 +127,7 @@ class CommentManageApi(DecoratedMethodView):
         result = _comment_service().delete_comment(
             comment_id=comment_id, operator=current_user
         )
-        PostListCache.invalidate_all()
+        _post_cache().invalidate_all()
         return success(message=result.message)
 
 

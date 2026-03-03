@@ -1,6 +1,5 @@
 import os
 
-from flask_jwt_extended import create_access_token, create_refresh_token
 from sqlalchemy.orm.attributes import flag_modified
 
 from ..application.dto import ActionResult, ItemResult
@@ -15,6 +14,7 @@ from ..domain.common.exceptions import ValidationError
 from ..domain.common.unit_of_work import UnitOfWork
 from ..domain.ports.assemblers import ResponseAssemblerPort
 from ..domain.ports.auth import EmailCodePort, MailSenderPort
+from ..domain.ports.jwt import JwtPort
 from ..domain.ports.storage import AvatarProviderPort
 from ..utils.time_util import DateUtils
 
@@ -28,11 +28,13 @@ class AuthService:
         assembler: ResponseAssemblerPort,
         mail_sender: MailSenderPort,
         avatar_provider: AvatarProviderPort,
+        jwt_port: JwtPort,
     ):
         self.code_token_service = code_token_service
         self.assembler = assembler
         self.mail_sender = mail_sender
         self.avatar_provider = avatar_provider
+        self.jwt_port = jwt_port
         self.uow = uow
 
     def rollback(self):
@@ -43,8 +45,10 @@ class AuthService:
         if not user or not user.verify_password(password):
             return None
 
-        fresh_access_token = "Bearer " + create_access_token(identity=user, fresh=True)
-        refresh_token = "Bearer " + create_refresh_token(identity=user)
+        fresh_access_token = "Bearer " + self.jwt_port.create_access_token(
+            identity=user, fresh=True
+        )
+        refresh_token = "Bearer " + self.jwt_port.create_refresh_token(identity=user)
         self.uow.users.touch_last_seen(user_id=user.id)
         user_extra_data = self.uow.users.build_user_extra_data(
             user_id=user.id, viewer_id=None
@@ -157,7 +161,7 @@ class AuthService:
     def update_user_password(
         self, *, user, old_password: str | None, new_password: str
     ):
-        if old_password is not None and not user.verify_password(old_password):
+        if old_password and not user.verify_password(old_password):
             return ActionResult(ok=False, message="原密码错误")
         user.password = new_password
         user.has_password = True

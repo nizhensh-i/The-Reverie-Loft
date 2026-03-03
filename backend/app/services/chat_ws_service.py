@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from ...domain.common.exceptions import NotFoundError
-from ...domain.ports.notifications import NotificationDispatcherPort
+from ..domain.common.exceptions import NotFoundError
+from ..domain.ports.notifications import NotificationDispatcherPort
 
 
-class ChatWsUseCases:
+class ChatWsService:
     def __init__(self, *, uow_factory, notifier: NotificationDispatcherPort):
         self.uow_factory = uow_factory
         self.notifier = notifier

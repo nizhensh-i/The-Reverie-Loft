@@ -112,13 +112,15 @@ export default {
       this.otherUser.userInfo.username = item.triggerUsername;
       this.$router.push("/chat");
     },
-    initSocket() {
+    async initSocket() {
       if (!this.currentUser.isLogin) {
         return;
       }
-      this.currentUser.connectSocket();
+      await this.currentUser.connectSocket();
       this.initLoad();
-      this.currentUser.socket.on("new_notification", this.receiveMessage);
+      if (this.currentUser.socket) {
+        this.currentUser.socket.on("new_notification", this.receiveMessage);
+      }
     },
     receiveMessage(data) {
       const d = data;

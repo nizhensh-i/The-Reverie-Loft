@@ -1,15 +1,20 @@
 import logging
 
+from dependency_injector.wiring import Provide, inject
 from flask import request
 from flask_jwt_extended import current_user, jwt_required
 
-from ..composition import get_container
+from ..container import AppContainer
 from ..decorators import DecoratedMethodView
+from ..services.message_service import MessageService
 from ..utils.response import success
 
 
-def _message_service():
-    return get_container().message_service()
+@inject
+def _message_service(
+    message_service: MessageService = Provide[AppContainer.message_service],
+) -> MessageService:
+    return message_service
 
 
 class MessageApi(DecoratedMethodView):

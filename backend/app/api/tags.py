@@ -1,19 +1,30 @@
 import logging
 
+from dependency_injector.wiring import Provide, inject
 from flask import request
 from flask_jwt_extended import current_user, jwt_required
 
-from ..composition import get_container
+from ..container import AppContainer
 from ..decorators import DecoratedMethodView, admin_required
+from ..services.tag_service import TagService
+from ..services.user_profile_service import UserProfileService
 from ..utils.response import error, success
 
 
-def _tag_service():
-    return get_container().tag_service()
+@inject
+def _tag_service(
+    tag_service: TagService = Provide[AppContainer.tag_service],
+) -> TagService:
+    return tag_service
 
 
-def _user_profile_service():
-    return get_container().user_profile_service()
+@inject
+def _user_profile_service(
+    user_profile_service: UserProfileService = Provide[
+        AppContainer.user_profile_service
+    ],
+) -> UserProfileService:
+    return user_profile_service
 
 
 class TagUserApi(DecoratedMethodView):

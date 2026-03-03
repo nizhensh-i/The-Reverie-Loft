@@ -4,14 +4,6 @@ from dataclasses import dataclass
 from datetime import timedelta
 from urllib.parse import urlencode
 
-import requests
-from flask_jwt_extended import (
-    create_access_token,
-    create_refresh_token,
-    current_user,
-    decode_token,
-)
-
 from ..domain.common.unit_of_work import UnitOfWork
 from ..domain.oauth.policies import (
     ensure_provider_enabled,
@@ -19,6 +11,7 @@ from ..domain.oauth.policies import (
     sanitize_oauth_authorize_url,
 )
 from ..domain.ports.assemblers import ResponseAssemblerPort
+from ..domain.ports.jwt import JwtPort
 from ..domain.ports.oauth import OAuthNetworkPort
 from .oauth_service import OAuthAccountService
 
@@ -69,12 +62,14 @@ class OAuthFlowService:
         uow: UnitOfWork,
         assembler: ResponseAssemblerPort,
         oauth_network: OAuthNetworkPort,
+        jwt_port: JwtPort,
     ):
         self.oauth_infra_service = oauth_infra_service
         self.frontend_oauth_redirect = frontend_oauth_redirect
         self.uow = uow
         self.assembler = assembler
         self.oauth_network = oauth_network
+        self.jwt_port = jwt_port
         self.oauth_account_service = OAuthAccountService(uow=self.uow)
 
     def rollback(self):
@@ -88,14 +83,16 @@ class OAuthFlowService:
         auth_url = auth_request.authorize()
         return sanitize_oauth_authorize_url(auth_url)
 
-    def create_bind_authorize_url(self, provider: str):
+    def create_bind_authorize_url(self, provider: str, bind_user):
         ensure_provider_enabled(
             provider=provider, enabled_providers=self.enabled_providers()
         )
 
         auth_request, _ = self.oauth_infra_service.get_auth_request(provider)
-        user_token = create_access_token(
-            identity=current_user, expires_delta=timedelta(minutes=10), fresh=False
+        user_token = self.jwt_port.create_access_token(
+            identity=bind_user,
+            expires_delta=timedelta(minutes=10),
+            fresh=False,
         )
         bind_state = f"bind:{user_token}"
         return auth_request.authorize(state=bind_state)
@@ -135,7 +132,9 @@ class OAuthFlowService:
             is_bind_mode = bind_token is not None
 
             if is_bind_mode:
-                decoded_token = decode_token(bind_token, allow_expired=False)
+                decoded_token = self.jwt_port.decode_token(
+                    bind_token, allow_expired=False
+                )
                 user_id = decoded_token.get("sub")
                 user = self.uow.users.get_by_id(user_id)
                 if not user:
@@ -155,8 +154,12 @@ class OAuthFlowService:
                 viewer_id=None,
             )
             user_payload = self.assembler.map_user(user, extra_data=user_extra_data)
-            access_token = "Bearer " + create_access_token(identity=user, fresh=True)
-            refresh_token = "Bearer " + create_refresh_token(identity=user)
+            access_token = "Bearer " + self.jwt_port.create_access_token(
+                identity=user, fresh=True
+            )
+            refresh_token = "Bearer " + self.jwt_port.create_refresh_token(
+                identity=user
+            )
             self.uow.users.touch_last_seen(user_id=user.id)
             self.uow.commit()
 
@@ -167,23 +170,19 @@ class OAuthFlowService:
                 refresh_token=refresh_token,
             )
 
-        except requests.exceptions.ConnectionError as exc:
-            logging.error(
-                "OAuth 网络连接失败 provider=%s error=%s", provider, str(exc), exc_info=True
-            )
-            return OAuthErrorResult(
-                code=503,
-                message=f"服务器无法连接 {provider.title()} 服务，请稍后重试或联系管理员检查网络配置",
-                is_bind_mode=is_bind_mode,
-            )
-        except requests.exceptions.Timeout as exc:
-            logging.error("OAuth 请求超时 provider=%s error=%s", provider, str(exc))
-            return OAuthErrorResult(
-                code=504,
-                message=f"连接 {provider.title()} 服务超时，请稍后重试",
-                is_bind_mode=is_bind_mode,
-            )
         except Exception as exc:
+            if self.oauth_network.has_network_error_message(str(exc)):
+                logging.error(
+                    "OAuth 网络异常 provider=%s error=%s",
+                    provider,
+                    str(exc),
+                    exc_info=True,
+                )
+                return OAuthErrorResult(
+                    code=503,
+                    message=f"服务器无法连接 {provider.title()} 服务，请稍后重试",
+                    is_bind_mode=is_bind_mode,
+                )
             logging.exception("处理第三方登录失败: %s", exc)
             self.uow.rollback()
             if is_bind_mode:

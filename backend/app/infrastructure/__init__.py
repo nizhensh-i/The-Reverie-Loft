@@ -18,6 +18,7 @@ from .oauth import setup_oauth
 from .observability import setup_slow_query_monitor
 from .providers import get_cache, get_db, get_limiter, get_mail, get_redis, get_socketio
 from .socketio import setup_socketio
+from .startup_report import print_startup_report
 from .storage import setup_storage
 
 __all__ = [
@@ -32,6 +33,7 @@ __all__ = [
     "setup_jwt",
     "setup_socketio",
     "setup_storage",
+    "print_startup_report",
     "setup_migration",
     "setup_logging",
     "setup_slow_query_monitor",

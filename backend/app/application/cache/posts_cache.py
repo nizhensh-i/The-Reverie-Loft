@@ -1,39 +1,39 @@
 from __future__ import annotations
 
-from ...infrastructure.cache import cache
+from ...domain.ports.cache import CachePort
 
 POST_LIST_VERSION_KEY = "cache:posts:list:version"
 POST_LIST_TIMEOUT_SECONDS = 60
 
 
 class PostListCache:
-    @staticmethod
-    def _get_version() -> int:
-        raw = cache.get(POST_LIST_VERSION_KEY)
+    def __init__(self, *, cache: CachePort):
+        self.cache = cache
+
+    def _get_version(self) -> int:
+        raw = self.cache.get(POST_LIST_VERSION_KEY)
         if raw is None:
-            cache.set(POST_LIST_VERSION_KEY, 1)
+            self.cache.set(POST_LIST_VERSION_KEY, 1)
             return 1
         try:
             return int(raw)
         except (TypeError, ValueError):
-            cache.set(POST_LIST_VERSION_KEY, 1)
+            self.cache.set(POST_LIST_VERSION_KEY, 1)
             return 1
 
-    @classmethod
-    def build_key(
-        cls, *, page: int, per_page: int, tab_name: str | None, viewer_id: int | None
+    def _build_key(
+        self, *, page: int, per_page: int, tab_name: str | None, viewer_id: int | None
     ) -> str:
-        version = cls._get_version()
+        version = self._get_version()
         scope = tab_name or "all"
         owner = viewer_id or 0
         return f"cache:posts:list:v{version}:p{page}:pp{per_page}:t{scope}:u{owner}"
 
-    @classmethod
     def get(
-        cls, *, page: int, per_page: int, tab_name: str | None, viewer_id: int | None
+        self, *, page: int, per_page: int, tab_name: str | None, viewer_id: int | None
     ):
-        return cache.get(
-            cls.build_key(
+        return self.cache.get(
+            self._build_key(
                 page=page,
                 per_page=per_page,
                 tab_name=tab_name,
@@ -41,9 +41,8 @@ class PostListCache:
             )
         )
 
-    @classmethod
     def set(
-        cls,
+        self,
         *,
         page: int,
         per_page: int,
@@ -52,8 +51,8 @@ class PostListCache:
         payload,
         timeout: int = POST_LIST_TIMEOUT_SECONDS,
     ) -> None:
-        cache.set(
-            cls.build_key(
+        self.cache.set(
+            self._build_key(
                 page=page,
                 per_page=per_page,
                 tab_name=tab_name,
@@ -63,7 +62,6 @@ class PostListCache:
             timeout=timeout,
         )
 
-    @classmethod
-    def invalidate_all(cls) -> None:
-        current = cls._get_version()
-        cache.set(POST_LIST_VERSION_KEY, current + 1)
+    def invalidate_all(self) -> None:
+        current = self._get_version()
+        self.cache.set(POST_LIST_VERSION_KEY, current + 1)
