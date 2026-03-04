@@ -1,12 +1,12 @@
 <div align="center">
 
-# Loft
+# The-Reverie-Loft(随想阁楼)
 
 ### 一个现代化、功能丰富的社交平台
 
 **基于 Vue3 + Flask 构建的开源社交系统**
 
-面向真实生产场景的开源社交平台模板，支持实时聊天、内容互动与“依赖缺失可降级”运行。
+支持实时通信与依赖降级的全栈社交平台模板，兼顾工程清晰度与可部署性。
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/nizhensh-i/The-Reverie-Loft/actions/workflows/python-tests.yml/badge.svg)](https://github.com/nizhensh-i/The-Reverie-Loft/actions/workflows/python-tests.yml)
@@ -24,30 +24,38 @@
 
 ## ⭐ Highlights
 
-- 后端采用 clean 风格分层（`domain / services / infrastructure`）+ 依赖注入容器
-- 支持实时通信：HTTP API + Socket.IO 双服务拆分
-- 中间件可降级：Redis / 邮件 / 对象存储 / OAuth 缺失时系统仍可启动
-- 内置部署脚本：`deploy.sh local/remote` 统一编排 dev/prod compose
-- 前后端解耦，前端 Vite 开发代理直连后端服务
+- Clean Architecture 后端分层，依赖注入清晰可维护
+- 实时通信能力完备：HTTP API + Socket.IO 双服务拆分
+- 依赖可降级：Redis / Mail / Storage / OAuth 缺失仍可运行
+- 一键开发启动：`start.sh` 直达可用环境
+- 生产级部署路径：Docker Compose + Nginx 反代
+
+## 🚩 快速概览
+- Vue 3 + Flask 全栈社交平台模板（动态/互动/实时聊天）
+- 后端 clean 分层 + 依赖注入；HTTP 与 Socket.IO 双服务拆分
+- 可选依赖（Redis/Mail/Storage/OAuth）缺失自动降级，核心流程可运行
+- 启动：MySQL → `./init.sh`（幂等执行）→ `./start.sh`
+- 默认地址：`5172`（前端）/ `4289`（API）/ `4290`（Socket.IO）
+
+## 📚 API 入口
+
+- 参考路由：`backend/app/api`、`backend/app/auth`
 
 ## 🎬 演示
 
-- 在线预览：TODO
-- 演示视频：TODO
-- GIF 演示：TODO
+- 在线预览：191718.com
+- 说明：无演示账号，可自行注册；也可游客访问。
 
 ## 🖼️ 预览图
 
-> 当前使用项目内真实页面截图；后续可替换为一张拼接图（PC + Mobile）。
-
-![Loft Preview PC](docs/用户首页.png)
-![Loft Preview Mobile](docs/绑定邮箱页面.png)
+<img src="docs/用户首页.png" alt="Loft Preview PC" style="max-width: 800px; width: 100%;" />
+<img src="docs/绑定邮箱页面.png" alt="Loft Preview Mobile" style="max-width: 800px; width: 100%;" />
 
 ---
 
 ## 📖 项目简介
 
-Loft 是一个全栈开源社交平台项目，采用现代化技术栈构建，并已在后端落地 clean 风格分层（domain / services / infrastructure）与依赖能力降级机制。
+The-Reverie-Loft 是一个全栈开源社交平台项目，采用现代化技术栈构建，并已在后端落地 clean 风格分层（domain / services / infrastructure）与依赖能力降级机制。
 
 ### ✨ 核心功能
 
@@ -91,14 +99,13 @@ Loft 在基础设施层实现了 capability 检测与降级策略：
 
 ## 🚀 快速上手
 
-> 默认推荐非 Docker 启动（`start.sh`），外部依赖最少。Docker 是可选方式。
+> 默认推荐脚本启动（`start.sh`），外部依赖最少。Docker 是可选方式。
 
 ### 前置要求（非 Docker 主路径）
 
 - Python 3.12（建议）
-- Node.js 18+（建议）与 npm/pnpm
+- Node.js 18+（建议），包管理器推荐 `npm`
 - MySQL 8.x
-- Git
 
 ### 第 0 步：准备 MySQL 并建库
 
@@ -113,31 +120,25 @@ CREATE DATABASE flasky CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 #### 第一步：克隆仓库
 
 ```bash
-git clone https://github.com/your-username/loft.git
-cd loft
+git clone https://github.com/nizhensh-i/The-Reverie-Loft && cd The-Reverie-Loft
 ```
 
-#### 第二步：安装依赖并配置环境变量
+#### 第二步：一键初始化环境（推荐）
 
 ```bash
-# 后端依赖
-cd backend
-pip install -r requirements/dev.txt
-
-# 配置后端环境变量
-cp .env.example .env
-
-# 回到项目根目录安装前端依赖
-cd ../frontend
-npm install
-
-# 配置前端环境变量（开发）
-cp .env.development.example .env.development
-
-cd ..
+./init.sh
 ```
 
-**最低必填配置（核心）**
+`init.sh` 会执行：
+- 创建 Python 虚拟环境并安装依赖
+- 生成 `backend/.env`（含随机密钥）
+- 执行数据库迁移 `flask deploy`
+- 安装前端依赖并生成 `frontend/.env.development`
+
+> 说明：`backend/.env` 代表开发环境配置，生产环境使用 `backend/.env.prod`。
+> 运行 `init.sh` 前请确保 MySQL 已创建库且可连接，否则迁移会失败。
+
+**最低必填配置（核心，手动模式）**
 
 ```bash
 # backend/.env 最小示例
@@ -152,13 +153,9 @@ DEV_DATABASE_URL=mysql+pymysql://user:password@127.0.0.1:3306/flasky?charset=utf
 openssl rand -hex 32
 ```
 
-#### 第三步：执行迁移并启动
+#### 第三步：启动
 
 ```bash
-cd backend
-flask deploy
-cd ..
-
 ./start.sh
 ```
 
@@ -180,19 +177,19 @@ cd ..
 
 ### 1) 核心必需（不建议缺失）
 
-| 配置项 | 位置 | 说明 |
+| **配置项** | 位置 | 说明 |
 |------|------|------|
-| `SECRET_KEY` / `JWT_SECRET_KEY` | `backend/.env` | Flask/JWT 基础安全密钥 |
-| `DEV_DATABASE_URL`（开发）或 `DATABASE_URL`（生产） | `backend/.env` / `backend/.env.prod` | MySQL 连接 |
+| **`SECRET_KEY` / `JWT_SECRET_KEY`** | `backend/.env` | Flask/JWT 基础安全密钥 |
+| **`DEV_DATABASE_URL`（开发）或 `DATABASE_URL`（生产）** | `backend/.env` / `backend/.env.prod` | MySQL 连接 |
 
 ### 2) 可选降级（缺失可启动，但对应功能受限）
 
-| 能力 | 关键配置 | 未配置影响 |
+| 能力 | **关键配置** | 未配置影响 |
 |------|------|------|
-| Redis | `DEV_REDIS_URL` / `REDIS_URL` / `REDIS_HOST` | 缓存、限流、实时消息、异步任务进入降级模式 |
-| 邮件 | `MAIL_USERNAME` / `MAIL_PASSWORD` | 邮件验证码、通知不可用（系统可运行） |
-| 七牛云对象存储 | `QINIU_ACCESS_KEY` / `QINIU_SECRET_KEY` / `QINIU_BUCKET_NAME` / `QINIU_DOMAIN` | 图片上传与签名访问不可用 |
-| OAuth 登录 | 各平台 `*_CLIENT_ID` / `*_CLIENT_SECRET` | 对应第三方登录入口不可用 |
+| Redis | **`DEV_REDIS_URL` / `REDIS_URL` / `REDIS_HOST`** | 缓存、限流、实时消息、异步任务进入降级模式 |
+| 邮件 | **`MAIL_USERNAME` / `MAIL_PASSWORD`** | 邮件验证码打印在backend/logg/celery.log、通知不可用（系统可运行） |
+| 七牛云对象存储 | **`QINIU_ACCESS_KEY` / `QINIU_SECRET_KEY` / `QINIU_BUCKET_NAME` / `QINIU_DOMAIN`** | 图片上传与签名访问不可用 |
+| OAuth 登录 | **各平台 `*_CLIENT_ID` / `*_CLIENT_SECRET`** | 对应第三方登录入口不可用 |
 
 ### 3) 配置示例
 
@@ -213,8 +210,10 @@ QINIU_DOMAIN=https://your-bucket-domain.example.com
 
 ## 🧱 项目结构
 
+后端分层与依赖注入说明见 [backend/README.md](backend/README.md)。
+
 ```text
-loft/
+The-Reverie-Loft/
 ├── frontend/                    # Vue3 + Vite 前端
 │   ├── src/
 │   │   ├── api/                # 请求封装与接口定义
@@ -222,6 +221,7 @@ loft/
 │   │   ├── views/              # 页面视图
 │   │   └── router/             # 路由
 │   └── .env.development.example
+│   └── .env.production.example
 ├── backend/                     # Flask 后端
 │   ├── app/
 │   │   ├── domain/             # 领域模型/策略/端口协议
@@ -233,6 +233,8 @@ loft/
 │   ├── migrations/             # Alembic 迁移脚本
 │   ├── flasky.py               # HTTP 入口
 │   └── flasky_socketio.py      # Socket.IO 入口
+│   └── .env.example      
+│   └── .env.prod.example
 ├── deploy/                      # 本地/远程部署配置模板
 ├── docs/                        # 文档与示例配置
 ├── start.sh                     # 非 Docker 一键启动脚本
@@ -277,6 +279,8 @@ flowchart LR
 
 - `target=local`：本地容器运行，使用 `backend/docker-compose.dev.yaml`
 - `target=remote`：远程服务器部署，使用 `backend/docker-compose.prod.yaml`
+
+生产环境模板：`backend/.env.prod.example`（复制为 `backend/.env.prod`）
 
 Compose service name（后端 compose 内服务名）：
 - `backend`
@@ -390,6 +394,17 @@ flask db downgrade -1
 
 ---
 
+## 🗺️ Roadmap
+
+- [x] 基础社交功能（发布/评论/点赞/关注）
+- [x] OAuth 登录
+- [x] WebSocket 实时聊天
+- [ ] 通知中心增强（规则/推送）
+- [ ] 移动端 PWA 体验
+- [ ] 更完善的运营/管理后台
+
+---
+
 ## ❓ 常见问题
 
 ### 1. ❌ `start.sh` 启动后后端连不上 MySQL
@@ -485,7 +500,7 @@ pre-commit run --all-files
 
 ## 📞 联系方式
 
-- 📧 项目维护者: your-email@example.com
+- 📧 项目维护者: zmc_li@foxmail.com
 - 🐛 Bug 反馈: [提交 Issue](https://github.com/nizhensh-i/The-Reverie-Loft/issues)
 
 ---
