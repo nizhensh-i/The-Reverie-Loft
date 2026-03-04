@@ -11,8 +11,8 @@ from .infrastructure.adapters import (
     FlaskCacheAdapter,
     FlaskConfigSettingsAdapter,
     FlaskJwtAdapter,
+    HybridAvatarProvider,
     OAuthNetworkAdapter,
-    QiniuAvatarProvider,
     QiniuStorageAdapter,
     RedisEmailCodeAdapter,
     RedisPresenceAdapter,
@@ -65,7 +65,7 @@ class AppContainer(containers.DeclarativeContainer):
         RedisEmailCodeAdapter, redis_client=redis_client
     )
     mail_sender = providers.Singleton(CeleryMailSender)
-    avatar_provider = providers.Singleton(QiniuAvatarProvider)
+    avatar_provider = providers.Singleton(HybridAvatarProvider)
     storage_gateway = providers.Singleton(QiniuStorageAdapter)
     asset_url = providers.Singleton(AvatarUrlAdapter)
     presence_port = providers.Factory(

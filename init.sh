@@ -1,24 +1,6 @@
 #!/usr/bin/env bash
 
-# 前后端环境创初始化脚本
-
-# 检查依赖
-# ↓
-# 创建 venv
-# ↓
-# 激活 venv
-# ↓
-# 升级 pip
-# ↓
-# 安装 backend 依赖
-# ↓
-# 创建 env
-# ↓
-# 数据库迁移
-# ↓
-# 安装 frontend 依赖
-# ↓
-# 创建 frontend env
+# 前后端环境初始化脚本
 
 set -e
 
@@ -48,6 +30,29 @@ error() {
   echo -e "${RED}✖ $1${NC}"
 }
 
+upsert_env_var() {
+  local file="$1"
+  local key="$2"
+  local value="$3"
+  if grep -q "^${key}=" "$file"; then
+    sed -i.bak "s|^${key}=.*|${key}=${value}|" "$file"
+    rm -f "${file}.bak"
+  else
+    echo "${key}=${value}" >> "$file"
+  fi
+}
+
+ensure_env_var() {
+  local file="$1"
+  local key="$2"
+  local value="$3"
+  local current
+  current="$(grep "^${key}=" "$file" 2>/dev/null | tail -n 1 | cut -d'=' -f2- || true)"
+  if [ -z "$current" ]; then
+    upsert_env_var "$file" "$key" "$value"
+  fi
+}
+
 ########################################
 # 检查依赖
 ########################################
@@ -75,20 +80,12 @@ else
 fi
 
 ########################################
-# 激活虚拟环境
-########################################
-
-log "激活虚拟环境..."
-
-source .venv/bin/activate
-
-########################################
 # 升级 pip
 ########################################
 
 log "升级 pip..."
 
-pip install --upgrade pip >/dev/null
+.venv/bin/python -m pip install --upgrade pip >/dev/null
 
 success "pip 已升级"
 
@@ -98,7 +95,7 @@ success "pip 已升级"
 
 log "安装后端依赖..."
 
-pip install -r backend/requirements/dev.txt
+.venv/bin/pip install -r backend/requirements/dev.txt
 
 success "后端依赖安装完成"
 
@@ -110,18 +107,19 @@ if [ ! -f "backend/.env" ]; then
   log "创建 backend/.env..."
 
   cp backend/.env.example backend/.env
-
-  SECRET_KEY=$(openssl rand -hex 32)
-  JWT_SECRET_KEY=$(openssl rand -hex 32)
-
-  echo "" >> backend/.env
-  echo "SECRET_KEY=$SECRET_KEY" >> backend/.env
-  echo "JWT_SECRET_KEY=$JWT_SECRET_KEY" >> backend/.env
-
-  success "backend/.env 创建完成并生成随机密钥"
 else
-  warn "backend/.env 已存在，跳过创建"
+  warn "backend/.env 已存在，将按需补全缺失项"
 fi
+
+SECRET_KEY="$(openssl rand -hex 32)"
+JWT_SECRET_KEY="$(openssl rand -hex 32)"
+
+ensure_env_var "backend/.env" "SECRET_KEY" "$SECRET_KEY"
+ensure_env_var "backend/.env" "JWT_SECRET_KEY" "$JWT_SECRET_KEY"
+# DEV_DATABASE_URL 为空时自动兜底 sqlite 文件库，保证首次初始化可完成。
+ensure_env_var "backend/.env" "DEV_DATABASE_URL" "sqlite:///dev.db"
+
+success "backend/.env 已完成幂等初始化（密钥/数据库连接）"
 
 ########################################
 # 数据库迁移
@@ -131,7 +129,7 @@ log "执行数据库迁移..."
 
 (
   cd backend
-  flask deploy
+  ../.venv/bin/flask deploy
 )
 
 success "数据库迁移完成"
@@ -173,4 +171,5 @@ echo ""
 
 echo "下一步启动服务："
 echo "  ./start.sh"
+echo "（start.sh 会自动使用 .venv，无需手动激活虚拟环境）"
 echo ""

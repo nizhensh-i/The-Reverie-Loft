@@ -6,7 +6,7 @@ from .notifications import CeleryNotificationDispatcher
 from .oauth import OAuthNetworkAdapter
 from .presence import RedisPresenceAdapter
 from .settings import FlaskConfigSettingsAdapter
-from .storage import QiniuAvatarProvider, QiniuStorageAdapter
+from .storage import HybridAvatarProvider, QiniuAvatarProvider, QiniuStorageAdapter
 
 __all__ = [
     "CeleryNotificationDispatcher",
@@ -14,6 +14,7 @@ __all__ = [
     "CeleryMailSender",
     "FlaskCacheAdapter",
     "FlaskJwtAdapter",
+    "HybridAvatarProvider",
     "QiniuAvatarProvider",
     "QiniuStorageAdapter",
     "AvatarUrlAdapter",

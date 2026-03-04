@@ -1,3 +1,5 @@
+import random
+
 from ...domain.ports.storage import AvatarProviderPort, StoragePort
 from ..storage import (
     del_qiniu_image,
@@ -12,6 +14,23 @@ class QiniuAvatarProvider(AvatarProviderPort):
     @staticmethod
     def get_random_avatar() -> str:
         return get_random_user_avatars()
+
+
+class LocalAvatarProvider(AvatarProviderPort):
+    AVATARS = ("a_1.jpg", "a_2.png")
+
+    @classmethod
+    def get_random_avatar(cls) -> str:
+        return f"local_avatar:{random.choice(cls.AVATARS)}"
+
+
+class HybridAvatarProvider(AvatarProviderPort):
+    @staticmethod
+    def get_random_avatar() -> str:
+        qiniu_avatar = QiniuAvatarProvider.get_random_avatar()
+        if qiniu_avatar:
+            return qiniu_avatar
+        return LocalAvatarProvider.get_random_avatar()
 
 
 class QiniuStorageAdapter(StoragePort):

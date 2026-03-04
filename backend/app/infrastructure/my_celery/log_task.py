@@ -22,7 +22,7 @@ def log_visitor(is_register, client_ip, user_agent):
     )
 
     # 判断访问间隔
-    now = DateUtils.now_time()
+    now = DateUtils.now_time_str()
     should_log = not last_visit or DateUtils.datetime_diff(
         now, DateUtils.datetime_to_str(last_visit.operate_time), 5
     )

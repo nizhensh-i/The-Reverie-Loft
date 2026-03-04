@@ -9,13 +9,16 @@ class DateUtils:
     Shanghai_tz = pytz.timezone("Asia/Shanghai")
 
     @staticmethod
-    def now_time() -> str:
-        """返回当前日期时间
+    def now_time() -> datetime:
+        """返回当前日期时间（datetime 对象，兼容 SQLAlchemy DateTime 字段）。"""
+        # SQLAlchemy DateTime 列在 sqlite 下要求 Python datetime/date 对象。
+        # 这里统一返回去掉 tzinfo 的本地 datetime，避免 sqlite 类型错误。
+        return datetime.now(DateUtils.Shanghai_tz).replace(tzinfo=None)
 
-        Returns:
-            str: 当前日期时间
-        """
-        return datetime.now(DateUtils.Shanghai_tz).strftime("%Y-%m-%d %H:%M:%S")
+    @staticmethod
+    def now_time_str() -> str:
+        """返回当前日期时间字符串。"""
+        return DateUtils.now_time().strftime("%Y-%m-%d %H:%M:%S")
 
     @staticmethod
     def get_year():
@@ -39,15 +42,21 @@ class DateUtils:
 
     @staticmethod
     def datetime_to_str(date_time):
+        if isinstance(date_time, str):
+            return date_time
         return date_time.strftime("%Y-%m-%d %H:%M:%S")
 
     @staticmethod
-    def datetime_diff(t1: str, t2: str, diff: int):
+    def datetime_diff(t1, t2, diff: int):
         """比较两个datetime对象时间间隔 大于某个分钟数
 
         Returns:
             bool: 是否大于diff分钟
         """
+        if isinstance(t1, datetime):
+            t1 = DateUtils.datetime_to_str(t1)
+        if isinstance(t2, datetime):
+            t2 = DateUtils.datetime_to_str(t2)
         r1 = datetime.strptime(t1, "%Y-%m-%d %H:%M:%S")
         r2 = datetime.strptime(t2, "%Y-%m-%d %H:%M:%S")
         return abs(r1 - r2) > timedelta(minutes=diff)

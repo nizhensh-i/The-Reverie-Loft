@@ -92,7 +92,7 @@ Loft 在基础设施层实现了 capability 检测与降级策略：
 
 - Redis 不可用：缓存/限流/实时消息/异步任务进入降级模式（例如 Celery 回退为内存 eager 执行）
 - 邮件未配置：邮件服务降级，验证码邮件不可发送，但主流程可运行
-- 七牛云未配置：上传与签名访问降级，相关接口返回受限
+- 七牛云未配置：上传与签名访问降级；注册用户会回退到前端静态默认头像并持久化头像名
 - OAuth 未配置：第三方登录入口自动不可用，不影响账号密码体系
 
 ---
@@ -103,7 +103,7 @@ Loft 在基础设施层实现了 capability 检测与降级策略：
 
 ### 前置要求（非 Docker 主路径）
 
-- Python 3.12（建议）
+- Python >= 3.12
 - Node.js 18+（建议），包管理器推荐 `npm`
 - MySQL 8.x
 
@@ -136,7 +136,8 @@ git clone https://github.com/nizhensh-i/The-Reverie-Loft && cd The-Reverie-Loft
 - 安装前端依赖并生成 `frontend/.env.development`
 
 > 说明：`backend/.env` 代表开发环境配置，生产环境使用 `backend/.env.prod`。
-> 运行 `init.sh` 前请确保 MySQL 已创建库且可连接，否则迁移会失败。
+> 若 `DEV_DATABASE_URL` 为空，`init.sh` 会自动写入 `sqlite:///dev.db` 作为开发兜底，确保首次初始化可完成。
+> 建议你尽快切换到 MySQL：sqlite 仅适合本地快速体验，不适合并发验证、性能评估与生产部署。
 
 **最低必填配置（核心，手动模式）**
 
@@ -188,7 +189,7 @@ openssl rand -hex 32
 |------|------|------|
 | Redis | **`DEV_REDIS_URL` / `REDIS_URL` / `REDIS_HOST`** | 缓存、限流、实时消息、异步任务进入降级模式 |
 | 邮件 | **`MAIL_USERNAME` / `MAIL_PASSWORD`** | 邮件验证码打印在backend/logg/celery.log、通知不可用（系统可运行） |
-| 七牛云对象存储 | **`QINIU_ACCESS_KEY` / `QINIU_SECRET_KEY` / `QINIU_BUCKET_NAME` / `QINIU_DOMAIN`** | 图片上传与签名访问不可用 |
+| 七牛云对象存储 | **`QINIU_ACCESS_KEY` / `QINIU_SECRET_KEY` / `QINIU_BUCKET_NAME` / `QINIU_DOMAIN`** | 图片上传与签名访问不可用；注册头像回退到前端静态默认头像（持久化头像名） |
 | OAuth 登录 | **各平台 `*_CLIENT_ID` / `*_CLIENT_SECRET`** | 对应第三方登录入口不可用 |
 
 ### 3) 配置示例
@@ -359,6 +360,13 @@ flask deploy
 - 迁移到最新版本（`upgrade`）
 - 在历史迁移链不完整且核心表缺失时兜底 `create_all + stamp head`
 - 初始化角色权限与自关注关系
+
+若你使用了 sqlite 兜底（`sqlite:///dev.db`），建议在切换到 MySQL 后重新执行一次迁移：
+
+```bash
+cd backend
+flask deploy
+```
 
 ### 手动迁移（开发常用）
 
