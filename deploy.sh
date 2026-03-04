@@ -44,9 +44,9 @@ function ensure_local_config() {
   if [[ ! -f "$cfg" ]]; then
     if [[ -f "$example" ]]; then
       cp "$example" "$cfg"
-      echo "已生成 $cfg，可按需修改。"
+      echo "已生成 ${cfg}，可按需修改。"
     else
-      echo "部署失败：缺少 $cfg，且未找到 $example"
+      echo "部署失败：缺少 ${cfg}，且未找到 ${example}"
       exit 1
     fi
   fi
