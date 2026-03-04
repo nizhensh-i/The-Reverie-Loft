@@ -19,6 +19,7 @@ EDITABLE_PROFILE_FIELDS = {
     "about_me",
     "birthday",
     "gender",
+    "social_account",
     "website",
     "company",
     "occupation",

@@ -34,11 +34,11 @@ platform=$(detect_platform)
 case $platform in
     "windows")
         echo "操作系统: Windows"
-        ../.venv/bin/celery -A app.make_celery worker -B --loglevel INFO --logfile=logs/celery.log -P eventlet &
+        ../.venv/bin/python -m celery -A app.make_celery worker -B --loglevel INFO --logfile=logs/celery.log -P eventlet &
         ;;
     "mac_arm"|"mac_intel")
         echo "操作系统: macOS"
-        ../.venv/bin/celery -A app.make_celery worker -B --loglevel INFO --logfile=logs/celery.log &
+        ../.venv/bin/python -m celery -A app.make_celery worker -B --loglevel INFO --logfile=logs/celery.log &
         ;;
     *)
         echo "操作系统: 未知 ($OSTYPE)"

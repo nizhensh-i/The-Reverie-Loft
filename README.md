@@ -16,6 +16,8 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1.svg)](https://www.mysql.com/)
 [![Redis](https://img.shields.io/badge/Redis-7.x-DC382D.svg)](https://redis.io/)
 
+[中文](README.md) | [English](README.en.md)
+
 [项目简介](#-项目简介) • [快速上手](#-快速上手) • [配置指南](#-第三方服务配置指南) • [部署文档](#-部署指南) • [FAQ](#-常见问题)
 
 </div>
@@ -48,8 +50,11 @@
 
 ## 🖼️ 预览图
 
-<img src="docs/用户首页.png" alt="Loft Preview PC" style="max-width: 800px; width: 100%;" />
-<img src="docs/绑定邮箱页面.png" alt="Loft Preview Mobile" style="max-width: 800px; width: 100%;" />
+<img src="docs/preview_1.jpg" alt="Loft Preview 1" style="max-width: 800px; width: 100%;" />
+
+---
+
+<img src="docs/preview_2.jpg" alt="Loft Preview 2" style="max-width: 800px; width: 100%;" />
 
 ---
 
