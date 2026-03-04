@@ -16,11 +16,31 @@ from unittest.mock import MagicMock
 
 import pytest
 from app import db
-from app.auth.third_party_login import _bind_third_party_account, _get_or_create_user
-from app.models import ThirdPartyAccount, User
+from app.container import get_container
+from app.infrastructure.persistence.models import ThirdPartyAccount, User
+from app.infrastructure.repositories.sqlalchemy.unit_of_work import (
+    SqlAlchemyRepositoryUnitOfWork,
+)
+from app.services.oauth_service import OAuthAccountService
+from dependency_injector import providers
 from flask_jwt_extended import create_access_token
 from senweaver_oauth import AuthConfig
 from senweaver_oauth.builder import AuthRequestBuilder
+
+
+def _oauth_account_service() -> OAuthAccountService:
+    return OAuthAccountService(uow=SqlAlchemyRepositoryUnitOfWork(db.session))
+
+
+def _get_or_create_user(provider, auth_user):
+    return _oauth_account_service().get_or_create_user(provider, auth_user)
+
+
+def _bind_third_party_account(provider, auth_user, user=None):
+    if user is None:
+        raise ValueError("用户未登录")
+    return _oauth_account_service().bind_third_party_account(provider, auth_user, user)
+
 
 # ============================================================================
 # Mock AuthUser 模型（模拟 senweaver_oauth.AuthUser）
@@ -360,7 +380,9 @@ class TestOAuthCallbackAPI:
             return auth_request, {"redirect_uri": "http://localhost/callback"}
 
         monkeypatch.setattr(
-            "app.auth.third_party_login._get_auth_request", mock_get_auth_request
+            get_container().oauth_infra_service(),
+            "get_auth_request",
+            mock_get_auth_request,
         )
 
         # Act
@@ -426,34 +448,39 @@ class TestOAuthCallbackAPI:
             auth_request.login = MagicMock(return_value=response_mock)
             return auth_request, {"redirect_uri": "http://localhost/callback"}
 
-        # Mock FRONTEND_OAUTH_REDIRECT 为 None，避免重定向
-        monkeypatch.setattr("app.auth.third_party_login.FRONTEND_OAUTH_REDIRECT", None)
-        monkeypatch.setattr(
-            "app.auth.third_party_login._get_auth_request", mock_get_auth_request
-        )
+        # 测试环境禁用前端重定向，走 JSON 响应分支
+        get_container().frontend_oauth_redirect.override(providers.Object(None))
+        try:
+            monkeypatch.setattr(
+                get_container().oauth_infra_service(),
+                "get_auth_request",
+                mock_get_auth_request,
+            )
 
-        # Act
-        response = client.get(
-            "/auth/oauth/callback/github?code=test_code&state=test_state"
-        )
+            # Act
+            response = client.get(
+                "/auth/oauth/callback/github?code=test_code&state=test_state"
+            )
 
-        # Assert - HTTP 状态码 200
-        assert response.status_code == 200
+            # Assert - HTTP 状态码 200
+            assert response.status_code == 200
 
-        # Assert - 响应中的 code 字段为 200（成功）
-        data = response.get_json()
-        if data:
-            assert data.get("code") == 200
+            # Assert - 响应中的 code 字段为 200（成功）
+            data = response.get_json()
+            if data:
+                assert data.get("code") == 200
 
-        # 验证创建了用户（但不校验细节，已在业务层测试）
-        user = User.query.filter_by(username="test_user").first()
-        assert user is not None
+            # 验证创建了用户（但不校验细节，已在业务层测试）
+            user = User.query.filter_by(username="test_user").first()
+            assert user is not None
 
-        # 验证创建了第三方账号
-        account = ThirdPartyAccount.query.filter_by(
-            provider="github", uuid="github_uuid_test"
-        ).first()
-        assert account is not None
+            # 验证创建了第三方账号
+            account = ThirdPartyAccount.query.filter_by(
+                provider="github", uuid="github_uuid_test"
+            ).first()
+            assert account is not None
+        finally:
+            get_container().frontend_oauth_redirect.reset_override()
 
     def test_oauth_callback_bind_mode_with_valid_token(self, app, client, monkeypatch):
         """绑定模式回调 -> 绑定成功"""
@@ -511,28 +538,33 @@ class TestOAuthCallbackAPI:
             auth_request.login = MagicMock(return_value=response_mock)
             return auth_request, {"redirect_uri": "http://localhost/callback"}
 
-        # Mock FRONTEND_OAUTH_REDIRECT 为 None
-        monkeypatch.setattr("app.auth.third_party_login.FRONTEND_OAUTH_REDIRECT", None)
-        monkeypatch.setattr(
-            "app.auth.third_party_login._get_auth_request", mock_get_auth_request
-        )
+        # 测试环境禁用前端重定向，走 JSON 响应分支
+        get_container().frontend_oauth_redirect.override(providers.Object(None))
+        try:
+            monkeypatch.setattr(
+                get_container().oauth_infra_service(),
+                "get_auth_request",
+                mock_get_auth_request,
+            )
 
-        # Act - 绑定模式回调（state 格式: bind:<token>）
-        response = client.get(
-            f"/auth/oauth/callback/qq?code=test_code&state=bind:{bind_token}"
-        )
+            # Act - 绑定模式回调（state 格式: bind:<token>）
+            response = client.get(
+                f"/auth/oauth/callback/qq?code=test_code&state=bind:{bind_token}"
+            )
 
-        # Assert - HTTP 状态码 200
-        assert response.status_code == 200
+            # Assert - HTTP 状态码 200
+            assert response.status_code == 200
 
-        # Assert - 响应中的 code 字段为 200（成功）
-        data = response.get_json()
-        if data:
-            assert data.get("code") == 200
+            # Assert - 响应中的 code 字段为 200（成功）
+            data = response.get_json()
+            if data:
+                assert data.get("code") == 200
 
-        # 验证账号绑定成功
-        account = ThirdPartyAccount.query.filter_by(
-            provider="qq", uuid="qq_uuid_test"
-        ).first()
-        assert account is not None
-        assert account.user_id == user.id
+            # 验证账号绑定成功
+            account = ThirdPartyAccount.query.filter_by(
+                provider="qq", uuid="qq_uuid_test"
+            ).first()
+            assert account is not None
+            assert account.user_id == user.id
+        finally:
+            get_container().frontend_oauth_redirect.reset_override()

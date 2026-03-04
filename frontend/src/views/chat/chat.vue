@@ -186,7 +186,7 @@ function submit(val, finish) {
 
 .typing-indicator {
   position: absolute;
-  top: 0px;
+  top: 10px;
   left: 30vw;
   right: 50vw;
   z-index: 5;

@@ -1,82 +1,299 @@
 #!/bin/bash
 
-function unit_test(){
-    echo "开始运行后端单元测试..."
-    
-    if [[ ! -d "./backend/tests_api" ]]; then
-        echo "错误：测试目录 ./backend/tests_api 不存在"
-        exit 1
-    fi
-    
-    # 运行单元测试
-    cd ./backend
-    pytest tests_api/ -v
-    
-    # 检查测试结果
-    if [[ $? -ne 0 ]]; then
-        echo "错误：单元测试未全部通过，停止部署"
-        cd ..
-        exit 1
-    fi
-    
-    echo "所有单元测试通过，继续部署..."
-    cd ..
+set -euo pipefail
+
+function deploy_step() {
+  echo "$1"
 }
 
-function backend_to_remote() {
-    unit_test
-    
-    backend_tar="flasky_backend.tar"
-    if [[ -e  $backend_tar ]];then
-      rm -f $backend_tar
-      echo "已删除 $backend_tar"
-    fi
+function backend_init_defaults() {
+  LOCAL_BACKEND_DIR="${LOCAL_BACKEND_DIR:-./backend}"
+  COMPOSE_FILE_BASE="${COMPOSE_FILE_BASE:-${COMPOSE_FILE:-}}"
 
-    # 构建镜像并保存为tar文件
-    if sysctl -n machdep.cpu.brand_string | grep -q "Apple"; then
-      # mac芯片为M4，指定平台为 linux/amd64
-      docker build --platform linux/amd64 -t nizhenshi/flasky_backend ./backend
-    else
-      docker build -t nizhenshi/flasky_backend ./backend
-    fi
-    docker save -o flasky_backend.tar nizhenshi/flasky_backend
+  BACKEND_IMAGE="${BACKEND_IMAGE:-nizhenshi/flasky_backend}"
+  BACKEND_TAG="${BACKEND_TAG:-latest}"
 
-    # 传输.env.production
-    ENV_FILE=".env.prod"
-    LOCAL_ENV_FILE="./backend/$ENV_FILE"
-    REMOTE_ENV_DIR="/home/ubuntu/user/loft/"
-    scp $LOCAL_ENV_FILE $ROMOTE_USER@$ROMOTE_HOST:$REMOTE_ENV_DIR
-    if [[ $? -eq 0 ]];then
-      echo "环境变量文件传输成功 $LOCAL_FILE"
-    else
-      echo "环境变量文件传输失败"
-    fi
+  BACKEND_SERVICE_NAME="${BACKEND_SERVICE_NAME:-backend}"
+  MYSQL_SERVICE_NAME="${MYSQL_SERVICE_NAME:-mysql}"
+  REDIS_SERVICE_NAME="${REDIS_SERVICE_NAME:-myredis}"
 
-    # 传输tar文件到远程服务器
-    LOCAL_FILE=$backend_tar
-    REMOTE_FILE="/home/ubuntu/user/"
-    scp $LOCAL_FILE $ROMOTE_USER@$ROMOTE_HOST:$REMOTE_FILE
-    if [[ $? -eq 0 ]];then
-      echo "传输成功 $LOCAL_FILE"
-    else
-      echo "传输失败"
-    fi
-    if [[ -e  $backend_tar ]];then
-      rm -f $backend_tar
-      echo "已删除 $backend_tar"
-    fi
-
-    # 远程运行容器命令
-    remote_del_old_container="docker rm -f flasky_backend;docker rmi nizhenshi/flasky_backend;"
-    remote_load_new_container="docker load -i flasky_backend.tar;"
-    remote_run_new_container="docker run --name flasky_backend --env-file $REMOTE_ENV_DIR$ENV_FILE -v /var/log/loft:/home/flasky/logs -d -p 4289:5000  -p 4290:5001 --network database_n nizhenshi/flasky_backend:latest;"
-    remote_cmd_backend="$remote_del_old_container $remote_load_new_container $remote_run_new_container"
-    echo "remote_cmd_backend:" $remote_cmd_backend
-    ssh $ROMOTE_USER@$ROMOTE_HOST "cd $REMOTE_ENV_DIR;chmod 600 $ENV_FILE;cd $REMOTE_FILE;$remote_cmd_backend"
-    if [[ $? -eq 0 ]];then
-      echo "执行成功"
-    else
-      echo "执行失败"
-    fi
+  SSH_PORT="${SSH_PORT:-22}"
+  REMOTE_TAR_DIR="${REMOTE_TAR_DIR:-/home/ubuntu/user}"
 }
 
+function backend_apply_mode_defaults() {
+  local mode="$1"
+
+  if [[ -z "${COMPOSE_FILE_BASE}" ]]; then
+    if [[ "$mode" == "local" ]]; then
+      COMPOSE_FILE_BASE="docker-compose.dev.yaml"
+    else
+      COMPOSE_FILE_BASE="docker-compose.prod.yaml"
+    fi
+  fi
+}
+
+function backend_compose_files_local() {
+  echo "-f ${COMPOSE_FILE_BASE}"
+}
+
+function backend_compose_files_remote() {
+  echo "-f ${COMPOSE_FILE_BASE}"
+}
+
+function backend_require_cmd() {
+  local cmd="$1"
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "部署失败：未检测到命令 $cmd"
+    return 1
+  fi
+}
+
+function backend_require_compose() {
+  if ! docker compose version >/dev/null 2>&1; then
+    echo "部署失败：未检测到 docker compose"
+    return 1
+  fi
+}
+
+function backend_ensure_runtime_env_files() {
+  local mode="$1"
+  local env_file
+  local redis_env_file="${LOCAL_BACKEND_DIR}/.env-redis"
+  local mysql_env_file="${LOCAL_BACKEND_DIR}/.env-mysql"
+
+  if [[ "$mode" == "remote" ]]; then
+    env_file="${LOCAL_BACKEND_DIR}/.env.prod"
+  else
+    env_file="${LOCAL_BACKEND_DIR}/.env"
+  fi
+
+  if [[ ! -f "$env_file" ]]; then
+    if [[ "$mode" == "local" && -f "${LOCAL_BACKEND_DIR}/.env.example" ]]; then
+      cp "${LOCAL_BACKEND_DIR}/.env.example" "$env_file"
+      echo "已生成 ${env_file}，请按需修改配置后重试。"
+    else
+      echo "部署失败：缺少 ${env_file}，且未找到 .env.example"
+      return 1
+    fi
+  fi
+
+  if [[ ! -f "$redis_env_file" ]]; then
+    cat > "$redis_env_file" <<'EOR'
+# Redis 容器参数
+REDIS_PASSWORD=1234
+REDIS_SAVE=60 1
+REDIS_LOGLEVEL=warning
+EOR
+    echo "已生成 ${redis_env_file}（默认值）"
+  fi
+
+  if [[ ! -f "$mysql_env_file" ]]; then
+    cat > "$mysql_env_file" <<'EOM'
+# MySQL 容器参数
+MYSQL_RANDOM_ROOT_PASSWORD=yes
+MYSQL_DATABASE=flasky
+MYSQL_USER=flasky
+MYSQL_PASSWORD=1234
+EOM
+    echo "已生成 ${mysql_env_file}（默认值）"
+  fi
+}
+
+function backend_build_image() {
+  local image_ref="${BACKEND_IMAGE}:${BACKEND_TAG}"
+  if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
+    docker build --platform linux/amd64 -t "$image_ref" "$LOCAL_BACKEND_DIR"
+  else
+    docker build -t "$image_ref" "$LOCAL_BACKEND_DIR"
+  fi
+}
+
+function backend_compose_local() {
+  local compose_action="$1"
+  local compose_files
+  compose_files="$(backend_compose_files_local)"
+  (
+    cd "$LOCAL_BACKEND_DIR"
+    BACKEND_IMAGE="$BACKEND_IMAGE" BACKEND_TAG="$BACKEND_TAG" docker compose ${compose_files} $compose_action
+  )
+}
+
+function backend_local() {
+  local action="${1:-init}"
+
+  backend_init_defaults
+  backend_apply_mode_defaults "local"
+
+  deploy_step "正在检查环境..."
+  backend_require_cmd docker
+  backend_require_compose
+
+  deploy_step "正在准备配置..."
+  backend_ensure_runtime_env_files "local"
+
+  case "$action" in
+    init)
+      deploy_step "正在构建镜像..."
+      backend_build_image
+      deploy_step "正在更新服务..."
+      backend_compose_local "up -d ${MYSQL_SERVICE_NAME} ${REDIS_SERVICE_NAME} ${BACKEND_SERVICE_NAME}"
+      ;;
+    update)
+      deploy_step "正在构建镜像..."
+      backend_build_image
+      deploy_step "正在更新服务..."
+      backend_compose_local "up -d --no-deps --force-recreate ${BACKEND_SERVICE_NAME}"
+      ;;
+    restart)
+      deploy_step "正在更新服务..."
+      backend_compose_local "restart ${BACKEND_SERVICE_NAME}"
+      ;;
+    status)
+      deploy_step "正在获取服务状态..."
+      backend_compose_local "ps"
+      ;;
+    logs)
+      deploy_step "正在读取后端日志..."
+      backend_compose_local "logs --tail=200 ${BACKEND_SERVICE_NAME}"
+      ;;
+    down)
+      deploy_step "正在停止后端服务..."
+      backend_compose_local "stop ${BACKEND_SERVICE_NAME}"
+      ;;
+    *)
+      echo "部署失败：不支持的 action: $action"
+      return 1
+      ;;
+  esac
+
+  deploy_step "部署完成。"
+}
+
+function backend_remote_ssh() {
+  local cmd="$1"
+  if [[ -n "${REMOTE_PASSWORD:-}" ]]; then
+    backend_require_cmd sshpass
+    sshpass -p "$REMOTE_PASSWORD" ssh -p "$SSH_PORT" -o StrictHostKeyChecking=accept-new "$REMOTE_USER@$REMOTE_HOST" "$cmd"
+  else
+    ssh -p "$SSH_PORT" -o StrictHostKeyChecking=accept-new "$REMOTE_USER@$REMOTE_HOST" "$cmd"
+  fi
+}
+
+function backend_remote_scp() {
+  local src="$1"
+  local dst="$2"
+  if [[ -n "${REMOTE_PASSWORD:-}" ]]; then
+    backend_require_cmd sshpass
+    sshpass -p "$REMOTE_PASSWORD" scp -P "$SSH_PORT" "$src" "$REMOTE_USER@$REMOTE_HOST:$dst"
+  else
+    scp -P "$SSH_PORT" "$src" "$REMOTE_USER@$REMOTE_HOST:$dst"
+  fi
+}
+
+function backend_load_remote_config() {
+  local remote_config_file="${1:-deploy/remote.env}"
+
+  if [[ ! -f "$remote_config_file" ]]; then
+    if [[ -f "deploy/remote.env.example" ]]; then
+      cp deploy/remote.env.example "$remote_config_file"
+      echo "已生成 $remote_config_file，请先填写必填项后重试。"
+    else
+      echo "部署失败：缺少 $remote_config_file"
+    fi
+    return 1
+  fi
+
+  set -a
+  # shellcheck source=/dev/null
+  source "$remote_config_file"
+  set +a
+
+  backend_init_defaults
+
+  if [[ -z "${REMOTE_HOST:-}" || -z "${REMOTE_USER:-}" || -z "${REMOTE_BACKEND_DIR:-}" ]]; then
+    echo "部署失败：remote 配置缺少必填项（REMOTE_HOST/REMOTE_USER/REMOTE_BACKEND_DIR）"
+    return 1
+  fi
+}
+
+function backend_remote_prepare_files() {
+  local backend_tar="$1"
+  local image_ref="${BACKEND_IMAGE}:${BACKEND_TAG}"
+
+  deploy_step "正在构建镜像..."
+  backend_build_image
+  docker save -o "$backend_tar" "$image_ref"
+
+  deploy_step "正在上传服务器..."
+  backend_remote_ssh "mkdir -p '$REMOTE_BACKEND_DIR' '$REMOTE_TAR_DIR'"
+  backend_remote_scp "$LOCAL_BACKEND_DIR/$COMPOSE_FILE_BASE" "$REMOTE_BACKEND_DIR/$COMPOSE_FILE_BASE"
+  backend_remote_scp "$LOCAL_BACKEND_DIR/.env.prod" "$REMOTE_BACKEND_DIR/.env.prod"
+  backend_remote_scp "$LOCAL_BACKEND_DIR/.env-redis" "$REMOTE_BACKEND_DIR/.env-redis"
+  backend_remote_scp "$LOCAL_BACKEND_DIR/.env-mysql" "$REMOTE_BACKEND_DIR/.env-mysql"
+  backend_remote_scp "$backend_tar" "$REMOTE_TAR_DIR/$backend_tar"
+}
+
+function backend_remote() {
+  local action="${1:-update}"
+  local remote_compose_files
+
+  deploy_step "正在检查环境..."
+  backend_require_cmd docker
+  backend_require_compose
+  backend_require_cmd ssh
+  backend_require_cmd scp
+
+  deploy_step "正在准备配置..."
+  backend_load_remote_config
+  backend_apply_mode_defaults "remote"
+  backend_ensure_runtime_env_files "remote"
+  remote_compose_files="$(backend_compose_files_remote)"
+
+  case "$action" in
+    init|update)
+      local tar_file
+      tar_file="flasky_backend_${BACKEND_TAG}.tar"
+      backend_remote_prepare_files "$tar_file"
+      deploy_step "正在更新服务..."
+      if [[ "$action" == "init" ]]; then
+        backend_remote_ssh "
+          set -e
+          docker load -i '$REMOTE_TAR_DIR/$tar_file'
+          cd '$REMOTE_BACKEND_DIR'
+          BACKEND_IMAGE='$BACKEND_IMAGE' BACKEND_TAG='$BACKEND_TAG' docker compose ${remote_compose_files} up -d $MYSQL_SERVICE_NAME $REDIS_SERVICE_NAME $BACKEND_SERVICE_NAME
+        "
+      else
+        backend_remote_ssh "
+          set -e
+          docker load -i '$REMOTE_TAR_DIR/$tar_file'
+          cd '$REMOTE_BACKEND_DIR'
+          BACKEND_IMAGE='$BACKEND_IMAGE' BACKEND_TAG='$BACKEND_TAG' docker compose ${remote_compose_files} up -d --no-deps --force-recreate $BACKEND_SERVICE_NAME
+        "
+      fi
+      rm -f "$tar_file"
+      ;;
+    restart)
+      deploy_step "正在更新服务..."
+      backend_remote_ssh "cd '$REMOTE_BACKEND_DIR' && docker compose ${remote_compose_files} restart $BACKEND_SERVICE_NAME"
+      ;;
+    status)
+      deploy_step "正在获取服务状态..."
+      backend_remote_ssh "cd '$REMOTE_BACKEND_DIR' && docker compose ${remote_compose_files} ps"
+      ;;
+    logs)
+      deploy_step "正在读取后端日志..."
+      backend_remote_ssh "cd '$REMOTE_BACKEND_DIR' && docker compose ${remote_compose_files} logs --tail=200 $BACKEND_SERVICE_NAME"
+      ;;
+    down)
+      deploy_step "正在停止后端服务..."
+      backend_remote_ssh "cd '$REMOTE_BACKEND_DIR' && docker compose ${remote_compose_files} stop $BACKEND_SERVICE_NAME"
+      ;;
+    *)
+      echo "部署失败：不支持的 action: $action"
+      return 1
+      ;;
+  esac
+
+  deploy_step "部署完成。"
+}

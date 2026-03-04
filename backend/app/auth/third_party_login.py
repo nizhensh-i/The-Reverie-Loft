@@ -1,321 +1,74 @@
-from __future__ import annotations
+from urllib.parse import urlencode
 
-import json
-import logging
-import os
-import re
-import secrets
-from datetime import timedelta
-from typing import Dict, List, Optional, Tuple
-from urllib.parse import parse_qs, urlencode, urlparse
-
-import requests
+from dependency_injector.wiring import Provide, inject
 from flask import redirect, request, url_for
-from flask_jwt_extended import (
-    create_access_token,
-    create_refresh_token,
-    current_user,
-    decode_token,
-    jwt_required,
-)
-from senweaver_oauth import AuthConfig
-from senweaver_oauth.builder import AuthRequestBuilder
-from senweaver_oauth.cache import DefaultCacheStore, RedisCacheStore
+from flask_jwt_extended import current_user, jwt_required
 
-from .. import db, redis
-from ..models import ThirdPartyAccount, User
+from ..container import AppContainer
+from ..services.oauth_flow_service import (
+    OAuthApiErrorResult,
+    OAuthBindErrorResult,
+    OAuthBindSuccessResult,
+    OAuthErrorResult,
+    OAuthFlowService,
+    OAuthLoginSuccessResult,
+    OAuthRedirectResult,
+)
 from ..utils.response import error, success
 from . import auth
 
-# 第三方授权平台
-APP_NAMES = ["qq", "weibo", "github", "google"]
+
+@inject
+def _flow_service(
+    flow_service: OAuthFlowService = Provide[AppContainer.oauth_flow_service],
+) -> OAuthFlowService:
+    return flow_service
 
 
-# 平台配置：仅在存在 client_id & client_secret 时才会启用
-def _read_config(app_names: list[str]) -> Dict[str, Dict]:
-    result = {}
-    for name in app_names:
-        pre_fix = name.upper()
-        result[name] = {
-            "display_name": name,
-            "client_id": os.getenv(f"{pre_fix}_CLIENT_ID", ""),
-            "client_secret": os.getenv(f"{pre_fix}_CLIENT_SECRET", ""),
-            # 可为空，后端自动生成
-            "redirect_uri": os.getenv(f"{pre_fix}_REDIRECT_URI"),
-        }
-    return result
+@inject
+def _oauth_infra_service(
+    oauth_infra_service=Provide[AppContainer.oauth_infra_service],
+):
+    return oauth_infra_service
 
 
-OAUTH_CONFIGS = _read_config(APP_NAMES)
+@inject
+def _frontend_oauth_redirect(
+    frontend_oauth_redirect: str = Provide[AppContainer.frontend_oauth_redirect],
+) -> str:
+    return frontend_oauth_redirect
 
 
-# 回跳到前端的页面（例如 https://your-frontend.com/oauth/callback）
-_host = os.getenv("FLASK_RUN_HOST")
-_port = "5172"
-FRONTEND_OAUTH_REDIRECT = f"http://{_host}:{_port}/oauth/callback"
-
-if os.getenv("FLASK_CONFIG") == "docker":
-    FRONTEND_OAUTH_REDIRECT = f"https://191718.com/oauth/callback"
-
-
-# 初始化 Redis 缓存存储（用于 OAuth state，解决多进程共享问题）
-# 使用现有的 flask_redis 实例
-_oauth_redis_cache = None
-
-
-def _get_oauth_cache_store() -> RedisCacheStore:
-    """
-    获取 OAuth Redis 缓存存储实例（单例模式）
-
-    Returns:
-        RedisCacheStore: Redis 缓存存储实例
-    """
-    global _oauth_redis_cache
-    if _oauth_redis_cache is None:
-        # 使用现有的 flask_redis 客户端
-        # flask_redis 的 redis 对象本身就是 Redis 客户端
-        redis_client = redis
-        if redis_client is None:
-            raise RuntimeError("Redis 客户端未初始化，请确保 flask_redis 已正确配置")
-
-        _oauth_redis_cache = RedisCacheStore(
-            redis_client=redis_client,
-            prefix="oauth:state:",
-            ttl=300,  # state 有效期 5 分钟
+def _handle_oauth_error(
+    provider: str, error_code: int, error_message: str, is_bind: bool = False
+):
+    frontend_redirect = _frontend_oauth_redirect()
+    if frontend_redirect:
+        query = urlencode(
+            {
+                "provider": provider,
+                "status": "error",
+                "message": error_message,
+                **({"action": "bind"} if is_bind else {}),
+            }
         )
-        # # 设置为默认缓存实例
-        DefaultCacheStore.set_instance(_oauth_redis_cache)
-    return _oauth_redis_cache
-
-
-def _enabled_providers() -> List[str]:
-    """过滤掉未配置的平台"""
-    return [
-        name
-        for name, cfg in OAUTH_CONFIGS.items()
-        if cfg.get("client_id") and cfg.get("client_secret")
-    ]
-
-
-def _get_auth_request(provider: str) -> Tuple[AuthRequestBuilder, Dict]:
-    """
-    构建 senweaver-oauth 的统一授权请求实例。
-    """
-    config = OAUTH_CONFIGS.get(provider)
-    if not config:
-        raise ValueError(f"未支持的平台: {provider}")
-    if not config.get("client_id") or not config.get("client_secret"):
-        raise ValueError(f"平台 {provider} 未正确配置")
-
-    # 若未显式配置 redirect_uri，则自动使用当前域名生成
-    redirect_uri = config.get("redirect_uri") or url_for(
-        "auth.oauth_callback", provider=provider, _external=True
-    )
-
-    # nginx只转发/api 开头的请求到后端
-    if os.getenv("FLASK_CONFIG") == "docker":
-        redirect_uri = redirect_uri.replace("auth", "api/auth", 1)
-
-    auth_config = AuthConfig(
-        client_id=config["client_id"],
-        client_secret=config["client_secret"],
-        redirect_uri=redirect_uri,
-        extras=config.get("extras", {}),
-    )
-
-    # senweaver-oauth 在内部会对传入的字符串执行 upper()
-    # 因此这里统一传字符串，避免直接传 AuthSource 对象导致缺少 upper 方法
-    source_name = config.get("source") or provider
-
-    # 获取 Redis 缓存存储（用于 OAuth state，解决多进程共享问题）
-    _get_oauth_cache_store()
-
-    auth_request = (
-        AuthRequestBuilder.builder()
-        .source(source_name)
-        .auth_config(auth_config)
-        .build()
-    )
-
-    return auth_request, {"redirect_uri": redirect_uri}
-
-
-def _safe_profile(raw_profile) -> Optional[Dict]:
-    """确保 raw_profile 可序列化为 JSON"""
-    if raw_profile is None:
-        return None
-    try:
-        return json.loads(json.dumps(raw_profile, default=str))
-    except Exception as exc:  # noqa: BLE001
-        logging.warning("原始第三方资料序列化失败: %s", exc)
-        return None
-
-
-def _extract_auth_user_profile(auth_user) -> Dict:
-    """
-    从 AuthUser 对象中提取标准化的用户资料
-
-    返回:
-        Dict: 包含所有标准化字段的字典
-    """
-    return {
-        "uuid": getattr(auth_user, "uuid", None),
-        "username": getattr(auth_user, "username", None),
-        "nickname": getattr(auth_user, "nickname", None),
-        "avatar": getattr(auth_user, "avatar", None),
-        "email": getattr(auth_user, "email", None),
-        "mobile": getattr(auth_user, "mobile", None),
-        "gender": auth_user.gender.value if auth_user.gender else None,
-        "location": getattr(auth_user, "location", None),
-        "company": getattr(auth_user, "company", None),
-        "blog": getattr(auth_user, "blog", None),
-        "remark": getattr(auth_user, "remark", None),
-        "raw_user_info": _safe_profile(getattr(auth_user, "raw_user_info", None)),
-    }
-
-
-def _generate_username(base_name: str) -> str:
-    """
-    基于第三方昵称生成唯一用户名。
-    """
-    slug = re.sub(r"[^a-zA-Z0-9_]+", "", base_name or "").lower() or "user"
-    candidate = slug
-    index = 1
-    while User.query.filter_by(username=candidate).first():
-        candidate = f"{slug}{index}"
-        index += 1
-    return candidate
-
-
-def _get_or_create_user(provider: str, auth_user) -> User:
-    """将第三方账号落地到 User + ThirdPartyAccount"""
-    profile = _extract_auth_user_profile(auth_user)
-
-    uuid = profile.get("uuid")
-    if not uuid:
-        raise ValueError("第三方登录缺少 uuid")
-
-    account = ThirdPartyAccount.query.filter_by(
-        provider=provider, uuid=uuid
-    ).one_or_none()
-
-    if account:
-        # 已绑定用户，更新快照信息
-        _update_account_snapshot(account, profile)
-        db.session.add(account)
-        user = User.query.get(account.user_id)
-        if user and (not user.image and profile["avatar"]):
-            user.image = profile["avatar"]
-            db.session.add(user)
-        return user
-
-    # 创建用户
-    username = _generate_username(profile["username"])
-    user = User(
-        username=username,
-        nickname=profile["nickname"],
-        image=profile["avatar"],
-        # 生成不可预测的密码，防止密码登录
-        password=secrets.token_urlsafe(32),
-        # 用户不具备密码登陆能力
-        has_password=False,
-    )
-    db.session.add(user)
-    # 获取 user.id
-    db.session.flush()
-
-    account = ThirdPartyAccount(
-        provider=provider,
-        user_id=user.id,
-        **profile,
-    )
-    db.session.add(account)
-    return user
-
-
-def _update_account_snapshot(account: ThirdPartyAccount, profile: Dict) -> None:
-    """
-    更新第三方账号快照信息
-
-    参数:
-        account: ThirdPartyAccount 对象
-        profile: 标准化的用户资料字典
-    """
-    account.nickname = profile["nickname"]
-    account.avatar = profile["avatar"]
-    account.email = profile["email"]
-    account.mobile = profile["mobile"]
-    account.gender = profile["gender"]
-    account.location = profile["location"]
-    account.company = profile["company"]
-    account.blog = profile["blog"]
-    account.remark = profile["remark"]
-    account.raw_user_info = profile["raw_user_info"]
-
-
-def _bind_third_party_account(
-    provider: str, auth_user, user: User = None
-) -> Optional[ThirdPartyAccount]:
-    """
-    将第三方账号绑定到指定用户
-
-    参数:
-        provider: 第三方平台名称
-        auth_user: 第三方用户信息
-        user: 要绑定的本地用户（可选，如果不传则使用current_user）
-
-    返回:
-        ThirdPartyAccount: 绑定成功的账号记录
-        None: 绑定失败
-    """
-    if user is None:
-        user = current_user
-        if not user or not user.is_authenticated:
-            raise ValueError("用户未登录，无法绑定第三方账号")
-
-    profile = _extract_auth_user_profile(auth_user)
-    uuid = profile.get("uuid")
-    if not uuid:
-        raise ValueError("第三方登录缺少 uuid")
-
-    # 检查该第三方账号是否已被其他用户绑定
-    existing_account = ThirdPartyAccount.query.filter_by(
-        provider=provider, uuid=uuid
-    ).one_or_none()
-
-    if existing_account:
-        if existing_account.user_id != user.id:
-            # 已被其他用户绑定
-            raise ValueError(f"该 {provider.title()} 账号已绑定其他用户")
-        else:
-            # 已绑定到当前用户，更新信息即可（幂等）
-            account = existing_account
-    else:
-        # 创建新的绑定记录
-        account = ThirdPartyAccount(
-            provider=provider,
-            user_id=user.id,
-            **profile,
-        )
-
-    # 更新快照信息
-    _update_account_snapshot(account, profile)
-
-    db.session.add(account)
-    return account
+        return redirect(f"{frontend_redirect}?{query}")
+    return error(code=error_code, message=error_message)
 
 
 @auth.route("/oauth/providers", methods=["GET"])
 def list_oauth_providers():
-    """
-    返回已启用的平台列表，前端据此动态渲染按钮。
-    """
+    service = _flow_service()
+    oauth_infra_service = _oauth_infra_service()
+
     providers = []
-    for provider in _enabled_providers():
+    for provider in service.enabled_providers():
         providers.append(
             {
                 "provider": provider,
-                "name": OAUTH_CONFIGS[provider].get("display_name", provider.title()),
+                "name": oauth_infra_service.oauth_configs[provider].get(
+                    "display_name", provider.title()
+                ),
                 "authorize_endpoint": url_for(
                     "auth.oauth_authorize", provider=provider, _external=False
                 ),
@@ -326,306 +79,82 @@ def list_oauth_providers():
 
 @auth.route("/oauth/authorize/<provider>", methods=["GET"])
 def oauth_authorize(provider: str):
-    """
-    返回第三方授权地址（由前端跳转）。
-    """
-    try:
-        auth_request, _ = _get_auth_request(provider)
-        auth_url = auth_request.authorize()
-
-        # 查询参数进行ENCODE编码
-        parsed = urlparse(auth_url)
-        query_params = parse_qs(parsed.query, keep_blank_values=True)
-        encoded_query = urlencode(query_params, doseq=True)
-        encoded_url = parsed._replace(query=encoded_query).geturl()
-        logging.info(f"zmc_11:{encoded_url}")
-
-        return success(data={"authorize_url": encoded_url, "provider": provider})
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("创建授权请求失败: %s", exc)
-        return error(code=400, message=str(exc))
-
-
-def _handle_oauth_error(
-    provider: str, error_code: int, error_message: str, is_bind: bool = False
-):
-    """
-    统一处理 OAuth 错误，根据是否有前端重定向地址决定返回方式
-
-    Args:
-        provider: 第三方平台名称
-        error_code: HTTP 错误码
-        error_message: 错误消息
-        is_bind: 是否为绑定模式
-
-    Returns:
-        redirect 或 error 响应
-    """
-    if FRONTEND_OAUTH_REDIRECT:
-        # 如果有前端重定向地址，跳转到前端并传递错误信息
-        query = urlencode(
-            {
-                "provider": provider,
-                "status": "error",
-                "message": error_message,
-                **({"action": "bind"} if is_bind else {}),
-            }
-        )
-        return redirect(f"{FRONTEND_OAUTH_REDIRECT}?{query}")
-
-    # 否则直接返回 JSON 错误
-    return error(code=error_code, message=error_message)
+    authorize_url = _flow_service().create_authorize_url(provider)
+    return success(data={"authorize_url": authorize_url, "provider": provider})
 
 
 @auth.route("/oauth/callback/<provider>", methods=["GET"])
 def oauth_callback(provider: str):
-    """
-    第三方回调：
-    - 统一解析第三方用户
-    - 落库（User / ThirdPartyAccount）
-    - 签发 JWT，并跳转到前端处理页面
-    """
-    params = dict(request.args)
-    try:
-        auth_request, meta = _get_auth_request(provider)
-        logging.info(
-            "处理第三方回调 provider=%s redirect_uri=%s params=%s",
-            provider,
-            meta["redirect_uri"],
-            params,
-        )
+    result = _flow_service().handle_callback(
+        provider=provider, params=dict(request.args)
+    )
 
-        try:
-            auth_user_response = auth_request.login(params)
-        except requests.exceptions.ConnectionError as e:
-            # 网络连接错误（服务器无法访问外网）
-            logging.error(
-                f"OAuth 网络连接失败 provider={provider}, error={str(e)}",
-                exc_info=True,
+    if isinstance(result, OAuthRedirectResult):
+        return redirect(result.url)
+
+    if isinstance(result, OAuthApiErrorResult):
+        return error(code=result.code, message=result.message)
+
+    if isinstance(result, OAuthBindSuccessResult):
+        frontend_redirect = _frontend_oauth_redirect()
+        if frontend_redirect:
+            return redirect(_flow_service().redirect_for_bind_success(provider))
+        return success(message="绑定成功")
+
+    if isinstance(result, OAuthBindErrorResult):
+        frontend_redirect = _frontend_oauth_redirect()
+        if frontend_redirect:
+            return redirect(
+                _flow_service().redirect_for_bind_error(provider, result.message)
             )
-            return _handle_oauth_error(
-                provider,
-                503,
-                f"{provider.title()} 服务连接失败，请稍后重试或检查网络配置",
-            )
-        except requests.exceptions.Timeout as e:
-            # 请求超时
-            logging.error(f"OAuth 请求超时 provider={provider}, error={str(e)}")
-            return _handle_oauth_error(
-                provider,
-                504,
-                f"{provider.title()} 服务响应超时，请稍后重试",
-            )
-        except AttributeError as e:
-            raise
+        return error(code=400, message=result.message)
 
-        # 检查响应是否包含网络错误（即使 code=200，message 中也可能包含错误）
-        if auth_user_response.message and (
-            "timed out" in auth_user_response.message.lower()
-            or "connection to" in auth_user_response.message.lower()
-            or "max retries exceeded" in auth_user_response.message.lower()
-            or "network unreachable" in auth_user_response.message.lower()
-        ):
-            # 网络错误
-            logging.error(f"OAuth 网络错误从响应中检测到: {auth_user_response.message}")
-            return _handle_oauth_error(
-                provider,
-                503,
-                f"{provider.title()} 服务连接失败，请稍后重试或检查网络配置",
-            )
-
-        if auth_user_response.code != 200 or not auth_user_response.data:
-            return error(
-                code=auth_user_response.code or 400,
-                message=auth_user_response.message or "第三方登录失败",
-            )
-
-        auth_user = auth_user_response.data
-        if getattr(auth_user, "service_url", None):
-            # 个别平台需要前往服务页面
-            return redirect(auth_user.service_url)
-
-        # 检查是否为绑定模式（通过state参数判断）
-        state = params.get("state", "")
-        is_bind_mode = state.startswith("bind:")
-
-        if is_bind_mode:
-            # 绑定模式：需要用户已登录
-            try:
-                # 从state中提取token
-                token = state[5:]  # 移除 "bind:" 前缀
-                decoded_token = decode_token(token, allow_expired=False)
-                user_id = decoded_token.get("sub")
-
-                # 获取用户
-                user = User.query.get(user_id)
-                if not user:
-                    raise ValueError("用户不存在")
-
-                # 执行绑定
-                account = _bind_third_party_account(provider, auth_user, user)
-                db.session.commit()
-
-                # 绑定成功，返回结果
-                if FRONTEND_OAUTH_REDIRECT:
-                    query = urlencode(
-                        {
-                            "provider": provider,
-                            "action": "bind",
-                            "status": "success",
-                            "message": "绑定成功",
-                        }
-                    )
-                    logging.info(f"zmc_query:{query}")
-                    return redirect(f"{FRONTEND_OAUTH_REDIRECT}?{query}")
-
-                return success(message="绑定成功")
-
-            except Exception as exc:
-                logging.exception("绑定第三方账号失败: %s", exc)
-                db.session.rollback()
-                error_message = str(exc) if str(exc) else "绑定失败"
-
-                if FRONTEND_OAUTH_REDIRECT:
-                    query = urlencode(
-                        {
-                            "provider": provider,
-                            "action": "bind",
-                            "status": "error",
-                            "message": error_message,
-                        }
-                    )
-                    return redirect(f"{FRONTEND_OAUTH_REDIRECT}?{query}")
-
-                return error(code=400, message=error_message)
-        else:
-            # 正常登录/注册模式
-            user = _get_or_create_user(provider, auth_user)
-            db.session.commit()
-
-            # 登录态
-            user_payload = user.to_json()
-            access_token = "Bearer " + create_access_token(identity=user, fresh=True)
-            refresh_token = "Bearer " + create_refresh_token(identity=user)
-
-            # 更新最近活跃
-            user.ping()
-
-            # 返回给前端
-            if FRONTEND_OAUTH_REDIRECT:
-                query = urlencode(
-                    {
-                        "provider": provider,
-                        "access_token": access_token,
-                        "refresh_token": refresh_token,
-                        "user": json.dumps(user_payload),
-                    }
+    if isinstance(result, OAuthLoginSuccessResult):
+        frontend_redirect = _frontend_oauth_redirect()
+        if frontend_redirect:
+            return redirect(
+                _flow_service().redirect_for_login_success(
+                    provider=provider,
+                    access_token=result.access_token,
+                    refresh_token=result.refresh_token,
+                    user=result.user,
                 )
-                return redirect(f"{FRONTEND_OAUTH_REDIRECT}?{query}")
-
-            return success(
-                data=user_payload,
-                access_token=access_token,
-                refresh_token=refresh_token,
-                message="登录成功",
             )
-    except requests.exceptions.ConnectionError as e:
-        # 网络连接错误（服务器无法访问外网）- 在最外层捕获兜底
-        logging.error(
-            f"OAuth 网络连接失败(外层捕获) provider={provider}, error={str(e)}",
-            exc_info=True,
+        return success(
+            data=result.user,
+            access_token=result.access_token,
+            refresh_token=result.refresh_token,
+            message="登录成功",
         )
+
+    if isinstance(result, OAuthErrorResult):
         return _handle_oauth_error(
-            provider,
-            503,
-            f"服务器无法连接 {provider.title()} 服务，请稍后重试或联系管理员检查网络配置",
-            is_bind_mode,
+            provider=provider,
+            error_code=result.code,
+            error_message=result.message,
+            is_bind=result.is_bind_mode,
         )
-    except requests.exceptions.Timeout as e:
-        logging.error(f"OAuth 请求超时(外层捕获) provider={provider}, error={str(e)}")
-        return _handle_oauth_error(
-            provider,
-            504,
-            f"连接 {provider.title()} 服务超时，请稍后重试",
-            is_bind_mode,
-        )
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("处理第三方登录失败: %s", exc)
-        db.session.rollback()
-        return _handle_oauth_error(
-            provider,
-            500,
-            "处理第三方登录失败，请稍后重试",
-            is_bind_mode,
-        )
+
+    return _handle_oauth_error(
+        provider=provider,
+        error_code=500,
+        error_message="处理第三方登录失败，请稍后重试",
+        is_bind=False,
+    )
 
 
 @auth.route("/oauth/bind/<provider>", methods=["POST"])
 @jwt_required()
 def oauth_bind(provider: str):
-    """
-    发起第三方账号绑定
-
-    返回第三方授权地址，前端需要跳转该地址
-    """
-    try:
-        # 检查平台是否支持
-        if provider not in _enabled_providers():
-            return error(code=400, message=f"不支持的平台: {provider}")
-
-        auth_request, _ = _get_auth_request(provider)
-
-        # 生成包含用户token的state参数，用于绑定模式
-        # 格式: bind:<user_jwt_token>
-        # 使用较短的过期时间（10分钟）
-
-        user_token = create_access_token(
-            identity=current_user, expires_delta=timedelta(minutes=10), fresh=False
-        )
-        bind_state = f"bind:{user_token}"
-
-        # 获取授权URL（包含state参数）
-        auth_url = auth_request.authorize(state=bind_state)
-
-        return success(data={"authorize_url": auth_url, "provider": provider})
-    except Exception as exc:
-        logging.exception("发起第三方账号绑定失败: %s", exc)
-        return error(code=500, message=f"发起绑定失败: {str(exc)}")
+    authorize_url = _flow_service().create_bind_authorize_url(
+        provider=provider,
+        bind_user=current_user,
+    )
+    return success(data={"authorize_url": authorize_url, "provider": provider})
 
 
 @auth.route("/oauth/unbind/<provider>", methods=["POST"])
 @jwt_required()
 def oauth_unbind(provider: str):
-    """
-    解绑第三方账号
-
-    规则：
-    1. 只能解绑已绑定到当前用户的第三方账号
-    2. 若用户没有密码且当前第三方是唯一登录方式，禁止解绑
-    """
-    try:
-        # 查询该第三方账号的绑定记录
-        account = ThirdPartyAccount.query.filter_by(
-            provider=provider, user_id=current_user.id
-        ).one_or_none()
-
-        if not account:
-            return error(code=404, message=f"未找到已绑定的 {provider} 账号")
-
-        # 检查是否可以解绑（至少保留一种登录方式）
-        # 条件：该用户不具备密码登录能力 且 只有这一个第三方绑定
-        bind_count = ThirdPartyAccount.query.filter_by(user_id=current_user.id).count()
-
-        if not current_user.has_password and bind_count <= 1:
-            return error(code=400, message="解绑失败：您未设置密码，且这是您唯一的登录方式。请先设置密码或绑定其他登录方式。")
-
-        # 执行解绑
-        db.session.delete(account)
-        db.session.commit()
-
-        return success(message=f"已成功解绑 {provider.title()} 账号")
-
-    except Exception as exc:
-        logging.exception("解绑第三方账号失败: %s", exc)
-        db.session.rollback()
-        return error(code=500, message=f"解绑失败: {str(exc)}")
+    _flow_service().unbind(provider=provider, user=current_user)
+    return success(message=f"已成功解绑 {provider.title()} 账号")

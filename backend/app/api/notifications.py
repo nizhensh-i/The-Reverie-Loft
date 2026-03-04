@@ -1,49 +1,45 @@
 import logging
 
+from dependency_injector.wiring import Provide, inject
 from flask import request
 from flask_jwt_extended import current_user, jwt_required
-from sqlalchemy.orm import joinedload
 
-from .. import db
+from ..container import AppContainer
 from ..decorators import DecoratedMethodView
-from ..models import Notification, User
+from ..services.notification_service import NotificationService
 from ..utils.response import success
 
 
-# --------------------------- 通知功能 ---------------------------
+@inject
+def _notification_service(
+    notification_service: NotificationService = Provide[
+        AppContainer.notification_service
+    ],
+) -> NotificationService:
+    return notification_service
+
+
 class NotificationApi(DecoratedMethodView):
     method_decorators = {
         "share": [jwt_required()],
     }
 
     def get(self):
-        """获取当前用户的所有通知"""
         logging.info(f"获取用户通知: user_id={current_user.id}")
-        # 预加载触发用户数据避免N+1查询
-        notifications = (
-            Notification.query.options(
-                joinedload(Notification.trigger_user).load_only(
-                    User.id, User.username, User.nickname, User.image
-                )
-            )
-            .filter_by(receiver_id=current_user.id)
-            .order_by(Notification.created_at.desc())
-            .all()
+        result = _notification_service().list_user_notifications(
+            user_id=current_user.id
         )
-        return success(data=[item.to_json() for item in notifications])
+        return success(data=result.data)
 
     def patch(self):
-        """标记通知为已读"""
         logging.info(f"标记通知已读: user_id={current_user.id}")
-        ids = request.get_json().get("ids", [])
-        Notification.query.filter(
-            Notification.id.in_(ids), Notification.receiver_id == current_user.id
-        ).update({"is_read": True}, synchronize_session=False)
-        db.session.commit()
-        return success(message="通知已标记为已读")
+        ids = (request.get_json() or {}).get("ids", [])
+        result = _notification_service().update_notifications_read(
+            user_id=current_user.id,
+            ids=ids,
+        )
+        return success(message=result.message)
 
 
 def register_notification_api(bp, *, notification_url):
-    bp.add_url_rule(
-        f"/{notification_url}", view_func=NotificationApi.as_view("notification")
-    )
+    bp.add_url_rule(notification_url, view_func=NotificationApi.as_view("notification"))

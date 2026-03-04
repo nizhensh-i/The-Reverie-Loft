@@ -1,6 +1,11 @@
 import { defineStore } from "pinia";
 import { io } from "socket.io-client";
 import imageCfg from "@/config/image.js";
+import {
+  LOCAL_USER_BG_MOBILE,
+  LOCAL_USER_BG_PC,
+  qiniuUrl,
+} from "@/config/fallbackAssets.js";
 import cityUtil from "@/utils/cityUtil.js";
 import { areaList } from "@vant/area-data";
 import router from "@/router/index.js";
@@ -78,12 +83,14 @@ export const useCurrentUserStore = defineStore("currentUser", {
     userPcBackgroundUrl: "userBackground/pc/",
     // 用户头像库地址
     userAvatars: "userAvatars/",
-    defaultBackground: `${
-      import.meta.env.VITE_QINIU_DOMAIN
-    }/userBackground/mobile/image-pre3.webp-slim`,
-    defaultPcBackground: `${
-      import.meta.env.VITE_QINIU_DOMAIN
-    }/userBackground/pc/image.png-slim`,
+    defaultBackground: qiniuUrl(
+      "userBackground/mobile/image-pre3.webp-slim",
+      LOCAL_USER_BG_MOBILE
+    ),
+    defaultPcBackground: qiniuUrl(
+      "userBackground/pc/image.png-slim",
+      LOCAL_USER_BG_PC
+    ),
   }),
   getters: {
     isLogin: (state) => state.access_token != "",

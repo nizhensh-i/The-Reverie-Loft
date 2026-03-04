@@ -1,306 +1,527 @@
-# 🌟 The-Reverie-Loft(随想阁楼)
+<div align="center">
 
-> 一个基于 Vue3 + Flask 的移动端优先的社交博客平台
+# The-Reverie-Loft(随想阁楼)
 
-[![License MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)[![Vue.js](https://img.shields.io/badge/Vue-3.x-brightgreen)](https://vuejs.org/)[![Flask](https://img.shields.io/badge/Flask-3.x-blue)](https://flask.palletsprojects.com/)
+### 一个现代化、功能丰富的社交平台
+
+**基于 Vue3 + Flask 构建的开源社交系统**
+
+支持实时通信与依赖降级的全栈社交平台模板，兼顾工程清晰度与可部署性。
+
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/nizhensh-i/The-Reverie-Loft/actions/workflows/python-tests.yml/badge.svg)](https://github.com/nizhensh-i/The-Reverie-Loft/actions/workflows/python-tests.yml)
+[![Vue.js](https://img.shields.io/badge/Vue.js-3.x-4FC08D.svg)](https://vuejs.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.x-000000.svg)](https://flask.palletsprojects.com/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1.svg)](https://www.mysql.com/)
+[![Redis](https://img.shields.io/badge/Redis-7.x-DC382D.svg)](https://redis.io/)
+
+[中文](README.md) | [English](README.en.md)
+
+[项目简介](#-项目简介) • [快速上手](#-快速上手) • [配置指南](#-第三方服务配置指南) • [部署文档](#-部署指南) • [FAQ](#-常见问题)
+
+</div>
+
+---
+
+## ⭐ Highlights
+
+- Clean Architecture 后端分层，依赖注入清晰可维护
+- 实时通信能力完备：HTTP API + Socket.IO 双服务拆分
+- 依赖可降级：Redis / Mail / Storage / OAuth 缺失仍可运行
+- 一键开发启动：`start.sh` 直达可用环境
+- 生产级部署路径：Docker Compose + Nginx 反代
+
+## 🚩 快速概览
+- Vue 3 + Flask 全栈社交平台模板（动态/互动/实时聊天）
+- 后端 clean 分层 + 依赖注入；HTTP 与 Socket.IO 双服务拆分
+- 可选依赖（Redis/Mail/Storage/OAuth）缺失自动降级，核心流程可运行
+- 启动：MySQL → `./init.sh`（幂等执行）→ `./start.sh`
+- 默认地址：`5172`（前端）/ `4289`（API）/ `4290`（Socket.IO）
+
+## 📚 API 入口
+
+- 参考路由：`backend/app/api`、`backend/app/auth`
+
+## 🎬 演示
+
+- 在线预览：191718.com
+- 说明：无演示账号，可自行注册；也可游客访问。
+
+## 🖼️ 预览图
+
+<img src="docs/preview_1.jpg" alt="Loft Preview 1" style="max-width: 800px; width: 100%;" />
+
+---
+
+<img src="docs/preview_2.jpg" alt="Loft Preview 2" style="max-width: 800px; width: 100%;" />
+
+---
 
 ## 📖 项目简介
 
-The-Reverie-Loft(随想阁楼) 是一个专为移动端设计的社交平台，提供完整的社交功能体验。项目采用前后端分离架构，前端使用 Vue3 构建移动端界面，后端基于 Flask 提供稳定的 API 服务。
+The-Reverie-Loft 是一个全栈开源社交平台项目，采用现代化技术栈构建，并已在后端落地 clean 风格分层（domain / services / infrastructure）与依赖能力降级机制。
 
-### 移动端界面
-![登录页面](./docs/登录页面.png)
-![用户首页](./docs/用户首页.png)
-![个人资料1](./docs/个人资料1.png)
-![个人资料2](./docs/个人资料2.png)
-![聊天](./docs/聊天.png)
-![文章详情](./docs/文章详情.png)
-![评论详情](./docs/评论详情.png)
-![通知面板](./docs/通知面板.png)
-![发布文章](./docs/发布文章.png)
-![管理员日志页](./docs/管理员日志页.png)
-![绑定邮箱页面](./docs/绑定邮箱页面.png)
+### ✨ 核心功能
 
-## ✨ 功能特性
+- 👤 **用户系统**：注册、登录、个人资料管理
+- 📱 **第三方登录**：支持 GitHub、Google、QQ、微博 OAuth
+- 💬 **实时聊天**：基于 WebSocket 的即时通讯
+- 📝 **内容发布**：支持文字、图片动态发布
+- 👍 **互动功能**：点赞、评论、关注
+- 🔐 **权限管理**：基于 JWT 的安全认证
+- 📊 **数据分析**：操作日志、用户行为统计
+- 🎨 **响应式设计**：完美支持 PC 和移动端
 
-- 🔐 **用户系统**
-  
-  - 用户注册与登录
-  - 个人资料管理
-  - 头像上传
-  - 密码找回（支持邮箱验证码）
-- 📝 **内容发布**
-  
-  - 图文动态发布
-  - 多图片上传
-  - 富文本编辑
-- 💬 **社交互动**
-  
-  - 点赞
-  - 评论与回复
-  - 关注与粉丝
-  - 私信聊天
-- 🔔 **实时通知**
-  
-  - 消息推送（@提及、评论、点赞、私信）
-  - 互动提醒
+### 🛠️ 技术栈
 
-  
-- 🔐 **安全与管理**
-  - JWT 权限验证
-  - 用户角色管理（普通用户、内容管理员、管理员）
-  - 评论敏感词过滤
-  - 图文请求次数限制
-  - 邮件告警
+| 层级 | 技术 | 说明 |
+|------|------|------|
+| **前端** | Vue 3 + Vite | 现代化构建工具与响应式框架 |
+| | Element Plus | UI 组件库 |
+| | Vue Router | 前端路由管理 |
+| | Pinia | 状态管理 |
+| **后端** | Flask 3.x | Python Web 框架 |
+| | SQLAlchemy | ORM 数据库操作 |
+| | Flask-JWT-Extended | JWT 认证 |
+| | Flask-SocketIO | WebSocket 实时通信 |
+| | dependency-injector | 依赖注入容器 |
+| **数据库** | MySQL 8.x | 关系型数据存储（核心必需） |
+| | Redis 7.x | 缓存/限流/消息能力（可降级） |
+| **部署** | Shell 脚本 + Docker Compose | `deploy.sh` 编排本地/远程部署 |
+| | Nginx | 可选反向代理与 HTTPS 终止 |
 
+### 🧠 能力降级设计
 
-## 🛠 技术栈
+Loft 在基础设施层实现了 capability 检测与降级策略：
 
-### 前端技术
+- Redis 不可用：缓存/限流/实时消息/异步任务进入降级模式（例如 Celery 回退为内存 eager 执行）
+- 邮件未配置：邮件服务降级，验证码邮件不可发送，但主流程可运行
+- 七牛云未配置：上传与签名访问降级；注册用户会回退到前端静态默认头像并持久化头像名
+- OAuth 未配置：第三方登录入口自动不可用，不影响账号密码体系
 
-- **框架**: Vue 3.x
-- **构建工具**: Vite
-- **UI 组件**: Element Plus / Vant / undraw UI
-- **状态管理**: Pinia
-- **路由**: Vue Router 4
-- **HTTP 客户端**: Axios
-- **样式**: SCSS
+---
 
-### 后端技术
+## 🚀 快速上手
 
-- **框架**: Flask 3.x
-- **数据库**: MySQL
-- **ORM**: SQLAlchemy
-- **认证**: JWT
-- **任务队列**: Celery + Redis
-- **文件存储**: 本地存储 / 云存储
+> 默认推荐脚本启动（`start.sh`），外部依赖最少。Docker 是可选方式。
 
-### 开发工具
+### 前置要求（非 Docker 主路径）
 
-- **代码规范**:ESLint + Prettier + flake8 + black + isort
-- **版本控制**: Git
-- **包管理**: npm
-- **容器化**: Docker
+- Python >= 3.12
+- Node.js 18+（建议），包管理器推荐 `npm`
+- MySQL 8.x
 
-## 📁 目录结构
+### 第 0 步：准备 MySQL 并建库
 
-```
-loft_1/  
-├── frontend/                 # 前端项目目录  
-│   ├── src/  
-│   │   ├── api/             # API 接口封装  
-│   │   ├── asset/           # 静态资源  
-│   │   ├── config/          # 配置文件  
-│   │   ├── directives/      # Vue 指令  
-│   │   ├── plugins/         # 插件配置  
-│   │   ├── router/          # 路由配置  
-│   │   ├── stores/          # Pinia 状态管理  
-│   │   ├── utils/           # 工具函数  
-│   │   └── views/           # 页面组件  
-│   ├── public/              # 公共静态文件  
-│   ├── dist/                # 构建输出目录  
-│   ├── package.json         # 前端依赖配置  
-│   └── vite.config.js       # Vite 配置  
-│  
-├── backend/                  # 后端项目目录  
-│   ├── app/  
-│   │   ├── api/             # API 路由  
-│   │   ├── auth/            # 认证模块  
-│   │   ├── main/            # 主要业务接口(现已使用api/)  
-│   │   ├── mycelery/        # Celery 任务  
-│   │   ├── schemas/         # 表单验证  
-│   │   ├── templates/       # 模板文件  
-│   │   └── utils/           # 工具函数  
-│   │   └── models.py        # 数据模型  
-│   ├── migrations/          # 数据库迁移文件  
-│   ├── requirements/        # Python 依赖  
-│   ├── tests_api/           # API 测试  
-│   └── deploy/              # 部署配置  
-│  
-└── docs/                    # README.md中的预览图片
-└── deploy.sh                # docker部署
-└── start.sh                 # 前后端启动脚本
-└── .pre-commit-config.yaml  # 代码规范工具
-└── README.md                # 项目说明文档  
+```sql
+CREATE DATABASE flasky CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-## 🚀 环境准备
+> 如果你用的是其他库名，请在 `backend/.env` 的 `DEV_DATABASE_URL` 中保持一致。
 
-### 📋 系统要求
+### ⚡ 三步启动项目（推荐）
 
-- **Node.js** >= 16.0.0
-- **Python** >= 3.8
-- **MySQL** >= 8.0
-- **Redis** >= 6.0
-
-### ⚙️ 配置文件
-
-#### 1. 后端环境配置
-
-在 `backend/` 目录下创建 `.env` 文件：
+#### 第一步：克隆仓库
 
 ```bash
-# 数据库配置  
-DATABASE_URL=mysql://username:password@localhost:3306/loft_db  
-
-# Redis 配置  
-REDIS_URL=redis://localhost:6379/0  
-
-# JWT 密钥  
-JWT_SECRET_KEY=your-super-secret-jwt-key  
-
-# 邮件配置 (QQ邮箱示例)  
-MAIL_SERVER=smtp.qq.com  
-MAIL_PORT=587  
-MAIL_USE_TLS=True  
-MAIL_USERNAME=your-email@qq.com  
-MAIL_PASSWORD=your-qq-auth-code  # QQ邮箱授权码，不是登录密码  
-
-# 七牛云配置 (如果使用)  
-QINIU_ACCESS_KEY=your-qiniu-access-key  
-QINIU_SECRET_KEY=your-qiniu-secret-key  
-QINIU_BUCKET_NAME=your-bucket-name  
-QINIU_DOMAIN=your-qiniu-domain  
-
-# 应用配置  
-FLASK_ENV=development  
-SECRET_KEY=your-flask-secret-key  
+git clone https://github.com/nizhensh-i/The-Reverie-Loft && cd The-Reverie-Loft
 ```
 
-#### 2. 前端环境配置
-
-在 `frontend/` 目录下创建 `.env` 文件：
+#### 第二步：一键初始化环境（推荐）
 
 ```bash
-# 平台本地运行端口号
-VITE_PORT=5172
-VITE_BASE=/
-
-# 图片域名
-VITE_QINIU_DOMAIN=QINIU_DOMAIN
-# 七牛云bucket名称
-VITE_QINIU_BUCKET=QINIU_BUCKET
-
-# 后端代理地址
-VITE_APP_BASE_API = '/api'
-
-# ICP 备案号
-VITE_ICP=xxxx
+./init.sh
 ```
 
-## 🏃‍♂️ 启动方式
+`init.sh` 会执行：
+- 创建 Python 虚拟环境并安装依赖
+- 生成 `backend/.env`（含随机密钥）
+- 执行数据库迁移 `flask deploy`
+- 安装前端依赖并生成 `frontend/.env.development`
 
-### 🔧 后端启动
+> 说明：`backend/.env` 代表开发环境配置，生产环境使用 `backend/.env.prod`。
+> 若 `DEV_DATABASE_URL` 为空，`init.sh` 会自动写入 `sqlite:///dev.db` 作为开发兜底，确保首次初始化可完成。
+> 建议你尽快切换到 MySQL：sqlite 仅适合本地快速体验，不适合并发验证、性能评估与生产部署。
+
+**最低必填配置（核心，手动模式）**
 
 ```bash
-# 1. 进入后端目录  
-cd backend  
-
-# 2. 创建虚拟环境  
-python -m venv venv  
-
-# 3. 激活虚拟环境  
-# Windows  
-venv\Scripts\activate  
-# macOS/Linux  
-source venv/bin/activate  
-
-# 4. 安装依赖  
-pip install -r requirements/base.txt  
-
-# 5. 数据库迁移  
-flask db upgrade  
-
-# 6. 启动 Redis (另开终端)  
-redis-server  
-
-# 7. 启动 Celery 异步任务 (另开终端)  
-celery -A app.make_celery worker --loglevel INFO -P eventlet # windows
-celery -A app.make_celery worker --loglevel INFO    # mac
-
-# 8. 启动后端服务  
-python flasky.py  
+# backend/.env 最小示例
+SECRET_KEY=replace-with-random-string
+JWT_SECRET_KEY=replace-with-random-string
+DEV_DATABASE_URL=mysql+pymysql://user:password@127.0.0.1:3306/flasky?charset=utf8mb4
 ```
 
-后端服务将在 `http://localhost:8082` 启动
-
-### 🎨 前端启动
+可选：使用以下命令生成随机密钥。
 
 ```bash
-# 1. 进入前端目录  
-cd frontend  
-
-# 2. 安装依赖  
-npm install  
-
-# 3. 启动开发服务器  
-npm run dev  
-
+openssl rand -hex 32
 ```
 
-前端服务将在 `http://localhost:5172` 启动
+#### 第三步：启动
 
-### 如何成为超级管理员身份？
-配置backend/config.py中的FLASKY_ADMIN变量
-当你绑定的邮箱与后端配置的邮箱相同时，该账号将具有管理员的权限。
-拥有管理员的权限， 你将可以对所有的评论审核，增加/删除tag标签，帮助未绑定邮箱的用户找回密码！
-![管理员邮箱配置](./docs/管理员邮箱配置.png)
-![管理员页面](./docs/管理员页面.png)
+```bash
+./start.sh
+```
+
+启动后默认开发访问地址：
+- 前端：`http://localhost:5172`
+- 后端 HTTP：`http://localhost:4289`
+- 后端 Socket.IO：`http://localhost:4290`
+
+端口可自定义（通过环境变量）：
+- 前端：`VITE_PORT`（`frontend/.env.development`）
+- 后端 HTTP：`FLASK_RUN_PORT`（`backend/.env`）
+- 后端 Socket.IO：`SOCKETIO_RUN_PORT`（`backend/.env`，默认 `4290`）
+
+---
+
+## 🔧 第三方服务配置指南
+
+项目支持“可用即启用、缺失即降级”的能力模型。请按优先级配置：
+
+### 1) 核心必需（不建议缺失）
+
+| **配置项** | 位置 | 说明 |
+|------|------|------|
+| **`SECRET_KEY` / `JWT_SECRET_KEY`** | `backend/.env` | Flask/JWT 基础安全密钥 |
+| **`DEV_DATABASE_URL`（开发）或 `DATABASE_URL`（生产）** | `backend/.env` / `backend/.env.prod` | MySQL 连接 |
+
+### 2) 可选降级（缺失可启动，但对应功能受限）
+
+| 能力 | **关键配置** | 未配置影响 |
+|------|------|------|
+| Redis | **`DEV_REDIS_URL` / `REDIS_URL` / `REDIS_HOST`** | 缓存、限流、实时消息、异步任务进入降级模式 |
+| 邮件 | **`MAIL_USERNAME` / `MAIL_PASSWORD`** | 邮件验证码打印在backend/logg/celery.log、通知不可用（系统可运行） |
+| 七牛云对象存储 | **`QINIU_ACCESS_KEY` / `QINIU_SECRET_KEY` / `QINIU_BUCKET_NAME` / `QINIU_DOMAIN`** | 图片上传与签名访问不可用；注册头像回退到前端静态默认头像（持久化头像名） |
+| OAuth 登录 | **各平台 `*_CLIENT_ID` / `*_CLIENT_SECRET`** | 对应第三方登录入口不可用 |
+
+### 3) 配置示例
+
+```bash
+# MySQL（开发）
+DEV_DATABASE_URL=mysql+pymysql://user:password@127.0.0.1:3306/flasky?charset=utf8mb4
+
+# Redis（可选）
+DEV_REDIS_URL=redis://:1234@127.0.0.1:6379/0
+
+# 七牛云（可选）
+QINIU_DOMAIN=https://your-bucket-domain.example.com
+```
+
+> 安全提示：请勿将真实密钥提交到仓库，示例值仅用于演示。
+
+---
+
+## 🧱 项目结构
+
+后端分层与依赖注入说明见 [backend/README.md](backend/README.md)。
+
+```text
+The-Reverie-Loft/
+├── frontend/                    # Vue3 + Vite 前端
+│   ├── src/
+│   │   ├── api/                # 请求封装与接口定义
+│   │   ├── stores/             # Pinia 状态
+│   │   ├── views/              # 页面视图
+│   │   └── router/             # 路由
+│   └── .env.development.example
+│   └── .env.production.example
+├── backend/                     # Flask 后端
+│   ├── app/
+│   │   ├── domain/             # 领域模型/策略/端口协议
+│   │   ├── services/           # 应用服务（用例编排）
+│   │   ├── infrastructure/     # DB/Redis/OAuth/Storage/Adapter 实现
+│   │   ├── api/                # /api/v1 路由
+│   │   ├── auth/               # /auth 路由
+│   │   └── container.py        # 依赖注入容器装配
+│   ├── migrations/             # Alembic 迁移脚本
+│   ├── flasky.py               # HTTP 入口
+│   └── flasky_socketio.py      # Socket.IO 入口
+│   └── .env.example      
+│   └── .env.prod.example
+├── deploy/                      # 本地/远程部署配置模板
+├── docs/                        # 文档与示例配置
+├── start.sh                     # 非 Docker 一键启动脚本
+└── deploy.sh                    # Docker 部署统一入口
+```
+
+### 架构与数据流（简图）
+
+```mermaid
+flowchart LR
+  A[Vue3 Frontend] -->|HTTP /api| B[Flask HTTP :4289]
+  A -->|WebSocket /socket.io| C[Flask SocketIO :4290]
+
+  B --> D[(MySQL)]
+  B --> E[(Redis 可选)]
+  C --> E
+
+  B --> F[Mail Adapter 可选]
+  B --> G[Qiniu Storage 可选]
+  B --> H[OAuth Providers 可选]
+
+  subgraph Backend Clean Layers
+    I[Domain] --> J[Services]
+    J --> K[Infrastructure Adapters]
+  end
+
+  B --> I
+  C --> I
+```
+
+---
+
+## 📦 部署指南
+
+### 方案 A：项目内置脚本部署（推荐）
+
+统一入口：
+
+```bash
+./deploy.sh <target> [action]
+```
+
+- `target=local`：本地容器运行，使用 `backend/docker-compose.dev.yaml`
+- `target=remote`：远程服务器部署，使用 `backend/docker-compose.prod.yaml`
+
+生产环境模板：`backend/.env.prod.example`（复制为 `backend/.env.prod`）
+
+Compose service name（后端 compose 内服务名）：
+- `backend`
+- `mysql`
+- `myredis`
+
+常用命令：
+
+```bash
+# 本地首次
+./deploy.sh local init
+
+# 本地更新后端
+./deploy.sh local update
+
+# 远程首次
+cp deploy/remote.env.example deploy/remote.env
+# 填写 REMOTE_HOST / REMOTE_USER / REMOTE_BACKEND_DIR
+./deploy.sh remote init
+
+# 远程更新
+./deploy.sh remote update
+```
+
+详细说明见 [docs/deploy.md](docs/deploy.md)。
+
+### 方案 B：可选 Nginx 反向代理（生产常见）
+
+README 只放最小可用配置，完整示例见 [docs/nginx.conf.example](docs/nginx.conf.example)。
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        root /usr/share/nginx/html;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        rewrite ^/api/(.*)$ /$1 break;
+        proxy_pass http://localhost:4289;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /socket.io/ {
+        proxy_pass http://localhost:4290;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+        proxy_buffering off;
+    }
+}
+```
+
+---
+
+## 🗄️ 数据库初始化与迁移
+
+### 快速路径（推荐）
+
+```bash
+cd backend
+flask deploy
+```
+
+`flask deploy` 会执行：
+- 迁移到最新版本（`upgrade`）
+- 在历史迁移链不完整且核心表缺失时兜底 `create_all + stamp head`
+- 初始化角色权限与自关注关系
+
+若你使用了 sqlite 兜底（`sqlite:///dev.db`），建议在切换到 MySQL 后重新执行一次迁移：
+
+```bash
+cd backend
+flask deploy
+```
+
+### 手动迁移（开发常用）
+
+```bash
+cd backend
+export FLASK_APP=flasky.py
+
+# 生成迁移脚本
+flask db migrate -m "your migration message"
+
+# 应用迁移
+flask db upgrade
+
+# 回滚一步（可选）
+flask db downgrade -1
+```
+
+### 种子数据
+
+- 默认“角色权限/自关注”在 `flask deploy` 中自动初始化
+- 业务演示数据可通过管理员接口生成：`GET /api/v1/users/generate_posts`
+
+---
+
+## 🔐 安全与生产注意事项
+
+- 不要提交真实密钥（`.env`、`deploy/*.env`、云服务 AK/SK）
+- 生产环境必须替换 `SECRET_KEY`、`JWT_SECRET_KEY`
+- CORS 请按实际域名收敛，不要长期全开
+- Socket.IO 走 Nginx 时必须带 `Upgrade/Connection` 头并放宽读写超时
+- Redis 降级可保证可用性，但会影响限流精度、缓存命中与异步吞吐
+- 上线前建议开启日志轮转与错误告警
+
+---
+
+## 🗺️ Roadmap
+
+- [x] 基础社交功能（发布/评论/点赞/关注）
+- [x] OAuth 登录
+- [x] WebSocket 实时聊天
+- [ ] 通知中心增强（规则/推送）
+- [ ] 移动端 PWA 体验
+- [ ] 更完善的运营/管理后台
+
+---
+
+## ❓ 常见问题
+
+### 1. ❌ `start.sh` 启动后后端连不上 MySQL
+
+**排查步骤：**
+
+1. 检查 MySQL 是否可连接（本机/远程）
+2. 检查 `backend/.env` 中 `DEV_DATABASE_URL` 是否正确
+3. 确认账号有对应数据库权限
+
+**示例：**
+```bash
+mysql -h 127.0.0.1 -P 3306 -u your_user -p
+```
+
+### 2. ⚠️ Redis 没有安装，项目还能跑吗？
+
+可以。Redis 在本项目是可选能力，会进入降级模式。  
+影响主要是：缓存/限流/部分实时与异步能力受限。
+
+### 3. ❌ 七牛云上传返回 401 / `bad token`
+
+请优先检查：
+- `QINIU_ACCESS_KEY` / `QINIU_SECRET_KEY` 是否正确
+- `QINIU_BUCKET_NAME` / `QINIU_DOMAIN` 是否与控制台一致
+- `.env` 中变量是否包含多余空格
+
+### 4. ❌ OAuth 登录回调失败（`redirect_uri_mismatch`）
+
+请确认两端一致：
+- OAuth 平台配置的回调地址
+- 服务端实际回调地址（`/api/auth/oauth/callback/<provider>`）
+
+生产环境务必使用实际域名与 HTTPS。
+
+### 5. ❌ WebSocket 在 Nginx 后 502
+
+请确认：
+- Nginx 已配置 `/socket.io/` 代理和 `Upgrade/Connection` 头
+- 后端 Socket.IO 服务监听在 `4290`
+- 防火墙/安全组放行 80/443（或对应端口）
+
+### 6. 🔍 如何快速确认 `.env` 已生效？
+
+```bash
+cd backend
+python -c "from app.infrastructure.config.runtime_env import load_env; load_env(); import os; print('FLASK_CONFIG=', os.getenv('FLASK_CONFIG')); print('DEV_DATABASE_URL set=', bool(os.getenv('DEV_DATABASE_URL')))"
+```
+
+若输出 `DEV_DATABASE_URL set= True`，说明已从 `.env` 加载到进程环境。
+
+---
 
 ## 🤝 贡献指南
 
-我们欢迎所有形式的贡献！请遵循以下步骤：
+欢迎提交 Issue 和 Pull Request！
 
-### 提交代码
+1. Fork 本仓库
+2. 创建特性分支（`git checkout -b feature/AmazingFeature`）
+3. 提交更改（`git commit -m 'Add some AmazingFeature'`）
+4. 推送到分支（`git push origin feature/AmazingFeature`）
+5. 开启 Pull Request
 
-1. **Fork 项目** 到你的 GitHub 账户
-2. **创建功能分支**: `git checkout -b feature/amazing-feature`
-3. **提交更改**: `git commit -m 'Add some amazing feature'`
-4. **推送分支**: `git push origin feature/amazing-feature`
-5. **创建 Pull Request**
-
-### 提交 Issue
-
-如果你发现了 bug 或有功能建议，请：
-
-1. 检查是否已有相关 Issue
-2. 提供详细的描述和复现步骤
-
-### 开发环境设置
+### 本地开发命令
 
 ```bash
-# 安装开发依赖  
-cd frontend && npm install  
-cd backend && pip install -r requirements/dev.txt  
+# 后端
+cd backend
+pip install -r requirements/dev.txt
+python flasky.py
 
 # 后端测试
-cd backend/tests_api
-pytest -v        # 
+pytest tests_api
 
-# 代码格式化  
-pre-commit install
+# 前端
+cd ../frontend
+npm install
+npm run dev
+npm run build
+
+# 仓库统一检查
+cd ..
 pre-commit run --all-files
 ```
 
-## 📄 开源协议
+---
 
-本项目基于 [MIT License](LICENSE) 开源协议。
+## 📄 许可证
 
+本项目基于 MIT 许可证开源 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
-## 🙏 致谢
+---
 
-在本项目的开发过程中，参考了以下项目和资料，特此致谢：
+## 📞 联系方式
 
-- **用户资料设计灵感**  
-  - [leleo-home-page](https://github.com/leleo886/leleo-home-page) 
+- 📧 项目维护者: zmc_li@foxmail.com
+- 🐛 Bug 反馈: [提交 Issue](https://github.com/nizhensh-i/The-Reverie-Loft/issues)
 
-- **网站引导页部分实现借鉴**  
-  - [Blog-Index](https://github.com/EsunR/Blog-Index)
+---
 
-- **设计思路**  
-  - Miguel Grinberg 著，《Flask Web开发：基于 Python 的 Web 应用开发实战（第二版）》
+<div align="center">
 
-## 📞 联系
+**如果这个项目对你有帮助，请给个 Star 支持一下。**
 
-- 问题反馈: https://github.com/nizhensh-i/The-Reverie-Loft/issues
-- 邮箱: zmc_li@foxmail.com
+Made with ❤️ by [nizhensh-i](https://github.com/nizhensh-i)
+
+</div>

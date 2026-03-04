@@ -1,38 +1,91 @@
-source ./frontend/deploy/front.sh
+#!/bin/bash
+
+set -euo pipefail
+
 source ./backend/deploy/backend.sh
 
-# 捕获Ctrl+C，终止所有子进程
-trap 'echo "\n中断，正在终止所有进程..."; jobs -p | xargs -r kill; exit 130' INT
+function print_help() {
+  cat <<'USAGE'
+Usage:
+  ./deploy.sh <target> [action]
 
+Targets:
+  local
+  remote
+  help
 
-# function deploy_front(){
-#   front_to_remote
-# }
+Actions:
+  init
+  update (default for remote)
+  restart
+  status
+  logs
+  down
 
-# function deploy_backend() {
-#     backend_to_remote
-# }
-
-function deploy() {
-    front_to_remote &
-    front=$!
-    backend_to_remote &
-    backend=$!
-    wait $front
-    wait $backend
+Quick Start:
+  ./deploy.sh local           # development compose
+  ./deploy.sh remote init     # production compose
+  ./deploy.sh remote update
+USAGE
 }
 
+function require_cmd() {
+  local cmd="$1"
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "部署失败：未检测到命令 $cmd"
+    exit 1
+  fi
+}
 
-echo "传入参数: $1"
+function ensure_local_config() {
+  local cfg="deploy/local.env"
+  local example="deploy/local.env.example"
 
-# 根据参数执行不同的部署函数
-if [ "$1" = "frontend" ]; then
-  echo "部署前端" 
-  front_to_remote
-elif [ "$1" = "backend" ]; then
-  echo "部署后端" 
-  backend_to_remote
-else
-  echo "部署前后端"
-  deploy
-fi
+  if [[ ! -f "$cfg" ]]; then
+    if [[ -f "$example" ]]; then
+      cp "$example" "$cfg"
+      echo "已生成 ${cfg}，可按需修改。"
+    else
+      echo "部署失败：缺少 ${cfg}，且未找到 ${example}"
+      exit 1
+    fi
+  fi
+
+  set -a
+  # shellcheck source=/dev/null
+  source "$cfg"
+  set +a
+}
+
+function run_local() {
+  local action="${1:-init}"
+  require_cmd docker
+  ensure_local_config
+  backend_local "$action"
+}
+
+function run_remote() {
+  local action="${1:-update}"
+  require_cmd docker
+  backend_remote "$action"
+}
+
+TARGET="${1:-help}"
+ACTION="${2:-}"
+
+case "$TARGET" in
+  local)
+    run_local "$ACTION"
+    ;;
+  remote)
+    run_remote "$ACTION"
+    ;;
+  help|-h|--help)
+    print_help
+    ;;
+  *)
+    echo "未知 target: $TARGET"
+    print_help
+    exit 1
+    ;;
+esac

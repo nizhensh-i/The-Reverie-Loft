@@ -36,7 +36,7 @@
 
 ```python
 from flask import Blueprint
-from app.schemas.user_schemas import RegisterRequest
+from app.schemas.auth_schemas import RegisterRequest
 from app.utils.validation import validate_json
 from app.utils.response import success
 
@@ -57,7 +57,7 @@ def register(validated_data):
 
 ```python
 from flask import Blueprint
-from app.schemas.user_schemas import RegisterRequest
+from app.schemas.auth_schemas import RegisterRequest
 from app.utils.validation import validate_request_data
 from app.utils.response import success
 
@@ -81,7 +81,7 @@ def register():
 ### 直接使用模型校验
 
 ```python
-from app.schemas.user_schemas import RegisterRequest
+from app.schemas.auth_schemas import RegisterRequest
 from app.utils.validation import validate_json_data
 
 data = {
@@ -113,7 +113,7 @@ else:
 
 ```bash
 # 运行所有校验相关测试
-python -m pytest tests/test_user_schemas.py -v
+python -m pytest tests/test_auth_schemas.py -v
 
 # 运行集成测试
 python -m pytest tests/test_validation_integration.py -v

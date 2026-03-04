@@ -1,0 +1,69 @@
+name: loft_backend_prod
+
+services:
+  backend:
+    image: ${BACKEND_IMAGE:-nizhenshi/flasky_backend}:${BACKEND_TAG:-latest}
+    container_name: flasky_backend
+    env_file:
+      - .env.prod
+    volumes:
+      - /var/log/loft:/home/flasky/logs
+    ports:
+      - "4289:5000"
+      - "4290:5001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      myredis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - backend_net
+
+  mysql:
+    image: ${MYSQL_IMAGE:-mysql/mysql-server:8.0}
+    container_name: mysql
+    env_file:
+      - .env-mysql
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER:-flasky} -p$${MYSQL_PASSWORD:-1234} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      backend_net:
+        aliases:
+          - mysql
+
+  myredis:
+    image: ${REDIS_IMAGE:-redis:latest}
+    container_name: myredis
+    env_file:
+      - .env-redis
+    command: >-
+      sh -c 'redis-server --requirepass "$${REDIS_PASSWORD:-1234}" --save "$${REDIS_SAVE:-60 1}" --loglevel "$${REDIS_LOGLEVEL:-warning}"'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $${REDIS_PASSWORD:-1234} ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      backend_net:
+        aliases:
+          - myredis
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  backend_net:
+    name: database_n

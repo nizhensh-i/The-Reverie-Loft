@@ -67,3 +67,8 @@ def too_many_req(message="操作过于频繁", data=None):
 def server_error(message="服务器内部错误", data=None):
     """500错误"""
     return api_response(500, message, data)
+
+
+def too_many_req(message="请求频率超限", data=None):
+    """429错误"""
+    return api_response(429, message, data)

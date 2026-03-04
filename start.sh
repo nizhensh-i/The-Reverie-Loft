@@ -14,14 +14,19 @@ function detect_platform(){
     fi
 }
 
+if [ ! -x ".venv/bin/python" ]; then
+    echo "未检测到 .venv，请先执行 ./init.sh"
+    exit 1
+fi
+
 # 启动后端服务
 echo "启动后端主应用..."
 cd backend
-python flasky.py &
+../.venv/bin/python flasky.py &
 BACKEND_PID=$!
 
 echo "启动Socket.IO服务..."
-python flasky_socketio.py &
+../.venv/bin/python flasky_socketio.py &
 SOCKETIO_PID=$!
 
 echo "启动Celery服务..."
@@ -29,11 +34,11 @@ platform=$(detect_platform)
 case $platform in
     "windows")
         echo "操作系统: Windows"
-        celery -A app.make_celery worker -B --loglevel INFO --logfile=logs/celery.log -P eventlet &
+        ../.venv/bin/python -m celery -A app.make_celery worker -B --loglevel INFO --logfile=logs/celery.log -P eventlet &
         ;;
     "mac_arm"|"mac_intel")
         echo "操作系统: macOS"
-        celery -A app.make_celery worker -B --loglevel INFO --logfile=logs/celery.log &
+        ../.venv/bin/python -m celery -A app.make_celery worker -B --loglevel INFO --logfile=logs/celery.log &
         ;;
     *)
         echo "操作系统: 未知 ($OSTYPE)"

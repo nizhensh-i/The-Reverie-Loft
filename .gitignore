@@ -12,3 +12,7 @@ Thumbs.db
 # Python虚拟环境
 .venv
 venv/
+
+# Deploy runtime config
+deploy/local.env
+deploy/remote.env

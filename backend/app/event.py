@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import atexit
 import logging
 import signal
@@ -6,20 +5,16 @@ import sys
 
 import eventlet
 from flask import request
-from flask_jwt_extended import decode_token
 from flask_socketio import ConnectionRefusedError, join_room
 from jwt.exceptions import ExpiredSignatureError
 
-from . import db, redis
-from .models import Message, Notification, NotificationType, User
-from .mycelery.notification_task import create_chat_notifications
-from .websocket import init_ws_services
-
-connection, presence, conversation, cleanup = init_ws_services(redis)
+from .domain.common.exceptions import NotFoundError
+from .presenters.event_serializers import serialize_message_event
 
 
 def register_cleanup_handlers(app):
     """注册 WebSocket 优雅停机处理器"""
+    cleanup = app.container.ws_cleanup()
 
     def shutdown_handler(signum=None, frame=None):
         """优雅停机处理器"""
@@ -55,6 +50,14 @@ def register_cleanup_handlers(app):
 # 封装为注册函数
 def register_ws_events(socketio, app):
     """注册WS事件，绑定传入的socketio实例和app上下文"""
+    container = app.container
+    connection = container.ws_connection()
+    presence = container.ws_presence()
+    conversation = container.ws_conversation()
+    jwt_port = container.jwt_port()
+
+    def _chat_service():
+        return container.chat_ws_service()
 
     def verify_token_in_websocket():
         """连接websocket时验证用户身份"""
@@ -65,7 +68,7 @@ def register_ws_events(socketio, app):
                 raise ConnectionRefusedError("未授权：缺少token")
 
             raw_token = access_token.replace("Bearer ", "", 1)
-            decoded_token = decode_token(raw_token)
+            decoded_token = jwt_port.decode_token(raw_token)
             user_id = decoded_token["sub"]
             logging.info(f"WebSocket连接token验证成功，用户ID: {user_id}")
         except ExpiredSignatureError as e:
@@ -75,13 +78,15 @@ def register_ws_events(socketio, app):
             logging.error(f"WebSocket身份验证失败: {str(e)}", exc_info=True)
             raise ConnectionRefusedError("WebSocket身份验证失败，token无效或解析错误")
 
-        # 检查用户是否存在（DB操作，后续异步场景需绑定上下文）
-        user = User.query.get(user_id)
-        if not user:
+        try:
+            username, resolved_user_id = _chat_service().get_user_identity(
+                user_id=int(user_id)
+            )
+        except (NotFoundError, ValueError):
             logging.warning(f"WebSocket连接失败: 用户ID {user_id} 不存在")
             raise ConnectionRefusedError("WebSocket身份验证失败，用户不存在")
 
-        return user.username, user.id
+        return username, resolved_user_id
 
     # 连接事件
     @socketio.on("connect")
@@ -136,29 +141,19 @@ def register_ws_events(socketio, app):
         """异步处理进入聊天的DB操作（标记已读）"""
         with app.app_context():  # 绑定WS应用上下文
             try:
-                # 标记消息已读
-                updated_messages = Message.query.filter(
-                    Message.receiver_id == user_id,
-                    Message.sender_id == target_id,
-                    Message.is_read.is_(False),
-                ).update({"is_read": True}, synchronize_session="fetch")
-                logging.info(f"已将 {updated_messages} 条消息标记为已读")
-
-                # 标记通知已读
-                updated_notifications = (
-                    Notification.query.filter_by(
-                        receiver_id=user_id,
-                        trigger_user_id=target_id,
-                        type=NotificationType.CHAT,
-                    )
-                    .filter(Notification.is_read.is_(False))
-                    .update({"is_read": True})
+                result = _chat_service().mark_enter_chat_read(
+                    user_id=user_id,
+                    target_id=target_id,
                 )
-                logging.info(f"已将 {updated_notifications} 条通知标记为已读")
-
-                db.session.commit()
+                logging.info(
+                    "已将 %s 条消息标记为已读",
+                    result["updated_messages"],
+                )
+                logging.info(
+                    "已将 %s 条通知标记为已读",
+                    result["updated_notifications"],
+                )
             except Exception as e:
-                db.session.rollback()  # 事务回滚
                 logging.error(f"更新消息和通知状态失败: {str(e)}", exc_info=True)
 
     @socketio.on("enter_chat")
@@ -198,36 +193,44 @@ def register_ws_events(socketio, app):
     def async_send_message(sender_id, receiver_id, content, sid):
         """异步处理发送消息的DB操作"""
         with app.app_context():
-            msg = Message(sender_id=sender_id, receiver_id=receiver_id, content=content)
-            db.session.add(msg)
-            db.session.flush()
-
             try:
                 # 使用正确的在线检测（会检查心跳超时）
                 is_online = presence.is_user_online(receiver_id)
                 active_chat = conversation.get_active_chat(receiver_id)
+                mark_read = is_online and active_chat == sender_id
 
                 logging.info(
                     f"接收者 {receiver_id} 在线状态: {is_online}, " f"活跃聊天: {active_chat}"
                 )
 
-                if is_online and active_chat == sender_id:
+                msg = _chat_service().create_message(
+                    sender_id=sender_id,
+                    receiver_id=receiver_id,
+                    content=content,
+                    mark_read=mark_read,
+                )
+
+                if mark_read:
                     logging.info(f"用户 {receiver_id} 当前正在与发送者 {sender_id} 聊天")
-                    msg.is_read = True
-                    socketio.emit("new_message", msg.to_json(), to=str(receiver_id))
+                    socketio.emit(
+                        "new_message",
+                        serialize_message_event(msg),
+                        to=str(receiver_id),
+                    )
                 else:
-                    # 异步生成通知（Celery任务）
-                    create_chat_notifications.delay(receiver_id, sender_id, msg.id)
+                    _chat_service().dispatch_chat_notification(
+                        receiver_id=receiver_id,
+                        sender_id=sender_id,
+                        message_id=msg.id,
+                    )
                     if is_online:
                         logging.info(f"用户 {receiver_id} 在线但不在聊天页面，消息已保存")
                     else:
                         logging.info(f"用户 {receiver_id} 离线，消息已保存")
 
-                db.session.commit()
-                socketio.emit("message_sent", msg.to_json(), room=sid)
+                socketio.emit("message_sent", serialize_message_event(msg), room=sid)
                 logging.info(f"消息 ID:{msg.id} 发送成功")
             except Exception as e:
-                db.session.rollback()  # 事务回滚
                 logging.error(f"消息发送失败: {str(e)}", exc_info=True)
 
     @socketio.on("send_message")

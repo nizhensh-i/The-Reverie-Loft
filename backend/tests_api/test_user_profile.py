@@ -62,6 +62,45 @@ class TestUserProfileCase:
         assert r.status_code == 200
         assert r.json.get("data").get("nickname") == "测试昵称"
 
+    def test_update_user_social_account(self, client, auth):
+        """测试更新用户社交账号"""
+        auth_instance = auth()
+        register_response = auth_instance.register()
+        assert register_response.status_code == 200
+        assert register_response.json.get("code") == 200
+
+        login_response = auth_instance.login()
+        assert login_response.status_code == 200
+        assert login_response.json.get("code") == 200
+        assert login_response.json.get("access_token") is not None
+
+        update_data = {
+            "social_account": {
+                "github": "https://github.com/test",
+                "qq": "123456789",
+                "wechat": "wx_test",
+                "bilibili": "bili_test",
+                "twitter": "@test",
+                "tiktok": None,
+                "rednote": None,
+                "email": "test@example.com",
+            }
+        }
+        r = client.patch(
+            self.pre_fix + "/users/1",
+            headers=auth_instance.get_headers(),
+            json=update_data,
+        )
+        assert r.status_code == 200
+        assert r.json.get("code") == 200
+        assert "用户资料更新成功" in r.json.get("message")
+
+        r = client.get(self.pre_fix + "/users/1", headers=auth_instance.get_headers())
+        assert r.status_code == 200
+        social_account = r.json.get("data").get("social_account")
+        assert social_account.get("qq") == "123456789"
+        assert social_account.get("github") == "https://github.com/test"
+
     def test_follow_unfollow_user(self, client, auth):
         """测试关注和取消关注用户"""
         # 创建两个独立的认证实例

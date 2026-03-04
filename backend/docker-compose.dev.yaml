@@ -1,0 +1,73 @@
+name: loft_backend_dev
+
+services:
+  backend:
+    image: ${BACKEND_IMAGE:-nizhenshi/flasky_backend}:${BACKEND_TAG:-latest}
+    container_name: flasky_backend
+    env_file:
+      - .env
+    environment:
+      # 本地容器运行仍保持 development 配置，但连接使用容器服务名
+      FLASK_CONFIG: development
+      DEV_DATABASE_URL: mysql+pymysql://flasky:1234@mysql:3306/flasky?charset=utf8mb4
+      DEV_REDIS_URL: redis://:1234@myredis:6379/0
+      REDIS_HOST: myredis
+    ports:
+      - "4289:5000"
+      - "4290:5001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      myredis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - backend_net
+
+  mysql:
+    image: ${MYSQL_IMAGE:-mysql/mysql-server:8.0}
+    container_name: mysql
+    env_file:
+      - .env-mysql
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER:-flasky} -p$${MYSQL_PASSWORD:-1234} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      backend_net:
+        aliases:
+          - mysql
+
+  myredis:
+    image: ${REDIS_IMAGE:-redis:latest}
+    container_name: myredis
+    env_file:
+      - .env-redis
+    command: >-
+      sh -c 'redis-server --requirepass "$${REDIS_PASSWORD:-1234}" --save "$${REDIS_SAVE:-60 1}" --loglevel "$${REDIS_LOGLEVEL:-warning}"'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $${REDIS_PASSWORD:-1234} ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      backend_net:
+        aliases:
+          - myredis
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  backend_net:
+    name: database_n

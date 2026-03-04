@@ -24,6 +24,6 @@ export default {
 </script>
 <style lang="scss" scoped>
 .el-page-header {
-  margin: 10px 0 10px 20px;
+  margin: 10px 10px 10px 20px;
 }
 </style>

@@ -1,4 +1,4 @@
-# from app.models import User, Role
+# from app.infrastructure.persistence.models import User, Role
 # from app import redis
 from base64 import b64encode
 

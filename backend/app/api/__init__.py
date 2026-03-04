@@ -2,7 +2,7 @@ from flask import Blueprint
 
 api = Blueprint("api", __name__)
 
-from . import _admin, authentication, errors, follow, upload, users
+from . import _admin, follow, upload, users
 from .comments import register_comment_api
 from .follow import register_follow_api
 from .logs import register_log_api
@@ -35,3 +35,10 @@ register_comment_api(
     comment_url="/posts/<int:post_id>/comments",
     comment_manage_url="/comments/<int:comment_id>",
 )
+
+
+def setup_api_bp(app):
+    app.register_blueprint(api, url_prefix="/api/v1")
+
+
+__all__ = ["setup_api_bp"]
